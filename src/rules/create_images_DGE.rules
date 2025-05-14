@@ -1,0 +1,44 @@
+'''
+Author:	E. Reichenberger
+Date:		7.31.2024
+'''
+
+log_directory = 'logs/DGE_Markers/'
+
+#--------------------MESSAGES-----------------------------------
+onsuccess:
+  print("The exploratory Seurat DGE and Marker Plots pipeline completed with no errors.")
+  shell("mail -s 'The exploratory Seurat DGE and Marker Plots pipeline completed with no errors.' "+ config['contact']+" < {log}")
+
+onerror:
+  print("The exploratory Seurat DGE and Marker Plots pipeline did not complete without errors."),
+  shell("mail -s 'The exploratory Seurat DGE and Marker Plots pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
+
+#--------------------RULES---------------------------------------
+rule cluster_plots_DGE:
+	input:
+		script = 'src/scripts/create_images_DGE.R',
+		analyzed_object = analyzed_seurat_object
+	params:
+		project = PROJECT,
+		rpath = RPATH,
+		storage = STORAGE,
+		normalization_method = SEURAT_NORMALIZATION_METHOD,
+		integration_method = SEURAT_INTEGRATION_METHOD,
+		resolution = RESOLUTION,
+		conserved_genes = CONSERVED_GENES,
+		threads = THREADS,
+		tsne = TSNE,
+		user_gene_file = USER_GENE_FILE,
+		report_path = directory(report_path_tables),
+		visualization = VISUALIZATION
+	output: touch_file_create_images_DGE
+	log:
+		log_output = create_images_DGE_log + PROJECT.lower() + '_create_images_DGE.log'
+	benchmark: benchmark_log + PROJECT.lower() + '_cluster_plots.benchmark'  #added 12.4.2024 ERR
+	shell:
+		"Rscript {input.script} {params.project} {params.rpath} {params.storage} \
+			{params.normalization_method} {params.integration_method} \
+			{params.resolution} {params.conserved_genes} {input.analyzed_object} \
+			{params.threads} {params.tsne} {params.report_path} {params.user_gene_file} \
+			{params.visualization} 2> {log.log_output} && touch {output}"

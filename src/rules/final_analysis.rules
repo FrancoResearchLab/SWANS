@@ -1,0 +1,142 @@
+'''
+Author:	E. Reichenberger
+Date:		8.11.2024
+'''
+
+#--------------------MESSAGES-----------------------------------
+onsuccess:
+  print("The final analysis pipeline completed with no errors.")
+  shell("mail -s 'The final analysis pipeline completed with no errors.' "+ config['contact']+" < {log}")
+
+onerror:
+  print("The final analysis pipeline did not complete without errors."),
+  shell("mail -s 'The final analysis pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
+
+#--------------------RULES---------------------------------------
+rule final_analysis:
+	input:
+		script = 'src/scripts/final_analysis.R',
+		seurat_object = analyzed_seurat_object,
+		celltype_assignment_file = CLUSTER_ANNOTATION_FILE,
+	params:
+		project = PROJECT,
+		rpath = RPATH,
+		normalization = FINAL_SEURAT_NORMALIZATION_METHOD,
+		integration = FINAL_SEURAT_INTEGRATION_METHOD,
+		resolution = FINAL_RESOLUTION,
+		tsne = TSNE,
+		user_file = FINAL_USER_GENE_FILE,
+		threads = FINAL_THREADS,
+		filtering_threshold = FINAL_FILTERING_THRESHOLD,
+		avg2fc = AVG_LOG2FC_THRESHOLD,
+		min_pct = MIN_PCT,
+		conserved_genes = FINAL_CONSERVED_GENES,
+		organism = ORGANISM,
+		final_storage = FINAL_STORAGE,
+		provide = PROVIDE_ANALYZED_SEURAT_OBJECT,
+		annotate = ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT,
+		visualization = FINAL_VISUALIZATION,
+		meta_sample = USER_ANALYZED_SEURAT_OBJECT_META_SAMPLE,
+		meta_experiment = USER_ANALYZED_SEURAT_OBJECT_META_EXPERIMENT,
+		meta_annotation = USER_ANALYZED_SEURAT_OBJECT_META_ANNOTATION,
+		umap_reduction = USER_UMAP_REDUCTION,
+		tnse_reduction = USER_TNSE_REDUCTION,
+		memory = memory_mb
+	output: 
+		storage_files = storage_items,
+		seurat_object = final_analyzed_seurat_object,
+	benchmark: benchmark_log + PROJECT + '_final_analysis.benchmark' #added 12.4.2024 ERR
+	log:
+		log_output = final_log + PROJECT + '_final_analysis.log'
+	#resources:
+	#	mem_mb= 20000
+	shell:
+		"Rscript {input.script} {params.project} {params.rpath} {input.seurat_object} \
+			{params.normalization} {params.integration} {params.resolution} \
+			{input.celltype_assignment_file} {params.tsne} {params.user_file} {params.threads} \
+			{params.filtering_threshold} {params.avg2fc} {params.min_pct} \
+			{params.conserved_genes} \
+			{params.organism} {params.final_storage} {params.provide}  \
+			{params.annotate} {params.visualization} {params.meta_sample} \
+			{params.meta_experiment} {params.meta_annotation} \
+			{params.umap_reduction} {params.tnse_reduction} {params.memory} \
+			2> {log.log_output}" 
+
+rule trajectory_analysis:
+	input:
+		script = 'src/scripts/trajectory_analysis.R',
+		storage_files = storage_items,
+		seurat_object = final_analyzed_seurat_object,
+	params:
+		project = PROJECT,
+		lib_path = RPATH,
+		normalization = FINAL_SEURAT_NORMALIZATION_METHOD,
+		integration = FINAL_SEURAT_INTEGRATION_METHOD,
+		resolution = FINAL_RESOLUTION,
+		provide = PROVIDE_ANALYZED_SEURAT_OBJECT,
+		annotate = ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT,
+		partition_trajectory = PARTITION_TRAJECTORY,
+		final_storage = FINAL_STORAGE,
+		celltype_assignment_file = CLUSTER_ANNOTATION_FILE
+	output: touch_trajectory_file
+	log:
+		log_output = final_log + PROJECT.lower() + '_trajectory_analysis.log'
+	benchmark: benchmark_log + PROJECT.lower() + '_trajectory_analysis.benchmark' #added 12.4.2024 ERR
+	shell:
+		"Rscript {input.script} \
+			{params.project} {input.seurat_object} {params.celltype_assignment_file} \
+			{params.normalization} {params.integration} {params.resolution} \
+			{params.partition_trajectory} \
+			{params.final_storage} \
+			{params.lib_path} \
+			{params.provide} {params.annotate} \
+			2> {log.log_output} && touch {output}"
+			
+rule final_report:
+	input:
+		storage_files = storage_items,
+		trajectory_output = touch_trajectory_file,
+		script = 'src/rmd/final_report.Rmd',
+	params:
+		project = PROJECT,
+		location = '../../' + final_path
+	output: final_report
+	log:
+		log_output = final_report_log + PROJECT + '_final_report.log'
+	benchmark: benchmark_log + PROJECT + '_final_report.benchmark'
+	shell:
+		"""
+			Rscript -e 'library(rmarkdown); rmarkdown::render(\"{input.script}\", output_file=paste0(\"{params.location}\", \"{params.project}\", "_final_report.html"))'
+		"""
+
+rule benchmarks:
+	input:
+		report = final_report,
+		script = 'src/scripts/benchmarks.R',
+	params:
+		project = PROJECT,
+		lib_path = RPATH,
+	output: benchmark_file
+	log:
+		log_output = benchmarking_table_log + PROJECT + '_benchmarking_table.log'
+	benchmark: benchmark_log + PROJECT + '_benchmark_table.benchmark'
+	shell:
+		"Rscript {input.script} {params.lib_path} {params.project} 2> {log.log_output}"
+
+rule bench_report:
+	input:
+		output_benchmarks = benchmark_file,
+		script = 'src/rmd/benchmark_reports.Rmd',
+		#script = 'benchmark_reports.Rmd',
+	params:
+		project = PROJECT,
+		location = '../../' + benchmark_dir
+	output: benchmark_report
+	log:
+		log_output = benchmark_report_log + PROJECT + '_benchmark_report.log'
+	benchmark: benchmark_log + PROJECT + '_benchmark_report.benchmark'
+	shell:
+		"""
+			Rscript -e 'library(rmarkdown); rmarkdown::render(\"{input.script}\", output_file=paste0(\"{params.location}\", \"{params.project}\", "_benchmark_report.html"))'
+		"""
+#Rscript -e 'library(rmarkdown); rmarkdown::render("src/rmd/benchmark_reports.Rmd", output_file="XX_benchmark_report.html"))'

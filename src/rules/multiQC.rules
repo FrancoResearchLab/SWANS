@@ -1,0 +1,33 @@
+'''
+Author: E. Reichenberger
+Date: 09.01.2024
+'''
+
+#--------------------MESSAGES-----------------------------------
+onsuccess:
+	print('The multiqc report pipeline completed with no errors.'),
+	shell("mail -s 'The multiqc report pipeline completed with no errors.' "+ config['contact']+" < {log}")
+
+onerror:
+	print('The multiqc report pipeline did not complete without errors.'),
+	shell("mail -s 'The multiqc report pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
+
+#--------------------RULES---------------------------------------
+rule multiqc_cellranger_report:
+	input: 
+		tool = MULTIQC,
+		input_data = qc_cellranger
+	output: cellranger_report
+	params:
+		search_dir = 'data/endpoints/' + PROJECT + '/',
+		module = 'cellranger',
+		outdir = 'data/endpoints/' + PROJECT + '/analysis/report/cellranger/',
+		report_name = PROJECT + '_multiqc_cellranger_summary',
+		title = PROJECT + 'Cell Ranger Summary',
+	log:
+		log_output = multiqc_log + 'multiqc_cellranger_report.log'
+	benchmark: benchmark_log + PROJECT.lower() + '_multiqc_cellranger.benchmark'  #added 12.4.2024 ERR
+	shell:
+		"{input.tool} {params.search_dir} -m {params.module} \
+			 --filename {params.report_name} -o {params.outdir} \
+			 --verbose --force 2> {log.log_output}" 

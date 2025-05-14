@@ -1,0 +1,271 @@
+<style>
+.main-container {
+    max-width: 1324px;
+    margin-left: 10px;
+    margin-right: auto;
+}
+</style>
+
+<style type="text/css">
+   .main-container {max-width: 1324px;}
+   .row {display: flex;}
+   .column {flex: 700;}
+</style>
+
+<style>
+    table {
+      border-collapse: collapse; /* Ensures borders don't overlap */
+      width: 100%; /* Optional: makes the table take the full width */
+    }
+    th, td {
+      border: 1px solid black; /* Adds borders to cells */
+      padding: 10px; /* Adds padding around text */
+      text-align: left; /* Aligns text to the left inside cells */
+    }
+    th {
+      background-color: #f2f2f2; /* Optional: gives header cells a background color */
+    }
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(data.table)
+library(dplyr)
+library(tidyverse)
+library(yaml)
+library(DT)
+library(stringr)
+```
+
+```{r meta_configs, include=FALSE}
+
+meta <- read.csv(paste0('../../samples.sample_list'), sep = '\t', header = TRUE)
+#meta <- read.csv(paste0('samples.sample_list'), sep = '\t', header = TRUE)
+meta <- meta[, c(1, 2)]
+#samples <- meta$samples
+
+
+# Read in configs
+proj_info <- read_yaml(paste0('../../configs/local_configs.yaml'))
+final_info <- read_yaml(paste0('../../configs/final_configs.yaml'))
+#proj_info <- read_yaml(paste0('../../configs/local_configs_dicer_test.yaml'))
+#final_info <- read_yaml(paste0('../../configs/final_configs_dicer_test.yaml'))
+
+## Main project info
+project <- proj_info$`PROJECT`   
+organism <- proj_info$`ORGANISM`
+
+## Configs relevant to rules + processing time
+run_cellranger <- proj_info$`RUN_CELLRANGER`
+create_bam <- proj_info$`OUTPUT_BAM`
+run_multiqc <- proj_info$`RUN_MULTIQC`
+run_soupX <- proj_info$`RUN_SOUPX`
+run_doubletFinder <- proj_info$`RUN_DOUBLETFINDER`
+components <- proj_info$`COMPONENTS`
+num_var_features <- proj_info$`NUM_VARIABLE_FEATURES`
+scale_data_features <- proj_info$`SCALE_DATA_FEATURES`
+mito_regression <- proj_info$`MITO_REGRESSION`
+ribo_regression <- proj_info$`RIBO_REGRESSION`
+regression_file <- proj_info$`REGRESSION_FILE`
+cell_cycle_regression <- proj_info$`CELL_CYCLE_REGRESSION`
+cell_cycle_method <- proj_info$`CELL_CYCLE_METHOD`
+seurat_normalization_method <- proj_info$`SEURAT_NORMALIZATION_METHOD`
+seurat_integration_method <- proj_info$`SEURAT_INTEGRATION_METHOD`
+reference_based_integration <- proj_info$`REFERENCE_BASED_INTEGRATION`
+reference_samples <- proj_info$`REFERENCE_SAMPLES`
+run_azimuth <- proj_info$`RUN_AZIMUTH`
+azimuth_reference <- proj_info$`AZIMUTH_REFERENCE`
+run_transferdata <- proj_info$`RUN_TRANSFERDATA`
+transferdata_ref_file <- proj_info$`TRANSFERDATA_REF_FILE`
+transferdata_reduction <- proj_info$`TRANSFERDATA_REDUCTION`
+transferdata_annocol <- proj_info$`TRANSFERDATA_ANNOCOL`
+resolution <- proj_info$`RESOLUTION`
+tsne <- proj_info$`TSNE`
+conserved_genes <- proj_info$`CONSERVED_GENES`
+storage <- proj_info$`STORAGE`
+threads <- proj_info$`THREADS`
+memory <- proj_info$`MEMORY`
+user_gene_file <- proj_info$`USER_GENE_FILE`
+visualization <- proj_info$`VISUALIZATION`
+
+#Final Analysis
+final_visualization <- final_info$`FINAL_VISUALIZATION`
+trajectory <- final_info$`RUN_TRAJECTORY_ANALYSIS`
+final_storage <- final_info$`FINAL_STORAGE`
+final_conserved_genes <- final_info$`FINAL_CONSERVED_GENES`
+final_threads <- final_info$`FINAL_THREADS`
+final_user_gene_file <- proj_info$`FINAL_USER_GENE_FILE`
+
+# read in benchmark table & images
+benchmark_dir <- paste0('../../data/endpoints/', project, '/analysis/report/benchmarks/')
+benchmark_table_dir <- paste0(benchmark_dir, 'table/')
+benchmark_fig_dir <- paste0(benchmark_dir, 'figures/')
+
+benchmark_file <- paste0(benchmark_table_dir, project, '_benchmarks.txt')
+benchmarks <- read.table(benchmark_file, header=TRUE, sep='\t')
+
+time_memory <- paste0(benchmark_fig_dir, project, '_time_memory.png')
+in_out_file <- paste0(benchmark_fig_dir, project, '_in_out.png')
+```
+
+---
+showWarnings: FALSE
+title: "`r project`"
+subtitle: "Benchmarking Report"
+date: "`r format(Sys.time())`"
+output: html_document
+---
+
+<div class = "main-container">
+
+# Pipeline Information
+SWANS, version 2.0
+
+## YAML Configuration Parameters
+##### Species
+Organism: `r organism`
+
+##### Initial Processing
+Was CellRanger Run? `r run_cellranger`   
+If yes, were bam files created? `r create_bam`   
+Was a MultiQC report created with CellRanger output? `r run_multiqc`  
+Was SoupX Run? `r run_soupX`    
+Was DoubletFinder Run? `r run_doubletFinder`    
+
+How many PCA components were initially investigated? `r components`  
+How may variable features were used? `r num_var_features`   
+How was the data scaled? `r scale_data_features`   
+
+Were mitochondira genes regressed out? `r mito_regression`   
+Were ribosomal genes regressed out? `r ribo_regression`   
+Were cell cycling genes regressed out? `r cell_cycle_regression`   
+Name of user-supplied file containing additional genes to regress out? `r regression_file`  
+
+Normalization Method(s): `r seurat_normalization_method`  
+Integration Method(s): `r seurat_integration_method`  
+Resolution(s): `r resolution`  
+
+Reference-Based Integration? `r reference_based_integration`  
+Reference-Based Samples: `r reference_samples`  
+
+Was Azimuth Run? `r run_azimuth`    
+Were lables transferred from an additional seurat object? `r run_transferdata`    
+Was Azimuth Run? `r run_azimuth`    
+
+Was FindConservedMarkers run? `r conserved_genes`  
+Was tSNE used? `r tsne`  
+
+How was the data stored? `r storage`  
+How many threads were used for parallel processing? `r threads`  
+Max assigned memory? `r memory`  
+
+Did user supply additional genes for visualization? `r user_gene_file`  
+How did they want the additional genes visualized? `r visualization`  
+
+ *** 
+ 
+##### Final Processing
+Was Trajectory Analysis Run? `r trajectory`    
+How many threads were used for parallel processing? `r final_threads`  
+How was the final data stored? `r final_storage`  
+Were conserved genes found? `r final_conserved_genes`  
+Name of user-supplied file containing (final) genes for visualization? `r final_user_gene_file`  
+How were they visualized? `r final_visualization`  
+
+ *** 
+
+## Sample Information
+```{r samples, echo=FALSE, include=TRUE}
+datatable(data = meta, caption = 'Table 1: Sample Data.', options=list(pageLength=20))
+```
+
+ *** 
+
+## Benchmarks
+```{r zscore_c_experiment, include=T, echo=F, out.width="100%", warning=FALSE}
+datatable(data=benchmarks, class = 'cell-border stripe', caption = 'Table 2: Benchmarking results for all Snakemake Rule', rownames= FALSE, filter = 'top', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, pageLength=30, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
+```
+
+<div class = "row">
+<div class = "column">
+```{r tm, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='Figure 1: Running time (hour:minutes:seconds) vs Max Physical Memory'}
+  knitr::include_graphics(time_memory)
+```
+</div>
+
+<div class = "column">
+```{r in_out, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='Figure 2: Number of MB read vs Number of MB written'}
+   knitr::include_graphics(in_out_file)
+```
+</div>
+</div>
+
+#### psutil description
+<table border="1">
+  <thead>
+    <tr>
+      <th>colname</th>
+      <th>type (unit)</th>
+      <th>description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>s</td>
+      <td>float (seconds)</td>
+      <td>Running time in seconds</td>
+    </tr>
+    <tr>
+      <td>h:m:s</td>
+      <td>string (-)</td>
+      <td>Running time in hour, minutes, seconds format</td>
+    </tr>
+    <tr>
+      <td>max_rss</td>
+      <td>float (MB)</td>
+      <td>Maximum "Resident Set Size”, this is the non-swapped physical memory a process has used.</td>
+    </tr>
+    <tr>
+      <td>max_vms</td>
+      <td>float (MB)</td>
+      <td>Maximum “Virtual Memory Size”, this is the total amount of virtual memory used by the process</td>
+    </tr>
+    <tr>
+      <td>max_uss</td>
+      <td>float (MB)</td>
+      <td>“Unique Set Size”, this is the memory which is unique to a process and which would be freed if the process was terminated right now.</td>
+    </tr>
+    <tr>
+      <td>max_pss</td>
+      <td>float (MB)</td>
+      <td>“Proportional Set Size”, is the amount of memory shared with other processes, accounted in a way that the amount is divided evenly between the processes that share it (Linux only)</td>
+    </tr>
+    <tr>
+      <td>io_in</td>
+      <td>float (MB)</td>
+      <td>the number of MB read (cumulative).</td>
+    </tr>
+    <tr>
+      <td>io_out</td>
+      <td>float (MB)</td>
+      <td>the number of MB written (cumulative).</td>
+    </tr>
+    <tr>
+      <td>mean_load</td>
+      <td>float (-)</td>
+      <td>CPU usage over time, divided by the total running time (first row)</td>
+    </tr>
+    <tr>
+      <td>cpu_time</td>
+      <td>float(-)</td>
+      <td>CPU time summed for user and system</td>
+    </tr>
+  </tbody>
+</table>
+
+<br>&nbsp;<br>
+
+
+
+</div>

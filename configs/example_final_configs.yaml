@@ -1,0 +1,80 @@
+# run finale (y/n)
+RUN_FINAL_ANALYSIS: n
+
+# minimimum % of cells in one of compared groups for dge
+MIN_PCT: 0.1
+
+# filtering DEGs (avg_log2FC) -- single value: e.g., 0.1 (longer) 2.5 (shorter)
+# use 0 to keep all results (pathway analysis); non-zero (gene set enrichment analysis)
+AVG_LOG2FC_THRESHOLD: 1.5
+
+# filtering threshold/value of adj.p.value for pathway/gsea results -- single value: e.g., 0.05 
+FINAL_FILTERING_THRESHOLD: 0.10
+
+#### WHAT IF USER IS SUPPLYING OBJECT?????
+# final normalization method for Seurat (standard, sct) -- choose only one
+FINAL_SEURAT_NORMALIZATION_METHOD: standard
+
+# final integration method for seurat (cca, rpca, harmony) -- choose only one
+FINAL_SEURAT_INTEGRATION_METHOD: harmony
+
+# final resolution value -- single value: e.g., 0.5
+FINAL_RESOLUTION: 0.1
+
+# file with names of new clusters
+CLUSTER_ANNOTATION_FILE: 
+# --------------------------------------------
+
+# -- ADDITIONAL ANALYSIS ---------------------
+
+# run Monocle3 trajectory analysis? (y/n) -- optional
+RUN_TRAJECTORY_ANALYSIS: n
+
+# partition clusters (y/n) 
+# if y, CLUSTER_ANNOTATION_FILE needs a column called 'partition' with a value for each cluster
+PARTITION_TRAJECTORY: y
+# --------------------------------------------
+
+# -- SUPPLYING SEURAT OBJECT ----------------
+
+# supply final Seurat object (y/n)
+PROVIDE_ANALYZED_SEURAT_OBJECT: n
+
+# path to seurat object -- cannot be blank if PROVIDE_ANALYZED_SEURAT_OBJECT = 'y'
+USER_ANALYZED_SEURAT_OBJECT: 
+
+# meta data character string to access 'Sample' in seurat object (e.g., Samples, sample_name')
+USER_ANALYZED_SEURAT_OBJECT_META_SAMPLE:
+
+# meta data character string to access 'Experiment' in seurat object (e.g., Experiment, Conditions)
+USER_ANALYZED_SEURAT_OBJECT_META_EXPERIMENT:
+
+# meta data character string that holding annotation information in seurat object (e.g., celltypes, annotation_layer)
+USER_ANALYZED_SEURAT_OBJECT_META_ANNOTATION:
+
+# umap reduction in supplied seurat object (e.g., standard.cca.umap)
+USER_UMAP_REDUCTION:
+
+# tsne reduction in supplied seurat object (e.g., standard.rpca.tsne)
+USER_TNSE_REDUCTION:
+
+# use only if providing annotated ANALYZED_SEURAT_OBJECT
+# annotate seurat object? (y/n)
+ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT:
+# --------------------------------------------
+
+# final storage format (rds,sceo,cloupe,cellchat,cellphone)
+FINAL_STORAGE: 
+
+# relative path with filename to file containing genes of interest
+FINAL_USER_GENE_FILE: 
+
+# which visualization for FINAL_USER_GENE_FILE (feature,violin,ridge,dot) -- choose 1, more, or leave blank
+# (feature plotted by default) choosing all will create very large pdf file
+FINAL_VISUALIZATION: dot
+
+# run conserved genes (y/n) -- only run with multiple experiments
+FINAL_CONSERVED_GENES: n
+
+# number of threads
+FINAL_THREADS: 30

@@ -1,0 +1,566 @@
+
+
+<style>
+.main-container {
+    max-width: 1324px;
+    margin-left: 10px;
+    margin-right: auto;
+}
+</style>
+
+<style type="text/css">
+  .main-container {max-width: 1324px;}
+  .row {
+    display: flex;
+    align-items: center;
+  }
+
+  .column {
+    padding: 5px;
+  }
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(knitr)
+library(data.table)
+library(dplyr)
+library(tidyverse)
+library(yaml)
+library(DT)
+library(stringr)
+
+# Sample Metadata
+meta <- read.csv('../../samples.sample_list', sep='\t', header=TRUE)
+meta <- meta[, 1:2]
+samples <- meta$samples
+
+
+# Configs
+proj_info <- read_yaml('../../configs/local_configs.yaml')
+project <- proj_info$`PROJECT`   
+organism <- proj_info$`ORGANISM`
+
+regression_cc <- proj_info$`CELL_CYCLE_REGRESSION`
+regression_mito <- proj_info$`MITO_REGRESSION`
+
+run_soupX <- proj_info$`RUN_SOUPX`
+run_doubletFinder <- proj_info$`RUN_DOUBLETFINDER`
+mito <- proj_info$`MITO`
+minfeat_thresh <- proj_info$`MIN_FEATURE_THRESHOLD`
+max_feat_thresh <- proj_info$`MAX_FEATURE_THRESHOLD`
+split_layers <- proj_info$`SPLIT_LAYERS_BY`
+num_var_features <- proj_info$`NUM_VARIABLE_FEATURES`
+scale_data <- proj_info$`SCALE_DATA_FEATURES`
+
+final_info <- read_yaml('../../configs/final_configs.yaml')
+normalization <- final_info$`FINAL_SEURAT_NORMALIZATION_METHOD`
+integration <- final_info$`FINAL_SEURAT_INTEGRATION_METHOD`
+resolution <- final_info$`FINAL_RESOLUTION`
+
+cluster_annotation <- paste0('../../', final_info$`CLUSTER_ANNOTATION_FILE`)
+file_user_gene_file <- paste0('../../', final_info$`FINAL_USER_GENE_FILE`)
+
+avglogfc <- final_info$`AVG_LOG2FC_THRESHOLD`
+filter_threshold <- final_info$`FINAL_FILTERING_THRESHOLD`
+min_ptc <- final_info$`MIN_PCT`
+gene_rank <- final_info$`GENE_RANK`
+trajectory_analysis <- final_info$`RUN_TRAJECTORY_ANALYSIS`
+partition <- final_info$`PARTITION_TRAJECTORY`
+conserved_genes <- final_info$`FINAL_CONSERVED_GENES`
+
+# Annotation
+annotation <- read.csv(cluster_annotation, header=TRUE, sep='\t')
+celltypes <- annotation$celltypes
+if (trajectory_analysis == 'y' && partition == 'y')
+{
+  partitions <- annotation$partition
+}
+
+# Sig PC 
+sig_pc_file <- paste0('../../data/endpoints/', project, '/analysis/tables/', project, '_', normalization, '_pca_sigPC.txt')
+sig_pc <- read.table(sig_pc_file, header=TRUE)
+sig_pc <- sig_pc$x
+#-------------------------------------------------------------------------------
+
+# Final Result Tables
+#-------------------------------------------------------------------------------
+final_markers_file <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_markers_total.txt')
+final_markers <- read.table(final_markers_file, header=TRUE, sep='\t')
+final_markers$p_val <- format(final_markers$p_val, digits=3)
+final_markers$avg_log2FC <- round(final_markers$avg_log2FC, 3)
+final_markers$p_val_adj <- format(final_markers$p_val_adj, digits=3)
+ucluster <- unique(final_markers$cluster)
+
+for (u in ucluster)
+{
+  uname <- paste0(u, '_')
+  final_markers$comparison <- gsub(uname, "", final_markers$comparison, fixed = TRUE)
+
+  final_markers <- final_markers[, c('gene', 'cluster', 'comparison', 'avg_log2FC', 'p_val', 'p_val_adj', 'pct.1', 'pct.2')]
+}
+#-------------------------------------------------------------------------------
+
+# Pathways
+#-------------------------------------------------------------------------------
+# column order
+col_order = c('Description', 'database', 'cluster', 'comparison', 'ES', 'NES', 'p.adjust', 'leadingEdge', 'size', 'leadingEdge_geneCount')
+
+# adjusted p.value
+final_pathways_file.adjP <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/pathway_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_filtered_results_combined_pathways_p_val_adj.csv')
+final_pathways_adjP <- ''
+if (file.exists(final_pathways_file.adjP))
+{  
+  final_pathways_adjP <- read.csv(final_pathways_file.adjP, sep=',', header=TRUE)
+  final_pathways_adjP$p.adjust <- format(final_pathways_adjP$p.adjust, digits=3)
+  final_pathways_adjP$Description <- gsub('_', ' ', final_pathways_adjP$Description)
+  final_pathways_adjP$leadingEdge_geneCount <- stringr::str_count(final_pathways_adjP$leadingEdge, '\\|') + 1
+  
+  for (u in ucluster)
+  { 
+    uname <- paste0(u, '_')
+    final_pathways_adjP$comparison <- gsub(uname, "", final_pathways_adjP$comparison, fixed = TRUE)
+  }
+  
+  final_pathways_adjP <- final_pathways_adjP[, col_order] %>%
+    rename(
+      pathway = 'Description')
+}
+
+
+# avglog2FC
+final_pathways_file.log <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/pathway_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_filtered_results_combined_pathways_avg_log2fc.csv')
+final_pathways_log <- ''
+if (file.exists(final_pathways_file.log))
+{  
+  final_pathways_log <- read.csv(final_pathways_file.log, sep=',', header=TRUE)
+  final_pathways_log$p.adjust <- format(final_pathways_log$p.adjust, digits=3)
+  final_pathways_log$Description <- gsub('_', ' ', final_pathways_log$Description)
+  final_pathways_log$leadingEdge_geneCount <- stringr::str_count(final_pathways_log$leadingEdge, '\\|') + 1
+  
+  for (u in ucluster)
+  { 
+    uname <- paste0(u, '_')
+    final_pathways_log$comparison <- gsub(uname, "", final_pathways_log$comparison, fixed = TRUE)
+  }
+  
+  final_pathways_log <- final_pathways_log[, col_order] %>%
+    rename(
+      pathway = 'Description')
+}
+#-------------------------------------------------------------------------------
+
+# Cell Counts + Proportions
+#-------------------------------------------------------------------------------
+counts_sample_file <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_cluster_counts_proportions_sample.txt')
+counts_sample <- read.table(counts_sample_file, header=TRUE, sep='\t')
+
+counts_experiment_file <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_cluster_counts_proportions_experiment.txt')
+counts_experiment <- read.table(counts_experiment_file, header=TRUE, sep='\t')
+#-------------------------------------------------------------------------------
+
+# Z-scores
+#-------------------------------------------------------------------------------
+z_scores_file_celltypes <- paste('../../data/endpoints/', project, '/analysis/final_analysis/tables/', project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, '_celltypes.txt', sep='')
+z_score_celltypes <- read.table(z_scores_file_celltypes, header=TRUE, sep='\t')
+z_score_celltypes[, 2:length(names(z_score_celltypes))]  <- round(z_score_celltypes[, 2:length(names(z_score_celltypes))], 3)
+
+z_scores_file_celltypes_experiment <- paste('../../data/endpoints/', project, '/analysis/final_analysis/tables/', project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, '_celltypes_experiment.txt', sep='')
+z_score_celltypes_experiment <- read.table(z_scores_file_celltypes_experiment, header=TRUE, sep='\t')
+z_score_celltypes_experiment[, 2:length(names(z_score_celltypes_experiment))]  <- round(z_score_celltypes_experiment[, 2:length(names(z_score_celltypes_experiment))], 3)
+
+z_scores_file_celltypes_experiment_samples <- paste('../../data/endpoints/', project, '/analysis/final_analysis/tables/', project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, '_celltypes_experiment_sample.txt', sep='')
+z_scores_celltypes_experiment_sample <- read.table(z_scores_file_celltypes_experiment_samples, header=TRUE, sep='\t')
+z_scores_celltypes_experiment_sample[, 2:length(names(z_scores_celltypes_experiment_sample))]  <- round(z_scores_celltypes_experiment_sample[, 2:length(names(z_scores_celltypes_experiment_sample))], 3)
+#-------------------------------------------------------------------------------
+
+# Conserved Genes -- EMPTY FILE
+#-------------------------------------------------------------------------------
+conserved_genes_file <- ''
+conserved_genes_df = ''
+if (conserved_genes == 'y' || conserved_genes == TRUE)
+{
+  conserved_genes_file <- paste('../../data/endpoints/', project, '/analysis/final_analysis/tables/conserved_genes/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_combined_conserved_markers.txt', sep='')
+
+  conserved_genes_df <- read.table(conserved_genes_file, header = TRUE, sep = '\t') #, row.names=1)
+  #conserved_genes_df <- conserved_genes_df[, c(1, 13, 14)]
+  conserved_genes_df <- conserved_genes_df[conserved_genes_df$minimump_p_val == 0, ]
+  conserved_genes_df <- conserved_genes_df[c('gene', 'cluster')]
+  #conserved_genes_df <- conserved_genes_df[, c(1, 3)]
+}
+#-------------------------------------------------------------------------------
+
+variable_genes_file <- paste0('../../data/endpoints/', project, '/analysis/tables/', project, '_', normalization, '_variable_genes.txt')
+variable_genes <- read.table(variable_genes_file, header=TRUE, sep='\t')
+colnames(variable_genes) <- 'genes'
+#-------------------------------------------------------------------------------
+
+# IMAGES
+#-------------------------------------------------------------------------------
+umap <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap.png')
+umap_phase <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_phase.png')
+umap_experiment <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_experiment.png')
+umap_sample <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_sample.png')
+proportions_sample <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_barplot_proportions_sample_', normalization, '.', integration, '_snn_res.', resolution, '.png')
+proportions_experiment <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_barplot_proportions_experiment_', normalization, '.', integration, '_snn_res.', resolution, '.png')
+heatmap_plot <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_', normalization, '_variable_genes_heatmap.png')
+trajectory_clusters_file <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/trajectory_analysis/figures/', project, '_monocle3_clusters.png')
+#-------------------------------------------------------------------------------
+```
+
+---
+showWarnings: FALSE
+title: "`r project`"
+author: "E. Reichenberger"
+date: "`r format(Sys.time())`"
+output: html_document
+---
+
+<div class = "main-container">
+# SWANS
+The cells were analyzed using SWANS, an automated and highly customizable single cell/nucleus RNA-seq analysis pipeline that relies heavily on Seurat, is managed by Snakemake, and must start with cellranger data. 
+
+## Metadata
+```{r echo=FALSE, include=TRUE}
+datatable(data = meta, caption = 'Table 1: Sample Meta Data.', options=list(pageLength=10))
+```
+
+## YAML Configuration Parameters
+##### Species      
+Organism: `r organism`  
+
+##### QC
+Was SoupX Run? `r run_soupX`    
+Was DoubletFinder Run? `r run_doubletFinder`    
+Mitochondria Filtering Threshold: `r mito`    
+Minimum Features (per cell) Threshold: `r minfeat_thresh`    
+Maximum Features (per cell) Threshold: `r max_feat_thresh`    
+
+##### Analysis Parameters
+Was Cell Cycling Regression Performed: `r regression_cc`     
+Was Mitochondria Regression Performed: `r regression_mito`    
+Split Layers By: `r split_layers`    
+Number of Variable Features: `r num_var_features`     
+Scale Data by: `r scale_data`    
+Number of Principal Components Retained: `r sig_pc`    
+Normalization Method: `r normalization`     
+Integration Method: `r integration`     
+Clustering Resolution: `r resolution`    
+
+##### Output Filtering
+Minimum AvgLog2FC (between groups) for DGEs (FindAllMarkers): `r avglogfc`      
+Minimum Percentage of cells that must express a gene (when comparing two groups (FindAllMarkers)) : `r min_ptc`    
+Adj.p.value Filtering Threshold for Pathway Results: `r filter_threshold`      
+
+##### Trajectory Analysis
+Was Trajectory Analysis Performed: `r trajectory_analysis`   
+If yes/true, were partitions provided:  `r partition`   
+
+##### Additional Gene Visualization
+Gene Visualization File: `r file_user_gene_file`        
+
+ *** 
+
+## UMAP of Cluster Annotations
+```{r umap1, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='UMAP'}
+knitr::include_graphics(umap)
+```
+
+ *** 
+
+## Experiment Comparisons
+### UMAP + Cell Counts (Proportions) for each Cluster by Experiment
+
+<div class = "row">
+<div class = "column" style="flex: 6; padding-right: 10px;">
+```{r umape, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='UMAP (experiment)'}
+  knitr::include_graphics(umap_experiment)
+```
+</div>
+
+<div class = "column" style="flex: 4;">
+```{r pe, include=T, echo=F, out.width="150%", fig.cap='Experiment Cluster Proportions'}
+   knitr::include_graphics(proportions_experiment)
+```
+</div>
+
+</div>
+
+```{r echo=FALSE, include=TRUE}
+datatable(data = counts_experiment, caption = 'Table 2: Number of cells (Proportion of cells) in each Cluster by Experiment.', options=list(pageLength=10))
+```
+
+***
+
+### Differentially Expressed Genes (DEGs) for each Cluster by Experiment
+
+<details>
+  <summary style="font-size: 16px; color: black;"><b>Table 3 Column Descriptions (CLICK TO EXPAND)</b></summary>
+  
+<ul>
+  <li><b>gene</b>: gene symbol</li>
+  <li><b>cluster</b>: cell type cluster annotation</li>
+  <li><b>comparison</b>: group comparison for the analysis, formatted as a contrast where groupA is the comparison level and groupB is the reference level (groupA_vs_groupB), which indicates the directionality of the log2 fold change (avg_log2FC)</li>
+  <li><b>avg_log2FC</b>: log2 fold change of the average expression between the two groups being compared (see comparison column for the group comparison information)</li>
+  <ul>
+    <li><i>positive avg_log2FC</i>: gene is more highly expressed in the first group (groupA) compared to the second group (groupB)</li>
+    <li><i>negative avg_log2FC</i>: gene is more highly expressed in the second group (groupB) compared to the first group (groupA)</li>
+  </ul>
+  <li><b>pct.1</b>: proportion of cells expressing the gene in the first group (groupA)</li>
+  <li><b>pct.2</b>: proportion of cells expressing the gene in the first group (groupB)</li>
+  <li><b>p_val</b>: p-value from Wilcox Rank Sum test comparison of conditions</li>
+  <li><b>p_val_adj</b>: adjusted p-value (p_val) based on Bonferroni correction using all genes in the dataset</li>
+</ul>
+
+</details>
+  
+<br/>
+
+```{r include=T, echo=F, out.width="100%", warning=FALSE, comment=""}
+datatable(
+  final_markers,
+  class = 'cell-border stripe',
+  caption = 'Table 3: DEGs by Cluster + Experimental Comparison.',
+  rownames = FALSE,
+  filter = 'top',
+  extensions = 'Buttons',  
+  width = '100%',
+  options = list(
+    autoWidth = TRUE,
+    dom = 'Blfrtip',
+    buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')
+  )
+)
+```
+
+***
+
+### Pathway Analysis (Gene Set Enrichment Analysis) for each Cluster by Experiment
+#### Ranked by adjusted.p.value
+
+<details>
+  <summary style="font-size: 16px; color: black;"><b>Table 4 Column Descriptions (CLICK TO EXPAND)</b></summary>
+  
+<ul>
+  <li><b>pathway</b>: pathway gene set name</li>
+  <li><b>database</b>: the Molecular Signatures Database (MSigDB) collection of the indicated pathway (Description), where hallmark is the Hallmark collection of gene sets (H collection), curated is the Curated collection of gene sets (C2 collection), and ontology is the Ontology collection of gene sets (C5 collection)</li>
+  <li><b>cluster</b>: cell type cluster annotation</li>
+  <li><b>comparison</b>: group comparison for the analysis, formatted as a contrast where groupA is the comparison level and groupB is the reference level (groupA_vs_groupB), which indicates the directionality of the ES and NES columns</li>
+  <li><b>ES</b>: enrichment score, which reflects the overrpresenation of genes from the pathway gene set at the top (positive ES) or bottom (negative ES) of the list of differentially expressed genes (ranked by adjusted p-value)</li>
+  <ul>
+    <li><i>positive ES (and NES)</i>: pathway is enriched in the first group (groupA) compared to the second group (groupB) (see comparison column for information on groups)</li>
+    <li><i>negative ES (and NES)</i>: pathway is enriched in the second group (groupB) compared to the first group (groupA) (see comparison column for information on groups)</li>
+  </ul>
+  <li><b>NES</b>: normalized enrichment score (ES), which is the enrichment score normalized to the mean enrichment of random samples of the same size (see ES description for directionality information)</li>
+  <li><b>p-adjust</b>: Benjamini-Hochberg (BH) adjusted p-value from gene set enrichment analysis (GSEA) for the normalized enrichment score (NES)</li>
+  <li><b>leadingEdge</b>: genes in the leading edge of the analysis (genes most responsible for driving the enrichment of the pathway)</li>
+  <li><b>size</b>: the number of genes in the pathway gene set</li>
+  <li><b>leadingEdge_geneCount</b>: number of genes in the leadingEdge</li>
+</ul>
+
+</details>
+  
+<br/>
+
+   
+```{r pathway_adj, include=T, echo=F, out.width="100%", warning=FALSE, comment=""}
+if (is.data.frame(final_pathways_adjP)) {
+  datatable(
+    final_pathways_adjP,
+    class = 'cell-border stripe',
+    caption = 'Table 4:  Pathway Analysis results from gene set enrichment analysis (GSEA) using fgsea with adjusted p-value as the ranking metric.',
+    rownames = FALSE,
+    filter = 'top',
+    extensions = 'Buttons',
+    width = '100%', 
+    options = list(
+      autoWidth = TRUE,
+      dom = 'Blfrtip',
+      buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')
+    )
+  ) %>%
+  # Apply custom CSS to the 6th column with the 'pre-wrap' style
+  formatStyle(
+    columns = grep('leadingEdge', colnames(final_pathways_adjP)), # Targeting leadingEdge column
+    `white-space` = "pre-wrap", # Preserve whitespace and wrap lines correctly
+    `word-break` = "break-all", # Break words at any point when needed
+    `overflow-wrap` = "break-word" # Ensure wrapping occurs at appropriate spots
+  )
+} else {
+  print('There are no pathway results for GSEA with genes ranked by adjusted p-value.')
+}
+```
+
+#### Ranked by avglog2FC
+
+<details>
+  <summary style="font-size: 16px; color: black;"><b>Table 5 Column Descriptions (CLICK TO EXPAND)</b></summary>
+  
+<ul>
+  <li><b>pathway</b>: pathway gene set name</li>
+  <li><b>database</b>: the Molecular Signatures Database (MSigDB) collection of the indicated pathway (Description), where hallmark is the Hallmark collection of gene sets (H collection), curated is the Curated collection of gene sets (C2 collection), and ontology is the Ontology collection of gene sets (C5 collection)</li>
+  <li><b>cluster</b>: cell type cluster annotation</li>
+  <li><b>comparison</b>: group comparison for the analysis, formatted as a contrast where groupA is the comparison level and groupB is the reference level (groupA_vs_groupB), which indicates the directionality of the ES and NES columns</li>
+  <li><b>ES</b>: enrichment score, which reflects the overrpresenation of genes from the pathway gene set at the top (positive ES) or bottom (negative ES) of the list of differentially expressed genes (ranked by average log2 fold change)</li>
+  <ul>
+    <li><i>positive ES (and NES)</i>: pathway is enriched in the first group (groupA) compared to the second group (groupB) (see comparison column for information on groups)</li>
+    <li><i>negative ES (and NES)</i>: pathway is enriched in the second group (groupB) compared to the first group (groupA) (see comparison column for information on groups)</li>
+  </ul>
+  <li><b>NES</b>: normalized enrichment score (ES), which is the enrichment score normalized to the mean enrichment of random samples of the same size (see ES description for directionality information)</li>
+  <li><b>p-adjust</b>: Benjamini-Hochberg (BH) adjusted p-value from gene set enrichment analysis (GSEA) for the normalized enrichment score (NES)</li>
+  <li><b>leadingEdge</b>: genes in the leading edge of the analysis (genes most responsible for driving the enrichment of the pathway)</li>
+  <li><b>size</b>: the number of genes in the pathway gene set</li>
+  <li><b>leadingEdge_geneCount</b>: number of genes in the leadingEdge</li>
+</ul>
+
+</details>
+  
+<br/>
+
+
+```{r pathway_log, include=T, echo=F, out.width="100%", warning=FALSE, comment=""}
+if (is.data.frame(final_pathways_log)) {
+  datatable(
+    final_pathways_log,
+    class = 'cell-border stripe', 
+    caption = 'Table 5: Pathway Analysis results from gene set enrichment analysis (GSEA) using fgsea with average log2 fold change as the ranking metric.',
+    rownames = FALSE,
+    filter = 'top',
+    extensions = 'Buttons',
+    width = '100%',
+    options = list(
+      autoWidth = TRUE,
+      dom = 'Blfrtip',
+      buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')
+    )
+  ) %>%
+  # Apply custom CSS to the 6th column with the 'pre-wrap' style
+  formatStyle(
+    columns = grep('leadingEdge', colnames(final_pathways_log)),  # Targeting leadingEdge column
+    `white-space` = "pre-wrap",  # Preserve whitespace and wrap lines correctly
+    `word-break` = "break-all",  # Break words at any point when needed
+    `overflow-wrap` = "break-word"  # Ensure wrapping occurs at appropriate spots
+  )
+} else { 
+  print('There are no pathway results for GSEA with genes ranked by average log2 fold change.')
+}
+```
+
+***
+
+## Z-Score
+Z-score transformation of gene expression data standardizes the values by converting them to a common scale with a mean of 0 and a standard deviation of 1.  
+<ul>
+  <li><b>Positive z-score</b>: gene with higher gene expression in the specific experiment/sample comapred to the mean</li>
+  <li><b>Negative z-scores</b>: gene with lower gene expression in the specific experiment/sample comapred to the mean</li>
+</ul>
+
+Z-scores have been calculated for the following groupings: 
+<ul>
+  <li>Cluster (Table 6)</li>
+  <li>Cluster and Experiment (Table 7)</li>
+  <li>Cluster, Sample, and Experiment (Table 8)</li>
+</ul>
+
+Z-scores allow for comparison of gene expression by removing biases due to differences in scale or distribution. This makes it easier to identify relative changes in expression while also granting the ability to see which genes are most highly expressed within each column in the tables.  
+
+### Split by Cluster
+```{r zscore_cluster, include=T, echo=F, out.width="100%", warning=FALSE}
+datatable(data=z_score_celltypes, class = 'cell-border stripe', caption = 'Table 6: Z-Scores by Cluster.', rownames= FALSE, filter = 'top', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, dom = 'Blfrtip', DT.warn.size=FALSE, buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
+```
+
+### Split by Cluster + Experiment
+```{r zscore_c_experiment, include=T, echo=F, out.width="100%", warning=FALSE}
+datatable(data=z_score_celltypes_experiment, class = 'cell-border stripe', caption = 'Table 7: Z-Scores by Cluster + Exerimental Condition.', rownames= FALSE, filter = 'top', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
+```
+
+### Split by Cluster + Experiment + Sample
+```{r zscore_c_experiment_sample, include=T, echo=F, out.width="100%", warning=FALSE}
+datatable(data=z_scores_celltypes_experiment_sample, class = 'cell-border stripe', caption = 'Table 7: Z-Scores by Cluster + Exerimental Condition.', rownames= FALSE, filter = 'top', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
+```
+
+ *** 
+ 
+## UMAP + Cell Counts (Proportions) for each Cluster by Sample
+<div class = "row">
+<div class = "column" style="flex: 6; padding-right: 10px;">
+```{r umaps, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='UMAP (sample)'}
+    knitr::include_graphics(umap_sample)
+```
+</div>
+
+<div class = "column" style="flex: 4;">
+```{r ps, include=T, echo=F, out.width="150%", fig.cap='Sample Cluster Proportions'}
+   knitr::include_graphics(proportions_sample)
+```
+</div>
+</div>
+
+```{r echo=FALSE, include=TRUE}
+datatable(data = counts_sample, caption = 'Table 8: Number of cells (Proportion of cells) in each Cluster by Sample.', options=list(pageLength=10, autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'print')))
+```
+
+***
+
+## UMAP by Cell Cycling Phase
+```{r umapp, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='UMAP (Cell Cycle Phase)'}
+knitr::include_graphics(umap_phase)
+```
+
+***
+
+## Variable Genes
+<div class="row" style="display: flex; justify-content: space-between;">
+<div class="column" style="flex: 3; padding: 5px;">
+
+```{r heat, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='Heatmap Plot of Variable Genes'}
+knitr::include_graphics(heatmap_plot)
+```
+</div>
+
+<div class="column" style="flex: 1; padding: 5px;">
+<br>
+```{r echo=FALSE, include=TRUE}
+datatable(data = variable_genes, rownames = FALSE, caption = 'Table 9: Variable Genes.', options=list(pageLength=10, autoWidth = TRUE, dom = 'Blfrtip', buttons = c('copy', 'excel', 'print')))
+```
+</div>
+</div>
+
+***
+
+## Conserved Genes
+**For all experimental groups, the combined miminum p-value = 0.**  
+Conserved genes are genes tha are conserved between groups (Experiment) within a cluster.  
+NOTE: If there is single body split into multiple clusters, conserved markers for those clusters are UNlikely to be genes used for annotation purposes.  
+
+```{r conserved, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='Conserved_Genes'}
+if (conserved_genes == 'y' || conserved_genes == TRUE)
+{
+  datatable(data=conserved_genes_df, class = 'cell-border stripe', caption = 'Table 10: Conserved Genes by Across Exerimental Conditions by Cluster.', rownames = FALSE, filter = 'top', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
+} else {
+  print('Conserved gene analysis was not run.')
+}
+```
+
+***
+
+## Trajectory Analysis (Monocle3)
+**Please see the docuemntation for [Monocle3](https://cole-trapnell-lab.github.io/monocle3/) for additional information and instructions on trajectory analysis and how to read the trajectory graph.**  
+In Monocle3, the trajectory graph edges and nodes are visualized on top of a UMAP. There are two different types of nodes that are present on the graph, here visualized as:
+<ul>
+  <li><b>Light gray circles</b>: "leaf" nodes, which correspond to a different cell fate outcome of the trajectory</li>
+  <li><b>Black circles</b>: "branch" nodes, which are nodes from which cells may travel to different possible connected leaf nodes.</li>
+</ul>
+
+```{r traj, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='Trajectory Analysis'}
+if (trajectory_analysis == 'y' || trajectory_analysis == TRUE)
+{
+  knitr::include_graphics(trajectory_clusters_file)
+} else {
+  print('Trajectory analysis was not run.')
+}
+```
+
+***
+
+</div>

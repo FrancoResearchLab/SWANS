@@ -1,0 +1,73 @@
+# Author: K. Beigel
+# Date: 7.23.2024
+# Purpose: Analyze Seurat object.
+# --------------------------------------------------------------
+
+#--------------------MESSAGES-----------------------------------
+onsuccess:
+    print("The doubletFinder pipeline completed with no errors.")
+    shell("mail -s 'The doubletFinder pipeline completed with no errors.' "+ config['contact']+" < {log}")
+
+onerror:
+    print("The doubletFinder pipeline did not complete without errors."),
+    shell("mail -s 'The doubletFinder pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
+
+#--------------------RULES---------------------------------------
+# noinspection SmkAvoidTabWhitespace
+rule analyze_sc_object:
+    input:
+        script = 'src/scripts/analyze_seurat_object.R',
+        initial_seurat_files = initial_seurat_list,
+        m_file = memory_file,
+    params:
+        initial_seurat_object = storage_file,
+        project = PROJECT,
+        organism = ORGANISM,
+        n_components = COMPONENTS,
+        mito_regression = MITO_REGRESSION,
+        ribo_regression = RIBO_REGRESSION,
+        cc_regression = CELL_CYCLE_REGRESSION,
+        cc_method = CELL_CYCLE_METHOD,
+        num_var_features = NUM_VARIABLE_FEATURES,
+        scale_data_features = SCALE_DATA_FEATURES,
+        split_layers_by = SPLIT_LAYERS_BY,
+        normalization_config = SEURAT_NORMALIZATION_METHOD,
+        integration_config = SEURAT_INTEGRATION_METHOD,
+        ref_based_integration = REFERENCE_BASED_INTEGRATION,
+        ref_samples = REFERENCE_SAMPLES,
+        run_azimuth = RUN_AZIMUTH,
+        azimuth_ref = AZIMUTH_REFERENCE,
+        run_transferdata = RUN_TRANSFERDATA,
+        transferdata_ref_file = TRANSFERDATA_REF_FILE,
+        transferdata_reduction = TRANSFERDATA_REDUCTION,
+        transferdata_annocol = TRANSFERDATA_ANNOCOL,
+        resolution_config = RESOLUTION,
+        include_tsne = TSNE,
+        analyzed_seurat_object = analyzed_seurat_object,
+        report_path_figures = report_path_figures,
+        lib_path = RPATH,
+        processes = THREADS,
+        memory = MEMORY,
+        regression_file = REGRESSION_FILE
+    output:
+        analyzed_seurat_object = analyzed_seurat_object
+    threads: THREADS
+    log:
+         log_output = seurat_analysis_log + PROJECT + '_seurat_analysis.log'
+    benchmark: benchmark_log + PROJECT + '_seurat_analysis.benchmark' #added 12.4.2024 ERR
+    shell:
+        "Rscript \
+        {input.script} \
+        {params.initial_seurat_object} \
+        {params.project} {params.organism} {params.n_components} \
+        {params.mito_regression} {params.ribo_regression} {params.cc_regression} {params.cc_method} \
+        {params.num_var_features} {params.scale_data_features} {params.split_layers_by} \
+        {params.normalization_config} {params.integration_config} \
+        {params.ref_based_integration} {params.ref_samples} \
+        {params.run_azimuth} {params.azimuth_ref} \
+        {params.run_transferdata} {params.transferdata_ref_file} \
+        {params.transferdata_reduction} {params.transferdata_annocol} \
+        {params.resolution_config} {params.include_tsne} \
+        {params.analyzed_seurat_object} {params.report_path_figures} \
+        {params.lib_path} {params.processes} {input.m_file} \
+        {params.memory} {params.regression_file} 2> {log.log_output}"

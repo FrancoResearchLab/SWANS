@@ -1,0 +1,29 @@
+# Author:	E. Reichenberger
+# Date:		11.12.2024
+
+#--------------------MESSAGES-----------------------------------
+onsuccess:
+	print("The memory pipeline completed with no errors.")
+	shell("mail -s 'The memory pipeline completed with no errors.' "+ config['contact']+" < {log}")
+
+onerror:
+	print("The memory pipeline did not complete without errors."),
+	shell("mail -s 'The memory pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
+
+#--------------------RULES---------------------------------------
+rule memory:
+	input:
+		initial_seurat_object = storage_file
+	params:
+		barcodes_files = 'data/endpoints/' + PROJECT + '/*/' + SEURAT_CREATION_SOURCE + '/barcodes.tsv.gz',
+		features_files = 'data/endpoints/' + PROJECT + '/*/' + SEURAT_CREATION_SOURCE + '/features.tsv.gz'
+	output:
+		m_file = memory_file
+	log:
+		log_output = memory_log + PROJECT + '_memory.log'
+	benchmark: benchmark_log + PROJECT.lower() + '_memory.benchmark'  #added 12.4.2024 ERR
+	shell:
+		"cells=$( zcat {params.barcodes_files} | wc -l) && \
+			genes=$( zcat {params.features_files} | wc -l) && \
+			echo $(( $cells * $genes * 8 )) > {output.m_file} \
+			2> {log.log_output}"

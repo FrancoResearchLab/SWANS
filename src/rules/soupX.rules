@@ -1,0 +1,33 @@
+# Author:	E. Reichenberger
+# Date:		2.16.2021
+
+#--------------------MESSAGES-----------------------------------
+onsuccess:
+  print("The  soupX pipeline completed with no errors.")
+  shell("mail -s 'The soupX pipeline completed with no errors.' "+ config['contact']+" < {log}")
+
+onerror:
+  print("The  soupX pipeline did not complete without errors."),
+  shell("mail -s 'The soupX pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
+
+#--------------------RULES---------------------------------------
+rule soupX:
+	input:
+		script = 'src/scripts/soupX.R',
+		cellranger_input = cellranger_output,
+	params:
+		r_lib_path = RPATH,
+		sample = '{s}',
+		project = PROJECT,
+		input_type = SOUPX_START,
+		soupX_input = 'data/endpoints/' + PROJECT + '/{s}/' + STARTING_DATA + '/',
+		soupx_output = 'data/endpoints/' + PROJECT + '/' + '{s}/soupX/',
+	output:
+		barcodes_path = 'data/endpoints/' + PROJECT + '/' + '{s}/soupX/barcodes.tsv.gz',
+		features_path = 'data/endpoints/' + PROJECT + '/' + '{s}/soupX/features.tsv.gz',
+		matrix_path = 'data/endpoints/' + PROJECT + '/' + '{s}/soupX/matrix.mtx.gz',
+	log:
+		log_output = soupX_log  + PROJECT + '_{s}_soupX.log'
+	benchmark: benchmark_log + PROJECT.lower() + '_{s}_soupX.benchmark' #added 12.4.2024 ERR
+	shell:
+		"Rscript {input.script} {params.r_lib_path} {params.sample} {params.input_type} {params.project} {params.soupX_input} {params.soupx_output} 2> {log.log_output}"

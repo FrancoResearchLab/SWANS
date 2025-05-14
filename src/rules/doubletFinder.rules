@@ -1,0 +1,48 @@
+# Author:	K. Beigel
+# Date:		6.20.2024
+
+#--------------------MESSAGES-----------------------------------
+onsuccess:
+	print("The doubletFinder pipeline completed with no errors.")
+	shell("mail -s 'The doubletFinder pipeline completed with no errors.' "+ config['contact']+" < {log}")
+
+onerror:
+	print("The doubletFinder pipeline did not complete without errors."),
+	shell("mail -s 'The doubletFinder pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
+
+#--------------------RULES---------------------------------------
+rule doubletFinder:
+	input:
+		script = 'src/scripts/doubletFinder.R',
+		cellranger_input = cellranger_output
+	params:
+		sample = '{s}',
+		project = PROJECT,
+		starting_data = STARTING_DATA,
+		input_path = 'data/endpoints/' + PROJECT + '/{s}/' + STARTING_DATA + '/',
+		output_path = 'data/endpoints/' + PROJECT + '/{s}/' + 'doubletFinder',
+		mito = MITO,
+		min_feature_threshold = MIN_FEATURE_THRESHOLD,
+		components = COMPONENTS,
+		organism = ORGANISM,
+		lib_path = RPATH,
+		processes = THREADS
+	output:
+		doublet_list = 'data/endpoints/' + PROJECT + '/' + '{s}/doubletFinder/tables/' + PROJECT + '_{s}_doublet_ids.txt'
+	threads: round(THREADS/6, 0)
+	log:
+		log_output = doubletFinder_log + PROJECT + '_{s}_doubletFinder.log'
+	benchmark: benchmark_log + PROJECT.lower() + '_{s}_doubletFinder.benchmark'  #added 12.4.2024 ERR
+	shell:
+		"Rscript \
+		{input.script} \
+		{params.sample} {params.project} \
+		{params.starting_data} \
+		{params.input_path} {params.output_path} \
+		{params.mito} {params.min_feature_threshold} \
+		{params.components} \
+		{params.organism} \
+		{params.lib_path} \
+		{params.processes} \
+		2> {log.log_output}"
+

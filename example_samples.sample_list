@@ -1,0 +1,9 @@
+samples	condition	path_to_starting_data
+S1	control	path_to_S1_starting_data
+S2	control	path_to_S2_starting_data
+M1	mut1	path_to_M1_starting_data
+M2	mut1	path_to_M2_starting_data
+M3	mut3	path_to_M3_starting_data
+M4	mut3	path_to_M4_starting_data
+T5	mut4	path_to_T5_starting_data
+T6	mut4	path_to_T6_starting_data

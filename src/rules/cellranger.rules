@@ -1,0 +1,38 @@
+'''
+Author: E. Wafula
+Date: 04.27.2024
+
+Author: E. Reichenberger
+Updated to accept true or false for BAM creation.
+'''
+
+#--------------------MESSAGES-----------------------------------
+onsuccess:
+	print('The cellranger pipeline completed with no errors.'),
+	shell("mail -s 'The cellranger pipeline completed with no errors.' "+ config['contact']+" < {log}")
+
+onerror:
+	print('The cellranger pipeline did not complete without errors.'),
+	shell("mail -s 'The cellranger pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
+
+#--------------------RULES---------------------------------------
+rule cellranger_counts:
+	input: 
+		tool = CELLRANGER,
+		fastqs = expand('data/endpoints/' + PROJECT + '/{{s}}/fastq/', s=SAMPLE_LIST)
+	output: 
+		stamp = cellranger_log + PROJECT + '_{s}.stamp',
+	params:
+		reference = REFERENCE,
+		counts = directory('data/endpoints/' + PROJECT + '/{s}/' + STARTING_DATA + '/'),
+		bam = '--create-bam=' + OUTPUT_BAM
+	log:
+		log_output = cellranger_log + PROJECT + '_{s}_counts.log'
+	threads: THREADS
+	benchmark: benchmark_log + PROJECT + '_{s}_cellranger_counts.benchmark' #added 12.4.2024 ERR
+	shell:
+		"{input.tool} count --id={wildcards.s} \
+		--fastqs={input.fastqs} --output-dir={params.counts} \
+		--sample={wildcards.s} \
+		--transcriptome={params.reference} {params.bam} \
+		--localcores={threads} --localmem=128 2> {log.log_output} && touch {output.stamp}"

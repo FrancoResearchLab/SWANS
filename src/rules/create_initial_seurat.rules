@@ -1,0 +1,62 @@
+'''
+Author:	K. Beigel
+Date:		10.18.2021
+'''
+
+#--------------------MESSAGES-----------------------------------
+onsuccess:
+  print("The Initial Seurat pipeline completed with no errors.")
+  shell("mail -s 'The Initial Seurat pipeline completed with no errors.' "+ config['contact']+" < {log}")
+
+onerror:
+  print("The Initial Seurat pipeline did not complete without errors."),
+  shell("mail -s 'The Initial Seurat pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
+
+#--------------------RULES---------------------------------------
+rule create_initial_seurat:
+	input:
+		script = 'src/scripts/create_initial_seurat.R',
+		input_files = qc_files
+	params:
+		sample_file = 'samples.sample_list',
+		project = PROJECT,
+		organism = ORGANISM,
+		seurat_creation_source = SEURAT_CREATION_SOURCE,
+		run_doubletfinder = RUN_DOUBLETFINDER,
+		mito = MITO,
+		ribo = RIBO,
+		min_feature_threshold = MIN_FEATURE_THRESHOLD,
+		max_feature_threshold = MAX_FEATURE_THRESHOLD,
+		seurat_file_name = storage_file,
+		r_lib_path = RPATH
+	output: 
+		s = storage_file,
+		f1 = f1,
+		f2 = f2
+	log:
+		log_output = create_initial_seurat_log + PROJECT + '_create_initial_seurat.log'
+	benchmark: benchmark_log + PROJECT.lower() + '_create_initial_seurat.benchmark'  #added 12.4.2024 ERR
+	shell:
+		"Rscript {input.script} \
+		{params.sample_file} {params.project} {params.organism} \
+		{params.seurat_creation_source} {params.run_doubletfinder} \
+		{params.mito} {params.ribo} {params.min_feature_threshold} \
+		{params.max_feature_threshold} {params.seurat_file_name} \
+		{params.r_lib_path} 2> {log.log_output}"
+
+rule make_qc_report:
+	input:
+		prefilt_imgs = f1,
+		postfilt_imgs = f2,
+		script = qc_report_rmd
+	params:
+		project = PROJECT
+	output: qc_report_html
+	log:
+		log_output = qc_report_log + PROJECT + '_qc_report.log'
+	benchmark: benchmark_log + PROJECT + '_qc_report.benchmark'
+	shell:
+		"""
+			Rscript -e 'library(rmarkdown); rmarkdown::render(paste0(\"{input.script}\"), output_file=paste0("../../", \"{qc_report_html}\"))'
+		"""
+		

@@ -1,0 +1,289 @@
+
+---
+showWarnings: FALSE
+runtime: shiny
+output: html_document
+css: my.css
+date: "`r format(Sys.time())`"
+title: SWANS Report
+---
+
+```{r setup, warnings=FALSE, echo=FALSE}
+#author: e. reichenberger
+#modified from the SWAN (Single cell Workflow ANalysiS) Pipeline
+
+suppressPackageStartupMessages(library(shiny))
+suppressPackageStartupMessages(library(shinyjs))
+suppressPackageStartupMessages(library(shinyfullscreen))
+suppressPackageStartupMessages(library(DT))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(rsconnect))
+suppressPackageStartupMessages(library(pdftools))
+suppressPackageStartupMessages(library(magick))
+suppressPackageStartupMessages(library(yaml))
+
+suppressWarnings({proj_info <- read_yaml('local_configs.yaml')})
+
+# CONFIGURATION VARS
+project <- proj_info$`PROJECT`   
+organism <- proj_info$`ORGANISM`
+normalization <- proj_info$`SEURAT_NORMALIZATION_METHOD`
+integration <- proj_info$`SEURAT_INTEGRATION_METHOD`
+resolution <- proj_info$`RESOLUTION`
+# -----------------------------------------
+
+single_or_list <- function(variable, comma = ',')
+{  
+   if ( grepl( comma, variable, fixed = TRUE) )
+   {
+      variable = as.list(strsplit(variable, comma)[[1]])
+
+      return(variable)
+   }
+
+   else
+   {
+      return(variable)
+   }
+}
+
+normalizations = single_or_list(normalization)
+integrations = single_or_list(integration)
+resolutions = as.numeric(single_or_list(resolution))
+
+# -----------------------------------------
+res_choices <- resolutions 
+normalization_choices <- normalizations
+integration_choices <- integrations
+table_choices <- c('_top100_markers_avg_log2FC_', '_z_scores.', '_clusterProportions.experiment_')
+# -----------------------------------------
+
+shinyApp(
+  ui <- fluidPage(
+    h2("Plots"),
+    
+    h5('It may take several minutes for images to appear.'),
+    fluidRow(
+      column(4, 
+             selectInput("norm1", label = "Normalization for Plot 1:", choices = normalization_choices),
+             selectInput("int1", label = "Integration for Plot 1:", choices = integration_choices),
+             selectInput("res1", label = "Resolution for Plot 1:", choices = res_choices)),
+      column(4,
+             selectInput("norm2", label = "Normalization for Plot 2:", choices = normalization_choices),
+             selectInput("int2", label = "Integration for Plot 2:", choices = integration_choices),
+             selectInput("res2", label = "Resolution for Plot 2:", choices = res_choices)),
+      column(4,
+             selectInput("norm3", label = "Normalization for Plot 3:", choices = normalization_choices),
+             selectInput("int3", label = "Integration for Plot 3:", choices = integration_choices),
+             selectInput("res3", label = "Resolution for Plot 3:", choices = res_choices))
+    ),
+    
+    fluidRow(
+      column(4, imageOutput('plot1', width = "auto")),
+      column(4, imageOutput('plot2', width = "auto")),
+      column(4, imageOutput('plot3', width = "auto"))
+    ),
+    
+    h2('Tables'),
+	 h5('To look at a certain cluster of a resolution and normalization, enter the appropriate cluster number. If the entered number is negative, a table with all cluster numbers will be displayed. If a postive but invalid cluster number is entered, no table will be displayed.'),
+	 h5('Choose between looking at differentially expressed genes (DEGs (top100_markers_avg_log2FC)), z-scores, or number of cells in each cluster (clusterProportions.experiment).'),
+	 div(style = "text-align: center;", h5('Explanations'),),
+#	 fluidRow(
+#    column(4, tags$h6("_top100_markers_avg_log2FC_", style = "text-align: center;"),  
+#              tags$h6("DEGs identified by comparing cells within a specific cluster to all other cells across the remaining clusters."), br(),  
+#              tags$h6("Columns: gene — Gene name; cluster — Cluster where the gene is upregulated; adjpval — Adjusted p-value for multiple testing; log2FC — Average log₂ fold change in expression"), style = "border-right: 1px solid #ccc; padding-right: 10px;"),
+#    
+#    column(4, tags$h6("_z_scores.", style = "text-align: center;"),  
+#              tags$h6("Genes rank based on z-score–transformed expression values, higher positive z-scores indicate greater relative mRNA abundance."), br(), 
+#              tags$h6("Columns: gene — Gene name; cluster — Cluster where the gene shows elevated expression; z.score — Standardized (z-score) expression value of the gene"), style = "border-right: 1px solid #ccc; padding-right: 10px; vertical-align: top; display: inline-block;"),
+#    
+#    column(4, tags$h6("_clusterProportions.experiment_", style = "text-align: center;"),  
+#              tags$h6("Number of cells per cluster, split by experimental condition"), br(),  
+#              tags$h6("Columns: expCond — Experimental condition; cluster — Cluster ID; numCell — Number of cells in the cluster (value in parentheses represents percentage of cells in that cluster relative to the total number of cells in the corresponding experimental group).")), br(),
+#  ),
+	 h6('_top100_markers_avg_log2FC_: Top 100 most DEGs identified by comparing cells within a specific cluster to all other cells across the remaining clusters. Columns: gene — Gene name; cluster — Cluster where the gene is upregulated; adjpval — Adjusted p-value for multiple testing; log2FC — Average log₂ fold change in expression'),
+	 h6('_z_scores.: Z-scores: Genes are ranked based on z-score–transformed expression values, where higher positive z-scores indicate greater relative mRNA abundance. Columns: gene — Gene name; cluster — Cluster where the gene shows elevated expression; z.score — Standardized (z-score) expression value of the gene'),
+	 h6('_clusterProportions.experiment_: Number of cells per cluster, split by experimental condition. Columns: expCond — Experimental condition; cluster — Cluster ID; numCell — Number of cells in the cluster (value in parentheses represents percentage of cells in that cluster relative to the total number of cells in the corresponding experimental group).'),
+ 
+    fluidRow(
+		column(3,  selectInput("tab1", label = "dge, z-scores, or cluster counts for Plot 1:", choices=table_choices), numericInput('cluster1', 'Cluster number from plot 1', value = -1, min = 0, max = 50)),
+		column(3, offset = 1, selectInput("tab2", label = "dge, z-scores, or cluster counts for Plot 2:", choices=table_choices), numericInput('cluster2', 'Cluster number from plot 2', value = -1, min = 0, max = 50)),
+		column(3, offset = 1, selectInput("tab3", label = "dge, z-scores, or cluster counts for Plot 3:", choices=table_choices), numericInput('cluster3', 'Cluster number from plot 3', value = -1, min = 0, max = 50))
+    ),
+    
+    fluidRow(
+      column(3, dataTableOutput('top100_bycluster_tbl1')),
+      column(3, offset = 1,dataTableOutput('top100_bycluster_tbl2')),
+      column(3, offset = 1,dataTableOutput('top100_bycluster_tbl3'))
+    ),
+  
+  #----------------
+   h2('Clustree Figures'),
+	h5('Clustree visualizes how cells transition between clusters across different resolution parameters in single-cell data, helping identify stable and meaningful clustering structures.'),
+	h6("All resolutions run at time of analysis will be listed in each clustree plots. Normaliztion and integration methods listed in title. Legends: resolution = resolution, cell/cluster = size reflects number of cells in each cluster, in_prop = the proportion of cells that move out of one cluster and into another; count = the number of moving cells"),
+	h6("Click any image to enlarge. Click anywhere outside the image (but inside the document) to close."),
+fluidRow(
+       column(4, imageOutput('plot4', width = "auto", click = 'img_click_1')),
+       column(4, imageOutput('plot5', width = "auto", click = 'img_click_2')),
+       column(4, imageOutput('plot6', width = "auto", click = 'img_click_3'))
+     ),
+  ),
+  #----------------
+    
+  
+  server <- function(input, output) {
+    output$plot1 <- renderImage({
+      doublet_pages<-image_read_pdf(paste0('figures/', project, '_', input$norm1, '.', input$int1, '_snn_res.', input$res1, '_clusters_umap.pdf'))
+      doublet_pages[1] %>% image_write(., path = paste0('compare_images/', project, '_', input$norm1, '.', input$int1, '_snn_res.', input$res1, '_image.png'), format = 'png')
+      list(src = paste0('compare_images/', project, '_', input$norm1, '.', input$int1, '_snn_res.', input$res1, '_image.png'), alt = paste(input$norm1, input$integration, input$res1), width = "90%", height = "100%")
+      }, deleteFile = TRUE)
+
+    
+    output$plot2 <- renderImage({
+      doublet_pages<-image_read_pdf(paste0('figures/', project, '_', input$norm2, '.', input$int2, '_snn_res.', input$res2, '_clusters_umap.pdf'))
+      doublet_pages[1] %>% image_write(., path = paste0('compare_images/', project, '_', input$norm2, '.', input$int2, '_snn_res.', input$res2, '_image.png'), format = 'png')
+      list(src = paste0('compare_images/', project, '_', input$norm2, '.', input$int2, '_snn_res.', input$res2, '_image.png'), alt = paste(input$norm2, input$integration, input$res2), width = "90%", height = "100%")
+      }, deleteFile = TRUE)
+    
+    output$plot3 <- renderImage({
+      doublet_pages<-image_read_pdf(paste0('figures/', project, '_', input$norm3, '.', input$int3, '_snn_res.', input$res3, '_clusters_umap.pdf'))
+      doublet_pages[1] %>% image_write(., path = paste0('compare_images/', project, '_', input$norm3, '.', input$int3, '_snn_res.', input$res3, '_image.png'), format = 'png')
+      list(src = paste0('compare_images/', project, '_', input$norm3, '.', input$int3, '_snn_res.', input$res3, '_image.png'), alt = paste(input$norm3, input$integration, input$res3), width = "90%", height = "100%")
+      }, deleteFile = TRUE)
+    
+    col_names <- c('avg_log2FC', 'p_val_adj', 'cluster', 'gene')
+	 new_col_names <- c('log2FC', 'adjpval', 'cluster', 'gene')
+    
+    output$top100_bycluster_tbl1 <- renderDataTable({
+      top100tbl_1 <- read.table(paste0('tables/', project, input$tab1, input$norm1, '.', input$int1, '_snn_res.', input$res1, '.txt'), header=TRUE, sep='\t')
+      if (input$tab1 == '_top100_markers_avg_log2FC_')
+      {
+        top100tbl_1$avg_log2FC <- signif(top100tbl_1$avg_log2FC,3)
+        top100tbl_1$p_val_adj <- formatC(signif(top100tbl_1$p_val_adj, 3), format = "e", digits = 1)
+        disp_top100tbl_1 <- top100tbl_1[,col_names]
+        colnames(disp_top100tbl_1) <- new_col_names
+		  disp_top100tbl_1 <- disp_top100tbl_1[, c('gene', 'cluster', 'adjpval', 'log2FC')]
+      }
+      else (disp_top100tbl_1 <- top100tbl_1)
+      
+      vec <- c(input$cluster1)
+      
+      if(input$cluster1<0) {
+        datatable(disp_top100tbl_1, rownames = FALSE, width = 100)
+      } else {
+        subtable1 <- disp_top100tbl_1[disp_top100tbl_1$cluster %in% vec,]
+        datatable(subtable1, rownames = FALSE, width = 100)
+      }
+    })
+    
+    output$top100_bycluster_tbl2 <- renderDataTable({
+      
+      top100tbl_2 <- read.table(paste0('tables/', project, input$tab2, input$norm2, '.', input$int2, '_snn_res.', input$res2, '.txt'), header=TRUE, sep='\t')
+        if (input$tab2 == '_top100_markers_avg_log2FC_')
+      {
+        top100tbl_2$avg_log2FC <- signif(top100tbl_2$avg_log2FC,3)
+        top100tbl_2$p_val_adj <- formatC(signif(top100tbl_2$p_val_adj, 3), format = "e", digits = 1)
+        disp_top100tbl_2 <- top100tbl_2[,col_names]
+        colnames(disp_top100tbl_2) <- new_col_names
+		  disp_top100tbl_2 <- disp_top100tbl_2[, c('gene', 'cluster', 'adjpval', 'log2FC')]
+      }
+      else (disp_top100tbl_2 <- top100tbl_2)
+      
+      vec <- c(input$cluster2)
+     
+      if(input$cluster2<0) {
+        datatable(disp_top100tbl_2, rownames = FALSE, width = 100)
+      } else {
+        subtable2 <- disp_top100tbl_2[disp_top100tbl_2$cluster %in% vec,]
+        datatable(subtable2, rownames = FALSE, width = 100)
+      }
+    })
+    
+    output$top100_bycluster_tbl3 <- renderDataTable({
+      top100tbl_3 <- read.table(paste0('tables/', project, input$tab3, input$norm3, '.', input$int3, '_snn_res.', input$res3, '.txt'), header=TRUE, sep='\t')
+      if (input$tab3 == '_top100_markers_avg_log2FC_')
+      {
+        top100tbl_3$avg_log2FC <- signif(top100tbl_3$avg_log2FC,3)
+        top100tbl_3$p_val_adj <- formatC(signif(top100tbl_3$p_val_adj, 3), format = "e", digits = 1)
+        disp_top100tbl_3 <- top100tbl_3[,col_names]
+        colnames(disp_top100tbl_3) <- new_col_names
+		  disp_top100tbl_3 <- disp_top100tbl_3[, c('gene', 'cluster', 'adjpval', 'log2FC')]
+      }
+      else (disp_top100tbl_3 <- top100tbl_3)
+      
+      vec <- c(input$cluster3)
+    
+      if(input$cluster3<0) {
+        datatable(disp_top100tbl_3, rownames = FALSE, width = 100)
+      } else {
+        subtable3 <- disp_top100tbl_3[disp_top100tbl_3$cluster %in% vec,]
+        datatable(subtable3, rownames = FALSE, width = 100)
+      }
+      
+    })
+    
+      output$plot4 <- renderImage({
+      doublet_pages<-image_read_pdf(paste0('figures/clustree/', project, '_', input$norm1, '.', input$int1, '_clustree_results.pdf'))
+      doublet_pages[1] %>% image_write(., path = paste0('compare_images/', project, '_', input$norm1, '.', input$int1, '_clustree_results.png'), format = 'png')
+      list(src = paste0('compare_images/', project, '_', input$norm1, '.', input$int1, '_clustree_results.png'), alt = paste(input$norm1, input$integration, input$res1), width = "90%", height = "60%", contentType = 'image/png')
+      }, deleteFile = FALSE)
+      
+      observeEvent(input$img_click_1, 
+		{
+			showModal(modalDialog(
+			title = paste0(input$norm1, '.', input$int1),
+			imageOutput("zoomed_plot4"),
+			easyClose = TRUE,
+			size = "l"))
+
+		  output$zoomed_plot4 <- renderImage({
+			 list(src = paste0('compare_images/', project, '_', input$norm1, '.', input$int1, '_clustree_results.png'), width = "100%", contentType = 'image/png')
+		  }, deleteFile = FALSE)
+		})
+
+
+#-----------------------------
+    output$plot5 <- renderImage({
+      doublet_pages<-image_read_pdf(paste0('figures/clustree/', project, '_', input$norm2, '.', input$int2, '_clustree_results.pdf'))
+      doublet_pages[1] %>% image_write(., path = paste0('compare_images/', project, '_', input$norm2, '.', input$int2, '_clustree_results.png'), format = 'png')
+      list(src = paste0('compare_images/', project, '_', input$norm2, '.', input$int2, '_clustree_results.png'), alt = paste(input$norm2, input$integration, input$res2), width = "90%", height = "60%")
+      }, deleteFile = FALSE)
+    
+     observeEvent(input$img_click_2, 
+	  {
+			showModal(modalDialog(
+			title = paste0(input$norm2, '.', input$int2),
+			imageOutput("zoomed_plot5"),
+			easyClose = TRUE,
+			size = "l"))
+
+		  output$zoomed_plot5 <- renderImage({
+				 list(src = paste0('compare_images/', project, '_', input$norm2, '.', input$int2, '_clustree_results.png'),width = "100%", contentType = 'image/png')    
+			  }, deleteFile = FALSE)
+	}) 
+     
+#-----------------------------
+     
+    output$plot6 <- renderImage({
+      doublet_pages<-image_read_pdf(paste0('figures/clustree/', project, '_', input$norm3, '.', input$int3, '_clustree_results.pdf'))
+      doublet_pages[1] %>% image_write(., path = paste0('compare_images/', project, '_', input$norm3, '.', input$int3, '_clustree_results.png'), format = 'png')
+      list(src = paste0('compare_images/', project, '_', input$norm3, '.', input$int3, '_clustree_results.png'), alt = paste(input$norm3, input$integration, input$res3), width = "90%", height = "60%")
+      }, deleteFile = FALSE)
+
+    observeEvent(input$img_click_3, 
+	 {
+		showModal(modalDialog(
+		title = paste0(input$norm3, '.', input$int3),
+		imageOutput("zoomed_plot6"),
+		easyClose = TRUE,
+		size = "l"))
+
+		output$zoomed_plot6 <- renderImage({
+		list(src = paste0('compare_images/', project, '_', input$norm3, '.', input$int3, '_clustree_results.png'), width = "100%", contentType = 'image/png')
+		}, deleteFile = FALSE)
+	})
+
+   },
+  options = list(width = 1100, height=1500)      
+ )
+```

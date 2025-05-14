@@ -1,0 +1,143 @@
+# contact (email will be sent when jobs complete) 
+contact: USER@chop.edu
+
+# project name (IN LOWER CASE) base_name: (name of output directory under data/endpoints/)
+PROJECT: project_name
+
+# organism (e.g., mouse, human)
+ORGANISM: human
+
+# starting point data (e.g., fastq, cellranger, matrix)
+STARTING_DATA: cellranger
+
+# run Cell Ranger count pipeline (y/n)
+RUN_CELLRANGER: y
+
+# path to the genome to use in cellranger
+CELLRANGER_REFERENCE: /reference_genome/
+
+# run multiQC on Cell Ranger output (y/n) -- must have outs/summary.html 
+RUN_MULTIQC: n
+
+# create bam file when running cellranger (slower) (y/n)
+OUTPUT_BAM: n
+
+# run SoupX (y/n)
+RUN_SOUPX: y
+
+# starting files for soupX: (outs, no_clusters, h5)
+SOUPX_START: outs
+
+# run doubletFinder (y/n)
+RUN_DOUBLETFINDER: y
+
+# mito cutoff (e.g., numeric value)
+MITO: 15
+
+# ribo cutoff (e.g., numeric value)
+RIBO: 100 
+
+# feature thresholds #
+# e.g., S <- subset(S.merged, subset = nFeature_RNA > 200 & nFeature_RNA < 3000)
+MIN_FEATURE_THRESHOLD: 200
+MAX_FEATURE_THRESHOLD: 3000
+
+# metadata by which to split the object into layers (Experiment, Sample)
+SPLIT_LAYERS_BY: Sample
+
+# number of PCs to use in Seurat (integer)
+COMPONENTS: 30
+
+# number of variable features (integer)
+NUM_VARIABLE_FEATURES: 3000
+
+# which features to use for scale data? (all or variable)
+SCALE_DATA_FEATURES: variable
+
+# should mito percent be regressed? (y/n)
+MITO_REGRESSION: n
+
+# should ribo percent be regressed? (y/n)
+RIBO_REGRESSION: n
+
+# file of genes to be regressed
+REGRESSION_FILE:
+
+# should cell cycle be regressed? (y/n)
+CELL_CYCLE_REGRESSION: n
+
+# which cell cycling method (standard, alternative)
+CELL_CYCLE_METHOD: standard
+
+# normalization method for Seurat (standard, sct)
+SEURAT_NORMALIZATION_METHOD: standard,sct
+
+# integration method for seurat (cca, rpca, harmony)
+SEURAT_INTEGRATION_METHOD: cca,rpca,harmony
+
+# resolution value(s) examples: single value: 0.5; multiple values: 0.1,0.3.0.5 
+RESOLUTION: 0.1,0.2,0.3
+
+# run integration in reference-based fashion? (y/n)
+REFERENCE_BASED_INTEGRATION: n
+
+# which sample(s) to use as references for ref-based integration? (names from samples.sample_list)
+REFERENCE_SAMPLES: 
+
+# run Azimuth annotation in Seurat? (y/n)
+RUN_AZIMUTH: n
+
+# Azimuth reference dataset to use for annotation
+# human ref options: adiposeref, bonemarrowref, fetusref, heartref, humancortexref, kidneyref, lungref, pancreasref, pbmcref, tonsilref
+# mouse ref options:  mousecortexref
+AZIMUTH_REFERENCE: 
+
+# run TransferData in Seurat to annotate with a provided reference Seurat object? (y/n)
+RUN_TRANSFERDATA: n
+
+# path to reference Seurat object for TransferData? (path/to/seuratfile.storage)
+TRANSFERDATA_REF_FILE: 
+
+# which dimensional reduction in the TRANSFERDATA_REF_FILE to use for TransferData?
+TRANSFERDATA_REDUCTION: 
+
+# which Seurat meta.data column to use for TransferData annotation? 
+TRANSFERDATA_ANNOCOL:
+
+# make tsne plots (y/n)
+TSNE: n
+
+# run conserved genes (y/n) -- only run with multiple experiments
+CONSERVED_GENES: n
+
+# file is automatically saved as qs file.
+# adding rds will create two files (rds + qs)
+# storage format (rds)
+STORAGE: 
+
+# number of threads
+THREADS: 30
+
+# max memory (write out fully in bytes, e.g., 1689064417920, NOT 1.89T)
+MEMORY: 1389064417920
+
+# relative path with filename to file containing genes of interest (optional)
+USER_GENE_FILE: 
+
+# which visualization for USER_GENE_FILE (feature,violin,ridge,dot) -- choose 1, more, or leave blank
+# (feature plotted by default) choosing all will create very large pdf file
+VISUALIZATION: dot 
+
+
+
+
+# DO NOT ALTER BELOW ##########################
+# location of cellranger executable binaries
+CELLRANGER: /usr/local/bin/cellranger
+
+# location of multiqc executable
+MULTIQC: /usr/local/bin/multiqc
+
+# location of R library path
+RPATH: /usr/local/lib/R/site-library/
+# ###############################################

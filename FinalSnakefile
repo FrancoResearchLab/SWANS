@@ -1,0 +1,514 @@
+'''
+
+Author:	E. Reichenberger
+Date:		4.30.2024
+
+Notes: Reference script to call all rules
+'''
+
+import sys
+import glob
+import os
+import os.path
+import subprocess
+import re
+from helper_scripts.sample_list import get_samples
+import shutil
+
+configfile: 'configs/local_configs.yaml'
+configfile: 'configs/final_configs.yaml'
+
+# set config parameters
+# -------------------------------------------------------------------------
+contact = config['contact']
+PROJECT = config['PROJECT']
+ORGANISM = config['ORGANISM']
+RPATH = config['RPATH'] #do not lower
+TSNE = config['TSNE']
+
+RUN_FINAL_ANALYSIS = config['RUN_FINAL_ANALYSIS']
+MIN_PCT = config['MIN_PCT']
+AVG_LOG2FC_THRESHOLD = config['AVG_LOG2FC_THRESHOLD']
+FINAL_FILTERING_THRESHOLD = config['FINAL_FILTERING_THRESHOLD']
+FINAL_SEURAT_NORMALIZATION_METHOD = config['FINAL_SEURAT_NORMALIZATION_METHOD']
+FINAL_SEURAT_INTEGRATION_METHOD = config['FINAL_SEURAT_INTEGRATION_METHOD']
+FINAL_RESOLUTION = config['FINAL_RESOLUTION']
+CLUSTER_ANNOTATION_FILE = config['CLUSTER_ANNOTATION_FILE']
+
+RUN_TRAJECTORY_ANALYSIS = config['RUN_TRAJECTORY_ANALYSIS']
+PARTITION_TRAJECTORY = config['PARTITION_TRAJECTORY']
+
+PROVIDE_ANALYZED_SEURAT_OBJECT = config['PROVIDE_ANALYZED_SEURAT_OBJECT']
+USER_ANALYZED_SEURAT_OBJECT = config['USER_ANALYZED_SEURAT_OBJECT']
+USER_ANALYZED_SEURAT_OBJECT_META_SAMPLE = config['USER_ANALYZED_SEURAT_OBJECT_META_SAMPLE']
+USER_ANALYZED_SEURAT_OBJECT_META_EXPERIMENT = config['USER_ANALYZED_SEURAT_OBJECT_META_EXPERIMENT']
+USER_ANALYZED_SEURAT_OBJECT_META_ANNOTATION = config['USER_ANALYZED_SEURAT_OBJECT_META_ANNOTATION']
+USER_UMAP_REDUCTION = config['USER_UMAP_REDUCTION']
+USER_TNSE_REDUCTION = config['USER_TNSE_REDUCTION']
+ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT = config['ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT']
+
+FINAL_STORAGE = config['FINAL_STORAGE']
+if FINAL_STORAGE is not None:
+	FINAL_STORAGE = FINAL_STORAGE.strip() #remove any spaces
+
+if FINAL_STORAGE is None: 
+	FINAL_STORAGE = 'qs' #making this a list has unintended consequences
+
+FINAL_USER_GENE_FILE = config['FINAL_USER_GENE_FILE']
+if FINAL_USER_GENE_FILE is None or FINAL_USER_GENE_FILE == ' ':
+	FINAL_USER_GENE_FILE = 'does_not_exist' 
+
+FINAL_VISUALIZATION = config['FINAL_VISUALIZATION']
+if FINAL_VISUALIZATION is None or FINAL_VISUALIZATION == ' ':
+	FINAL_VISUALIZATION = 'feature' #making this a list has unintended consequences
+
+FINAL_CONSERVED_GENES = config['FINAL_CONSERVED_GENES']
+FINAL_THREADS = config['FINAL_THREADS']
+# -------------------------------------------------------------------------
+
+# DEFINITIONS/FUNCTIONS ----------------------------------------------------
+
+# for params with potential for > 1 selection ---------------
+def replace_spaces_commas(config_param_name, config_param):
+	storage_options = ['qs', 'rds', 'sceo', 'cloupe', 'cellchat', 'cellphone']
+	visualization_options = ['violin', 'ridge', 'dot', 'feature']
+	flag = 1
+
+	while ' ' in config_param:
+		config_param = config_param.replace(' ', ',')
+	config_param = config_param.replace(',,', ',')
+
+	if config_param.endswith(','):
+		config_param = config_param.rsplit(',', 1)[0] #remove last comma
+
+	if config_param_name == 'FINAL_STORAGE' and 'qs' not in config_param:
+		config_param = 'qs,'+ config_param	
+
+	options = []
+	if ',' in config_param:
+		options = config_param.split(',')
+	if ',' not in config_param:
+		options.append(config_param)
+
+	for index,o in enumerate(options):
+		if config_param_name == 'FINAL_STORAGE':
+			if o not in storage_options:
+				print('If you would like to save output as RDS, enter \'rds\' for ' + config_param_name + ' in the configs/final_configs.yaml file, then run this script again')
+				print('P.S. you can have \'sceo\', but that format must be saved as a RDS or QS file.')
+				sys.exit()
+			else:
+				flag = 0
+
+		if config_param_name == 'FINAL_VISUALIZATION':
+			if FINAL_USER_GENE_FILE is not None:
+				if os.path.isfile(FINAL_USER_GENE_FILE):
+					if o not in visualization_options:
+						print('If you have selected NO dot, ridge, or violin plots, you will be given feature plots only.')
+						print('If you meant to have different features plots, and e.g., you typed \'viola\' instead of \'violin\', \
+							type \'CTRL+c\', and correct your error.')
+						flag = 0
+					else:
+						flag = 0
+
+	if flag == 0:
+		return(config_param)
+
+
+# WANT TO USE THIS FUNCTION RATHER THAN LATER FUNCTION W/ SAME NAME
+def not_null_check_no_yes(config_param, config_param_name):
+	do_not_lower = ['RPATH', 'MIN_PCT', 'AVG_LOG2FC_THRESHOLD', 'FINAL_FILTERING_THRESHOLD', \
+		'FINAL_RESOLUTION', 'FINAL_THREADS', 'CLUSTER_ANNOTATION_FILE', 'FINAL_USER_GENE_FILE']
+
+	yes_no = ['RUN_FINAL_ANALYSIS', 'RUN_TRAJECTORY_ANALYSIS', 'PROVIDE_ANALYZED_SEURAT_OBJECT', 'ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT', \
+		'TSNE', 'FINAL_CONSERVED_GENES', 'PARTITION_TRAJECTORY', 'USER_ANALYZED_SEURAT_OBJECT_META_ANNOTATION']
+
+	numeric_values = ['MIN_PCT', 'AVG_LOG2FC_THRESHOLD', 'FINAL_FILTERING_THRESHOLD', 'FINAL_RESOLUTION', 'FINAL_THREADS']
+	multi_options = ['FINAL_STORAGE', 'FINAL_VISUALIZATION']
+	method_options = ['FINAL_SEURAT_NORMALIZATION_METHOD', 'FINAL_SEURAT_INTEGRATION_METHOD']
+	user_files = ['FINAL_USER_GENE_FILE']
+
+	if config_param is None or type(config_param) == 'NoneType' or config_param == ' ':
+		print(config_param_name + ' cannot be empty.')
+		print('Please write a value for ' + config_param_name + ' in the configs/final_configs.yaml file, then run this script again')
+		sys.exit()
+
+	if config_param is not None and config_param != ' ':
+		if config_param_name in method_options:
+			m_options = ['avg_log2fc', 'p_val_adj', 'standard', 'sct', 'cca', 'rpca', 'harmony']
+			if config_param not in m_options:
+				print('You must provide valid options for ', config_param_name)
+				print('Please consult configs/final_configs.yaml for valid options, then run this script again')
+				sys.exit()
+
+		if config_param_name not in numeric_values:
+			config_param = ''.join(config_param.split()) # remove all spaces
+
+		if config_param_name not in do_not_lower and config_param_name not in numeric_values:
+			config_param = config_param.lower()
+
+			if config_param_name in user_files:
+				config_param = config_param.strip()
+
+				if os.path.exists(config_param) == False:
+					config_param = 'does_not_exist'
+
+		if config_param_name in yes_no:
+			yes_no_options = ['n', 'y']
+			if 'ye' in config_param or 'yes' in config_param:
+				config_param = 'y'
+			if config_param == 'no': 
+				config_param = 'n'
+			if config_param not in yes_no_options:
+				print('You must provide a \'y\' or a \'n\' for', config_param_name)
+				print('Please write \'y\' or \'n\' in the configs/final_configs.yaml file, then run this script again')
+				sys.exit()
+		
+		if config_param_name in numeric_values:
+			if config_param_name == 'FINAL_THREADS':
+				config_param = str(config_param)
+
+				if config_param.isdigit() == False:
+					print('You must provide a numeric value for ', config_param_name)
+					print('Please write a whole number (e.g., 12) for this parameter in the configs/final_configs.yaml file, then run this script again')
+					sys.exit()
+
+			if config_param_name != 'FINAL_THREADS':
+				if str(config_param).isdecimal() == True:
+					config_param = config_param
+				if ',' in str(config_param):
+					temp_res = str(config_param).replace(',', '').strip()
+					temp_res = temp_res.replace('.', '')
+
+					if temp_res.isdigit() == False:
+						print('You must provide a decimal value for ', config_param_name)
+						print('Please write decimal value(s) (e.g., 1.2 or 0.18) for this parameter in the configs/final_configs.yaml file, then run this script again')
+						sys.exit()
+
+		if config_param_name in multi_options:
+			config_param = replace_spaces_commas(config_param_name, config_param)
+			
+		return(config_param)
+# --------------------
+
+no_nulls = [contact, PROJECT, ORGANISM, RPATH, RUN_FINAL_ANALYSIS, MIN_PCT, \
+	AVG_LOG2FC_THRESHOLD, FINAL_FILTERING_THRESHOLD, FINAL_SEURAT_NORMALIZATION_METHOD, \
+	FINAL_SEURAT_INTEGRATION_METHOD, FINAL_RESOLUTION, CLUSTER_ANNOTATION_FILE, \
+	RUN_TRAJECTORY_ANALYSIS, PROVIDE_ANALYZED_SEURAT_OBJECT, TSNE, FINAL_CONSERVED_GENES, \
+	FINAL_THREADS, FINAL_USER_GENE_FILE, FINAL_STORAGE, FINAL_VISUALIZATION]
+
+no_nulls_string = ['contact', 'PROJECT', 'ORGANISM', 'RPATH', 'RUN_FINAL_ANALYSIS', 'MIN_PCT', \
+	'AVG_LOG2FC_THRESHOLD', 'FINAL_FILTERING_THRESHOLD', 'FINAL_SEURAT_NORMALIZATION_METHOD', \
+	'FINAL_SEURAT_INTEGRATION_METHOD', 'FINAL_RESOLUTION', 'CLUSTER_ANNOTATION_FILE', \
+	'RUN_TRAJECTORY_ANALYSIS', 'PROVIDE_ANALYZED_SEURAT_OBJECT', 'TSNE', 'FINAL_CONSERVED_GENES', \
+	'FINAL_THREADS', 'FINAL_USER_GENE_FILE', 'FINAL_STORAGE', 'FINAL_VISUALIZATION']
+
+# check for nulls and y/n
+for index,n in enumerate(no_nulls):
+	value = no_nulls_string[index]
+	n = not_null_check_no_yes(n, value)
+
+# EDGE CASES -------------------------------------------------------------------------------------
+
+if (ORGANISM != 'mouse' and ORGANISM != 'human') or ORGANISM is None:
+   print('This pipeline only works with mouse or human data')
+   print('Please write \'human\' or \'mouse\' in the configs/local_configs.yaml file, then run this script again')
+   sys.exit()
+
+# trajectory analysis
+if RUN_TRAJECTORY_ANALYSIS == 'y':
+	PARTITION_TRAJECTORY = not_null_check_no_yes(PARTITION_TRAJECTORY, 'PARTITION_TRAJECTORY')
+
+# user-supplied seurat object
+if PROVIDE_ANALYZED_SEURAT_OBJECT == 'y':
+	if USER_ANALYZED_SEURAT_OBJECT is not None:
+		USER_ANALYZED_SEURAT_OBJECT = USER_ANALYZED_SEURAT_OBJECT.strip()
+
+	if USER_ANALYZED_SEURAT_OBJECT is None or os.path.isfile(USER_ANALYZED_SEURAT_OBJECT) == False:
+		print('------------------------------------------------')
+		print('AUCHTUNG AUCHTUNG AUCHTUNG!!!!')
+		print('You have indicated that a seurat object will be provided for the final analysis but it does not exist.')
+		print('Either provide the full path to your unannotated seurat object, or leave it blank to use the seurat object analyzed in previous steps and try again.')
+		print('------------------------------------------------')
+		sys.exit()
+
+	ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT = not_null_check_no_yes(ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT, 'ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT')
+
+	# these cannot be lowered
+	methods, methods_string = [], []
+
+	if ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT == 'y':
+		methods = [USER_ANALYZED_SEURAT_OBJECT_META_SAMPLE, USER_ANALYZED_SEURAT_OBJECT_META_EXPERIMENT, CLUSTER_ANNOTATION_FILE]
+		methods_strings = ['USER_ANALYZED_SEURAT_OBJECT_META_SAMPLE', 'USER_ANALYZED_SEURAT_OBJECT_META_EXPERIMENT', 'CLUSTER_ANNOTATION_FILE']
+		USER_ANALYZED_SEURAT_OBJECT_META_ANNOTATION = 'celltypes'
+
+	if ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT == 'n':
+		methods = [USER_ANALYZED_SEURAT_OBJECT_META_SAMPLE, USER_ANALYZED_SEURAT_OBJECT_META_EXPERIMENT, USER_ANALYZED_SEURAT_OBJECT_META_ANNOTATION]
+		methods_strings = ['USER_ANALYZED_SEURAT_OBJECT_META_SAMPLE', 'USER_ANALYZED_SEURAT_OBJECT_META_EXPERIMENT', 'USER_ANALYZED_SEURAT_OBJECT_META_ANNOTATION']
+
+	for index,m in enumerate(methods):
+		if m != CLUSTER_ANNOTATION_FILE:
+			if m is None:
+				print('You have indicated that a seurat object will be provided for the final analysis.')
+				print('You must supply metadata names to access samples and experimental conditions, \
+					(& potentially cluster annotation information) within the seurat object.')
+				print('Please update the configs/final_config.yaml file for ', methods_strings[index], ' and try again.')
+				print('Note: If this parameter has a space (character) in the name, this pipeline will fail.')
+				print('Remove the space from all names in the seurat object.')
+				sys.exit()
+			if m is not None:
+				m = m.strip()
+
+		if m == CLUSTER_ANNOTATION_FILE:
+			if CLUSTER_ANNOTATION_FILE == '' or CLUSTER_ANNOTATION_FILE is None or os.path.exists(CLUSTER_ANNOTATION_FILE) == False:
+				print('------------------------------------------------')
+				print('AUCHTUNG AUCHTUNG AUCHTUNG!!!!')
+				print('You must supply an annotation file in \'configs/final_analysis_configs.yaml\'')
+				print('Enter a value for CLUSTER_ANNOTATION_FILE and try again.')
+				print('------------------------------------------------')
+#-------------------------------------------------------------------------------------
+
+# Get memory
+# may not be needed 
+#-------------------------------------------------------------------------------------
+memory_file = 'data/endpoints/' + PROJECT + '/analysis/' + PROJECT + '_memory.txt'
+memory_mb = 5000
+
+if os.path.exists(memory_file) == True:
+	with open(memory_file, 'r') as input_file:
+		for line in input_file.readlines():
+			line = line.replace('\n', '')
+			if line is not None:
+				memory_mb = line
+				#memory_mb = round(int(line)/1000000, 0)
+				#memory_mb = int(int(line)/1000000)
+
+# Get samples
+#-------------------------------------------------------------------------------------
+sample_file = 'samples.sample_list'
+if os.path.exists(sample_file) == False:
+	print('You must supply a list of files')
+	print('Create samples.sample_list first, then run this script again')
+	sys.exit()
+
+if os.path.exists(sample_file) == True:
+	SAMPLE_LIST = []
+	SAMPLE_LIST = get_samples(PROJECT) #get sample list from samples.sample_list 
+#-------------------------------------------------------------------------------------
+
+# DEFINE SEURAT IDENT + REDEFINE SEURAT_INTEGRATION_METHOD ----------------------------
+sample_length = len(SAMPLE_LIST)
+if sample_length == 1:
+	FINAL_SEURAT_INTEGRATION_METHOD == 'pca'
+#--------------------------------------------------------------------------------------
+
+# DEFINE LOG DIRS ---------------------------------------------------------------------
+logs = 'logs/' + PROJECT + '/'
+final_log = logs + 'final_analysis/'
+final_report_log = final_log + 'report/'
+benchmark_report_log = 'benchmark_report/' + PROJECT + '/'
+benchmarking_table_log = logs + 'benchmarking_table/' 
+#--------------------------------------------------------------------------------------
+
+# DEFINE BENCHMARK DIRS ---------------------------------------------------------------
+benchmark_log = 'benchmarks/' + PROJECT + '/'
+#--------------------------------------------------------------------------------------
+
+# ------------ FINAL DIRECTORIES ------------------------------------------------------
+string_path= 'data/endpoints/' + PROJECT + '/'
+final_path = string_path + 'analysis/final_analysis/'
+report_path_figures = final_path + 'figures/' 
+report_path_tables = final_path + 'tables/' 
+
+benchmark_dir = string_path + 'analysis/report/benchmarks/'
+#--------------------------------------------------------------------------------------
+
+# ------------ CREATE FINAL DIRECTORY -------------------------------------------------
+# need to copy files below into dir
+if not os.path.exists(final_path):
+	os.makedirs(final_path)
+if not os.path.exists(report_path_figures):
+	os.makedirs(report_path_figures)
+if not os.path.exists(report_path_tables):
+	os.makedirs(report_path_tables)
+if not os.path.exists(benchmark_dir):
+	os.makedirs(benchmark_dir)
+
+# ------------- ADD TO FINAL DIRECTORY ------------------------------------------------
+# cp local,final config files & samples/cell annotation file
+local_config = 'configs/local_configs.yaml'
+new_local_config = final_path + PROJECT + '_local_configs.yaml'
+final_config = 'configs/final_configs.yaml'
+new_final_config = final_path + PROJECT + '_final_configs.yaml'
+new_cluster_annotation_file = final_path + PROJECT + '_cluster_annotation.txt'
+new_samples_file = final_path + PROJECT + '_samples.sample_list'
+
+shutil.copyfile(local_config, new_local_config)
+shutil.copyfile(final_config, new_final_config)
+shutil.copyfile(sample_file,  new_samples_file)
+
+if PROVIDE_ANALYZED_SEURAT_OBJECT == 'n' or (PROVIDE_ANALYZED_SEURAT_OBJECT == 'y' and ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT == 'y'):
+	shutil.copyfile(CLUSTER_ANNOTATION_FILE,  new_cluster_annotation_file)
+# -------------------------------------------------------------------------------------
+
+# DEFINE IDENT AND SEURAT OBJECTS
+# this will work whether user supplied object or not.
+# if the user has a custom name for Standard or SCT -- need to check in final_analysis.R for nomenclature.
+ident = FINAL_SEURAT_NORMALIZATION_METHOD + '.' + FINAL_SEURAT_INTEGRATION_METHOD + '_snn_res.' + str(FINAL_RESOLUTION)
+analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_analyzed_seurat_object.qs'
+#final_analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_final_analyzed_seurat_object.qs'
+
+if PROVIDE_ANALYZED_SEURAT_OBJECT == 'y' and os.path.isfile(USER_ANALYZED_SEURAT_OBJECT):
+	analyzed_seurat_object = USER_ANALYZED_SEURAT_OBJECT
+
+	# check for reduction naming convention
+	if USER_UMAP_REDUCTION is None:
+		print('USER_UMAP_REDUCTION cannot be empty when user supplies a seurat object.')
+		print('Inspect the seurat object & provide exact umap reduction name in configs/final_configs.yaml!!!')
+		sys.exit()
+
+	if USER_TNSE_REDUCTION is None and TSNE == 'y':
+		print('USER_TNSE_REDUCTION cannot be empty when user supplies a seurat object.')
+		print('Inspect the seurat object & provide exact tsne reduction name in configs/final_configs.yaml!!!')
+		sys.exit()
+# -------------------------------------------------------------------------------------
+
+# Note: May want to indent this under line 333 (PROVIDE_ANALYZED_SEURAT_OBJECT == 'y' and os.path.isfile(USER_ANALYZED_SEURAT_OBJECT))
+# or does below obviate any issues?dddd
+
+# REDEFINE META DATA ------------------------------------------------------------------
+if USER_ANALYZED_SEURAT_OBJECT_META_SAMPLE is None:
+	USER_ANALYZED_SEURAT_OBJECT_META_SAMPLE = 'Sample'
+
+# meta data character string to access 'Experiment' in seurat object (e.g., Experiment, Conditions)
+if USER_ANALYZED_SEURAT_OBJECT_META_EXPERIMENT is None:
+	USER_ANALYZED_SEURAT_OBJECT_META_EXPERIMENT = 'Experiment'
+
+# meta data character string that holding annotation information in seurat object (e.g., celltypes, annotation_layer)
+if USER_ANALYZED_SEURAT_OBJECT_META_ANNOTATION is None:
+	USER_ANALYZED_SEURAT_OBJECT_META_ANNOTATION = 'celltypes'
+# -------------------------------------------------------------------------------------
+
+# DEFINE OUTPUT -----------------------------------------------------------------------
+
+# Final analysis output
+final_files = []
+
+# Add requested saved objects
+core_name = 'data/endpoints/' + PROJECT + '/analysis/RDS/' + PROJECT + '_final_analyzed_seurat_object'
+storage_items = []
+
+final_analyzed_seurat_object = ''
+
+options = []
+if ',' in FINAL_STORAGE:
+	options = FINAL_STORAGE.split(',')
+if ',' not in FINAL_STORAGE:
+	options.append(FINAL_STORAGE)
+
+if 'qs' in options:
+	final_analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_final_analyzed_seurat_object.qs'
+
+if 'qs' not in options and 'rds' not in options:
+	options.append('qs')
+	final_analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_final_analyzed_seurat_object.qs'
+	FINAL_STORAGE = FINAL_STORAGE + ',qs'
+
+if 'qs' not in options and 'rds' in options:
+	final_analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_final_analyzed_seurat_object.rds'
+
+if 'cloupe' in options:
+	r_comm = "R -q -e 'suppressWarnings(loupeR:::eula_data_dir())'"
+	eula_loc = (subprocess.run(r_comm, shell=True, capture_output=True, text=True)).stdout
+	eula_loc = re.search(r'"\s*([^"]+)\s*"', eula_loc)
+	if not os.path.exists(eula_loc.group(1) + '/eula_agreement'):
+		# print error message with instructions if EULA agreement for loupeR is not present
+		print("You have selected the 'cloupe' option for FINAL_STORAGE in final_configs.yaml.\n" + 
+			  "The .cloupe file format is part of the loupeR R package from 10x Genomics and\n" +
+			  "requires acceptance of the 10x Genomics loupeR End User License Agreement (EULA).\n")
+		print("Follow the instructions below to accept the loupeR EULA:\n" +
+			  "1. Open an R terminal.\n" +
+			  "2. In R, run the following command:\n" +
+			  "   > suppressWarnings(loupeR::setup())", "\n" +
+			  "3. Accept the agreement.\n" +
+			  "4. Run SWANS again.\n")
+		sys.exit()
+		
+
+
+storage_items.append(final_analyzed_seurat_object)
+final_files.append(final_analyzed_seurat_object)
+
+# NEED TO SPLIT BY ',', otherwise with one item it will enumerate the string
+for o in options:
+	storage_item = core_name + '.' + o
+
+	if o == 'cellchat':
+		if 'rds' in options:
+			storage_item = core_name + '_cellchat.rds'
+		if 'qs' in options:
+			storage_item = core_name + '_cellchat.qs'
+
+	if o == 'cloupe':
+		storage_item = core_name + '.cloupe'
+
+	if o == 'sceo':
+		if 'rds' in options:
+			storage_item = core_name + '_sceo.rds'
+		if 'qs' in options:
+			storage_item = core_name + '_sceo.qs'
+
+	if o == 'cellphone':
+		cellphoneDB_dir = final_path + 'cellphoneDB/'
+		storage_item = cellphoneDB_dir + PROJECT + '_final_analyzed_cellphoneDB.txt'
+
+	# will need to choose EITHER RDS or QS
+	if storage_item not in storage_items:
+		storage_items.append(storage_item)
+	if storage_item not in final_files:
+		final_files.append(storage_item)
+# -------------------------------------------------------------------------------------
+
+# Trajectory analysis output
+touch_trajectory_file = []
+if RUN_TRAJECTORY_ANALYSIS == 'y':
+	touch_trajectory_file = [final_log + PROJECT + '_trajectory_analysis.txt']
+	final_files.append(touch_trajectory_file)
+
+# Final Analysis Overview HTML Report
+final_report = final_path + PROJECT + '_final_report.html'
+final_files.append(final_report)
+
+# Final Benchmark Overview HTML Report
+benchmark_dir = string_path + 'analysis/report/benchmarks/'
+benchmark_tables = string_path + 'analysis/report/benchmarks/table/'
+
+benchmark_file = benchmark_tables + PROJECT + '_benchmarks.txt'
+benchmark_report = benchmark_dir + PROJECT + '_benchmark_report.html'
+
+final_files.append(benchmark_file)
+final_files.append(benchmark_report)
+#-------------------------------------------------------------------------------------
+
+#--------------------TARGET RULES-----------------------------------
+include:
+	"src/rules/final_analysis.rules"
+#-------------------------------------------------------------------------------------
+
+#--------------------MESSAGES-----------------------------------
+onsuccess:
+	print("The final analysis pipeline completed with no errors.")
+	shell("mail -s 'The final analysis pipeline completed with no errors.' "+ config['contact']+" < {log}")
+
+onerror:
+	print("The final analysis pipeline did not complete without errors."),
+	shell("mail -s 'The final analysis pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
+#-------------------------------------------------------------------------------------
+
+#--------------------RULE ------------------------------------------------------------
+rule biggie:
+	#input: final_files 
+	#input: final_report 
+	#input: benchmark_file 
+	input: benchmark_report 
+
+#-------------------------------------------------------------------------------------

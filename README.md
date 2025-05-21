@@ -797,7 +797,7 @@ For all issues and questions, please [submit an Issue on GitHub](https://github.
 * *******************************************************************************
 
 ## How to cite
-Katherine Beigel, Eric Wafula, Dana V Mitchelle, Steven J Pastor, Michelle Gong, Robert Heuckeroth, Julio C Ricarte-Filho, Aime T. Franco, Erin R Reichenberger. 2025.
+Katherine Beigel, Eric Wafula, Dana V Mitchell, Steven J Pastor, Michelle Gong, Robert Heuckeroth, Julio C Ricarte-Filho, Aime T. Franco, Erin R Reichenberger. 2025.
 SWANS: A highly configurable analysis pipeline for single-cell and single-nuclei RNA-sequencing data
 
 bioRxiv doi: https://doi.org/10.1101/2025.05.14.654073 

@@ -1,7 +1,7 @@
 # SWANS 2.0: Single-entity Workflow ANalysiS Pipeline
 * *******************************************************************************
 ## Motivation
-Beyond analyzing data, the motiviation behind developing SWANS was related to a) how a bioinformatician can share massive amounts of complex data in a concise manner with investigators, and b) how can an analysis be tweeked and the analyses compared to arrive at a one schema for additional downstream analysis. 
+Beyond analyzing data, the motiviation behind developing SWANS was related to a) how a bioinformatician can share massive amounts of complex data in a concise manner with investigators, b) have a devoted pipeline that can run a completely different analysis by changing configuration files, and c) how can an analysis be tweeked and the analyses compared to arrive at a one schema for additional downstream analysis. 
 
 ## Overview
 SWANS analyzes single cell or single nuclei data and relies heavily on <a href="https://satijalab.org/seurat/" target="_blank">Seurat 5.1.0</a>, using Snakemake as a workflow manager, and YAML files to allow customization of the myriad of analysis parameters. The SWANS pipeline works with human or mouse organisms, one or multiple samples, and can run in parallel where Snakemake manages the resources behind the scenes. 

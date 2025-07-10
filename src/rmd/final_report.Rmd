@@ -58,20 +58,20 @@ num_var_features <- proj_info$`NUM_VARIABLE_FEATURES`
 scale_data <- proj_info$`SCALE_DATA_FEATURES`
 
 final_info <- read_yaml('../../configs/post_annotation_configs.yaml')
-normalization <- final_info$`POST_ANNOTATION_SEURAT_NORMALIZATION_METHOD`
-integration <- final_info$`POST_ANNOTATION_SEURAT_INTEGRATION_METHOD`
-resolution <- final_info$`POST_ANNOTATION_RESOLUTION`
+normalization <- final_info$`FINAL_SEURAT_NORMALIZATION_METHOD`
+integration <- final_info$`FINAL_SEURAT_INTEGRATION_METHOD`
+resolution <- final_info$`FINAL_RESOLUTION`
 
 cluster_annotation <- paste0('../../', final_info$`CLUSTER_ANNOTATION_FILE`)
-file_user_gene_file <- paste0('../../', final_info$`POST_ANNOTATION_USER_GENE_FILE`) #need to double check if this causes an error
+file_user_gene_file <- paste0('../../', final_info$`FINAL_USER_GENE_FILE`) #need to double check if this causes an error
 
 avglogfc <- final_info$`AVG_LOG2FC_THRESHOLD`
-filter_threshold <- final_info$`POST_ANNOTATION_FILTERING_THRESHOLD`
+filter_threshold <- final_info$`FINAL_FILTERING_THRESHOLD`
 min_ptc <- final_info$`MIN_PCT`
 gene_rank <- final_info$`GENE_RANK`
 trajectory_analysis <- final_info$`RUN_TRAJECTORY_ANALYSIS`
 partition <- final_info$`PARTITION_TRAJECTORY`
-conserved_genes <- final_info$`POST_ANNOTATION_CONSERVED_GENES`
+conserved_genes <- final_info$`FINAL_CONSERVED_GENES`
 
 # Annotation
 annotation <- read.csv(cluster_annotation, header=TRUE, sep='\t')
@@ -128,7 +128,7 @@ for (cl in ucluster)
 # make named list of data.frames, one per cluster
 cluster_data_list <- lapply(ucluster, function(cl) {
   final_markers %>% filter(cluster == cl) %>%
-  select(gene, cluster, comparison, avg_log2FC, p_val, p_val_adj, pct_1, pct_2)
+ Final select(gene, cluster, comparison, avg_log2FC, p_val, p_val_adj, pct_1, pct_2)
 
 })
 

@@ -29,6 +29,10 @@ library(tidyverse)
 library(yaml)
 library(DT)
 library(stringr)
+library(jsonlite)
+library(htmltools)
+
+htmltools::htmlDependency("jquery", "3.6.0", src = "https://code.jquery.com/", script = "jquery-3.6.0.min.js")
 
 # Sample Metadata
 meta <- read.csv('../../samples.sample_list', sep='\t', header=TRUE)
@@ -54,20 +58,20 @@ num_var_features <- proj_info$`NUM_VARIABLE_FEATURES`
 scale_data <- proj_info$`SCALE_DATA_FEATURES`
 
 final_info <- read_yaml('../../configs/post_annotation_configs.yaml')
-normalization <- final_info$`FINAL_SEURAT_NORMALIZATION_METHOD`
-integration <- final_info$`FINAL_SEURAT_INTEGRATION_METHOD`
-resolution <- final_info$`FINAL_RESOLUTION`
+normalization <- final_info$`POST_ANNOTATION_SEURAT_NORMALIZATION_METHOD`
+integration <- final_info$`POST_ANNOTATION_SEURAT_INTEGRATION_METHOD`
+resolution <- final_info$`POST_ANNOTATION_RESOLUTION`
 
 cluster_annotation <- paste0('../../', final_info$`CLUSTER_ANNOTATION_FILE`)
-file_user_gene_file <- paste0('../../', final_info$`FINAL_USER_GENE_FILE`)
+file_user_gene_file <- paste0('../../', final_info$`POST_ANNOTATION_USER_GENE_FILE`) #need to double check if this causes an error
 
 avglogfc <- final_info$`AVG_LOG2FC_THRESHOLD`
-filter_threshold <- final_info$`FINAL_FILTERING_THRESHOLD`
+filter_threshold <- final_info$`POST_ANNOTATION_FILTERING_THRESHOLD`
 min_ptc <- final_info$`MIN_PCT`
 gene_rank <- final_info$`GENE_RANK`
 trajectory_analysis <- final_info$`RUN_TRAJECTORY_ANALYSIS`
 partition <- final_info$`PARTITION_TRAJECTORY`
-conserved_genes <- final_info$`FINAL_CONSERVED_GENES`
+conserved_genes <- final_info$`POST_ANNOTATION_CONSERVED_GENES`
 
 # Annotation
 annotation <- read.csv(cluster_annotation, header=TRUE, sep='\t')
@@ -83,10 +87,10 @@ sig_pc <- read.table(sig_pc_file, header=TRUE)
 sig_pc <- sig_pc$x
 #-------------------------------------------------------------------------------
 
-# Final Result Tables
+# Post-Annotation Result Tables
 #-------------------------------------------------------------------------------
-final_markers_file <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_markers_total.txt')
-final_markers <- read.table(final_markers_file, header=TRUE, sep='\t')
+final_markers_file <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_markers_total.txt') 
+final_markers <- read.table(final_markers_file, header=TRUE, sep='\t', stringsAsFactors = FALSE)
 final_markers$p_val <- format(final_markers$p_val, digits=3)
 final_markers$avg_log2FC <- round(final_markers$avg_log2FC, 3)
 final_markers$p_val_adj <- format(final_markers$p_val_adj, digits=3)
@@ -95,10 +99,47 @@ ucluster <- unique(final_markers$cluster)
 for (u in ucluster)
 {
   uname <- paste0(u, '_')
+  final_markers$comparison <- trimws(final_markers$comparison)
+  final_markers$comparison <- gsub(' ', '', final_markers$comparison, fixed = TRUE) #remove any spaces
   final_markers$comparison <- gsub(uname, "", final_markers$comparison, fixed = TRUE)
 
   final_markers <- final_markers[, c('gene', 'cluster', 'comparison', 'avg_log2FC', 'p_val', 'p_val_adj', 'pct.1', 'pct.2')]
 }
+
+#adding this 6.2.2025
+final_markers$pct.1[is.na(final_markers$pct.1)] <- 0
+final_markers$pct.2[is.na(final_markers$pct.2)] <- 0
+colnames(final_markers) <- gsub("\\.", "_", colnames(final_markers))
+
+# make combined comparison csv files for each cluster
+csv_folder <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/tables/csv_files/')
+dir.create(csv_folder, showWarnings = FALSE)
+
+cluster_list <- paste0('cluster_', ucluster)
+
+for (cl in ucluster) 
+{
+	df <- final_markers %>% filter(cluster == cl)
+	cluster_file <- file.path(csv_folder, paste0(project, '_combined_comparisons_', cl, '.csv'))
+	write.csv(df, file = cluster_file, row.names=FALSE, quote=FALSE)
+}
+
+# convert to json
+# make named list of data.frames, one per cluster
+cluster_data_list <- lapply(ucluster, function(cl) {
+  final_markers %>% filter(cluster == cl) %>%
+  select(gene, cluster, comparison, avg_log2FC, p_val, p_val_adj, pct_1, pct_2)
+
+})
+
+names(cluster_data_list) <- ucluster
+
+# convert each data.frame to JSON (pretty=FALSE to save space)
+cluster_json_list <- lapply(cluster_data_list, function(df) toJSON(df, pretty=FALSE))
+
+# remove final_markers
+rm(final_markers)
+gc()
 #-------------------------------------------------------------------------------
 
 # Pathways
@@ -122,9 +163,7 @@ if (file.exists(final_pathways_file.adjP))
     final_pathways_adjP$comparison <- gsub(uname, "", final_pathways_adjP$comparison, fixed = TRUE)
   }
   
-  final_pathways_adjP <- final_pathways_adjP[, col_order] %>%
-    rename(
-      pathway = 'Description')
+  final_pathways_adjP <- final_pathways_adjP[, col_order] %>% rename(pathway = 'Description')
 }
 
 
@@ -144,9 +183,7 @@ if (file.exists(final_pathways_file.log))
     final_pathways_log$comparison <- gsub(uname, "", final_pathways_log$comparison, fixed = TRUE)
   }
   
-  final_pathways_log <- final_pathways_log[, col_order] %>%
-    rename(
-      pathway = 'Description')
+  final_pathways_log <- final_pathways_log[, col_order] %>% rename(pathway = 'Description')
 }
 #-------------------------------------------------------------------------------
 
@@ -172,6 +209,28 @@ z_score_celltypes_experiment[, 2:length(names(z_score_celltypes_experiment))]  <
 z_scores_file_celltypes_experiment_samples <- paste('../../data/endpoints/', project, '/analysis/final_analysis/tables/', project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, '_celltypes_experiment_sample.txt', sep='')
 z_scores_celltypes_experiment_sample <- read.table(z_scores_file_celltypes_experiment_samples, header=TRUE, sep='\t')
 z_scores_celltypes_experiment_sample[, 2:length(names(z_scores_celltypes_experiment_sample))]  <- round(z_scores_celltypes_experiment_sample[, 2:length(names(z_scores_celltypes_experiment_sample))], 3)
+
+# dynami z-scores
+z_folder <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/tables/z_score_files/')
+dir.create(z_folder, showWarnings = FALSE)
+
+z_selection <- c('_celltypes.txt', '_celltypes_experiment.txt', '_celltypes_experiment_sample.txt')
+
+z_files <- file.path(paste0('../../data/endpoints/', project, '/analysis/final_analysis/tables/', project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, z_selection))
+
+for (z_file in z_files)
+{  
+	if (!file.exists(z_file)) 
+	{
+		stop(sprintf('File does not exist: %s. Stopping script.', z_file))
+	}
+
+	df_z <- read.table(z_file, header = TRUE, sep = '\t', stringsAsFactors = FALSE, check.names = FALSE)
+	json_z <- toJSON(df_z, pretty = FALSE, dataframe = 'rows', auto_unbox = TRUE)
+	json_basename <- sub('\\.txt$', '.json', basename(z_file))
+	json_file <- file.path(z_folder, json_basename)
+	write(json_z, file = json_file)
+}
 #-------------------------------------------------------------------------------
 
 # Conserved Genes -- EMPTY FILE
@@ -215,6 +274,35 @@ author: "E. Reichenberger"
 date: "`r format(Sys.time())`"
 output: html_document
 ---
+
+<script>
+  // keep jQuery plugin from trying to call noUiSlider
+  jQuery.fn.noUiSlider = function() 
+  {
+    console.warn('noUiSlider disabled');
+    return this;
+  };
+</script>
+
+
+<!-- DO NOT CHANGE ORDER!!! ----------------------------------------------------------->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<link href="https://cdn.jsdelivr.net/npm/nouislider@14.7.0/distribute/nouislider.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/nouislider@14.7.0/distribute/nouislider.min.js"></script>
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css" />
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.colVis.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<!-- ----------------------------------------------------------------------------------->
 
 <div class = "main-container">
 # SWANS
@@ -316,22 +404,129 @@ datatable(data = counts_experiment, caption = 'Table 2: Number of cells (Proport
   
 <br/>
 
-```{r include=T, echo=F, out.width="100%", warning=FALSE, comment=""}
-datatable(
-  final_markers,
-  class = 'cell-border stripe',
-  caption = 'Table 3: DEGs by Cluster + Experimental Comparison.',
-  rownames = FALSE,
-  filter = 'top',
-  extensions = 'Buttons',  
-  width = '100%',
-  options = list(
-    autoWidth = TRUE,
-    dom = 'Blfrtip',
-    buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')
-  )
-)
+<!-- define json object -->
+```{r results='asis'} 
+cat("<script>\n")
+cat("const clusterData = {\n")
+
+for (cl in ucluster) 
+{
+  json_str <- cluster_json_list[[cl]]
+
+  # add trailing comma except last
+  comma <- ifelse(cl == tail(ucluster,1), "", ",")
+  cat(sprintf("'%s': %s%s\n", cl, json_str, comma))
+}
+
+cat("};\n")
+cat("</script>\n")
 ```
+
+<style>
+  #clusterTable 
+  {
+    width: 80% !important;
+    margin: 0 auto;
+    table-layout: fixed;
+  }
+
+  #clusterTable th, #clusterTable td 
+  {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* make width 100% of column w/ no overflow */
+  #clusterTable thead input 
+  {
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.9em;
+  }
+</style>
+
+
+<select id="clusterSelect">
+  <option value="" disabled selected>Select a cluster</option>
+  <!-- options filled by JS -->
+</select>
+
+<div id="tableContainer"></div>
+
+<script>
+  // populate dropdown options from clusterData keys
+  const select = document.getElementById('clusterSelect');
+  Object.keys(clusterData).forEach(cluster => 
+  {
+    const opt = document.createElement('option');
+    opt.value = cluster;
+    opt.text = cluster;
+    select.appendChild(opt);
+  });
+
+  function renderTable(data, selectedCluster) 
+  {
+  // remove any existing table 
+  $('#tableContainer').html('<table id="clusterTable" class="display cell-border stripe" style="width:100%"></table>');
+  
+  // add caption w/ cluster name above table
+  $('#clusterTable').prepend(
+  `<caption style="caption-side: top; text-align: left; font-weight: bold; margin-bottom: 0.5em;">
+    Table 3: DEGs for ${selectedCluster} Cluster + Experimental Comparison.
+  </caption>`
+	);
+
+  // get columns from keys of first object
+  const columns = data.length > 0 ? Object.keys(data[0]).map(k => ({ title: k, data: k })) : [];
+
+  $('#clusterTable').DataTable(
+  {
+    destroy: true,
+    data: data,
+    columns: columns,
+    pageLength: 10,
+    lengthMenu: [10, 25, 50, 100],
+    dom: 'Blfrtip',
+    buttons: ['colvis', 'copy', 'excel', 'pdf', 'print'],
+    autoWidth: true,
+    columnDefs: [
+    { width: '60px', targets: ['avg_log2FC', 'p_val', 'p_val_adj', 'pct_1', 'pct_2'] }, // narrow columns
+    { width: '130px', targets: ['gene', 'cluster', 'comparison'] },          // optional wider column
+	 ],
+
+    initComplete: function () 
+	 {
+      this.api().columns().every(function () 
+		{
+        var column = this;
+        var input = document.createElement("input");
+        $(column.header()).append('<br>').append(input);
+		  $(input).on('keyup change clear', function () 
+		  {
+				if (column.search() !== this.value) 
+				{
+					column.search(this.value).draw();
+				}
+		  });
+
+		  $(column.header()).append('<br>').append(input);
+      });
+    }
+  });
+ }
+
+
+  // render cluster's table on user selection
+  select.addEventListener('change', function() 
+  {
+    const cluster = this.value;
+    const data = clusterData[cluster];
+    renderTable(data, cluster);
+  });
+</script>
 
 ***
 
@@ -370,15 +565,46 @@ if (is.data.frame(final_pathways_adjP)) {
     class = 'cell-border stripe',
     caption = 'Table 4:  Pathway Analysis results from gene set enrichment analysis (GSEA) using fgsea with adjusted p-value as the ranking metric.',
     rownames = FALSE,
-    filter = 'top',
+    filter = 'none', #hiding this shows the next table, but subsequent tables are hidden
     extensions = 'Buttons',
     width = '100%', 
     options = list(
       autoWidth = TRUE,
       dom = 'Blfrtip',
-      buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')
+      buttons = c('colvis', 'copy', 'excel', 'pdf', 'print'), #added comma at end
+      initComplete = JS("
+  function() {
+    var api = this.api();
+    var searchableCols = [0, 1, 2, 3, 7]; // zero-based indices of columns to filter
+
+    // Check if second header row exists; if not, add it inside the thead
+    var $thead = $(api.table().header());
+    if ($thead.find('tr.filter-row').length === 0) {
+      $thead.append('<tr class=\"filter-row\"></tr>');
+    }
+    var $filterRow = $thead.find('tr.filter-row').empty();
+
+    api.columns().every(function(colIdx) {
+      var $th = $('<th></th>').appendTo($filterRow);
+
+      if (searchableCols.indexOf(colIdx) !== -1) {
+        var input = $('<input type=\"text\" placeholder=\"Search\" style=\"width: 100%;\" />')
+          .appendTo($th)
+          .on('keyup change clear', function() {
+            if (api.column(colIdx).search() !== this.value) {
+              api.column(colIdx).search(this.value).draw();
+            }
+          });
+
+        // Restore previous search value on redraw
+        input.val(api.column(colIdx).search());
+      }
+    });
+  }
+")
     )
   ) %>%
+    
   # Apply custom CSS to the 6th column with the 'pre-wrap' style
   formatStyle(
     columns = grep('leadingEdge', colnames(final_pathways_adjP)), # Targeting leadingEdge column
@@ -425,13 +651,43 @@ if (is.data.frame(final_pathways_log)) {
     class = 'cell-border stripe', 
     caption = 'Table 5: Pathway Analysis results from gene set enrichment analysis (GSEA) using fgsea with average log2 fold change as the ranking metric.',
     rownames = FALSE,
-    filter = 'top',
+    filter = 'none',
     extensions = 'Buttons',
     width = '100%',
     options = list(
       autoWidth = TRUE,
       dom = 'Blfrtip',
-      buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')
+      buttons = c('colvis', 'copy', 'excel', 'pdf', 'print'),
+      initComplete = JS("
+      function() {
+        var api = this.api();
+        var searchableCols = [0, 1, 2, 3, 7]; // zero-based indices of columns to filter
+
+        // Check if second header row exists; if not, add it inside the thead
+        var $thead = $(api.table().header());
+        if ($thead.find('tr.filter-row').length === 0) {
+          $thead.append('<tr class=\"filter-row\"></tr>');
+        }
+        var $filterRow = $thead.find('tr.filter-row').empty();
+
+        api.columns().every(function(colIdx) {
+         var $th = $('<th></th>').appendTo($filterRow);
+
+        if (searchableCols.indexOf(colIdx) !== -1) {
+        var input = $('<input type=\"text\" placeholder=\"Search\" style=\"width: 100%;\" />')
+          .appendTo($th)
+          .on('keyup change clear', function() {
+            if (api.column(colIdx).search() !== this.value) {
+              api.column(colIdx).search(this.value).draw();
+            }
+          });
+
+        // Restore previous search value on redraw
+        input.val(api.column(colIdx).search());
+      }
+    });
+  }
+")
     )
   ) %>%
   # Apply custom CSS to the 6th column with the 'pre-wrap' style
@@ -449,6 +705,23 @@ if (is.data.frame(final_pathways_log)) {
 ***
 
 ## Z-Score
+
+<!-- this works but is too laggy, using dynamic approach 
+### Split by Cluster
+```{r zscore_cluster, include=T, echo=F, out.width="100%", warning=FALSE}
+datatable(data=z_score_celltypes, class = 'cell-border stripe', caption = 'Table 6: Z-Scores by Cluster.', rownames= FALSE, filter = 'none', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, dom = 'Blfrtip', DT.warn.size=FALSE, buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
+```
+
+### Split by Cluster + Experiment
+```{r zscore_c_experiment, include=T, echo=F, out.width="100%", warning=FALSE}
+datatable(data=z_score_celltypes_experiment, class = 'cell-border stripe', caption = 'Table 7: Z-Scores by Cluster + Experimental Condition.', rownames= FALSE, filter = 'none', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
+```
+
+### Split by Cluster + Experiment + Sample
+```{r zscore_c_experiment_sample, include=T, echo=F, out.width="100%", warning=FALSE}
+datatable(data=z_scores_celltypes_experiment_sample, class = 'cell-border stripe', caption = 'Table 7: Z-Scores by Cluster + Experimental Condition.', rownames= FALSE, filter = 'none', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
+```
+-->
 Z-score transformation of gene expression data standardizes the values by converting them to a common scale with a mean of 0 and a standard deviation of 1.  
 <ul>
   <li><b>Positive z-score</b>: gene with higher gene expression in the specific experiment/sample comapred to the mean</li>
@@ -457,28 +730,119 @@ Z-score transformation of gene expression data standardizes the values by conver
 
 Z-scores have been calculated for the following groupings: 
 <ul>
-  <li>Cluster (Table 6)</li>
-  <li>Cluster and Experiment (Table 7)</li>
-  <li>Cluster, Sample, and Experiment (Table 8)</li>
+  <li>Cluster</li>
+  <li>Cluster and Experiment</li>
+  <li>Cluster, Sample, and Experiment</li>
 </ul>
 
 Z-scores allow for comparison of gene expression by removing biases due to differences in scale or distribution. This makes it easier to identify relative changes in expression while also granting the ability to see which genes are most highly expressed within each column in the tables.  
+<hr>
 
-### Split by Cluster
-```{r zscore_cluster, include=T, echo=F, out.width="100%", warning=FALSE}
-datatable(data=z_score_celltypes, class = 'cell-border stripe', caption = 'Table 6: Z-Scores by Cluster.', rownames= FALSE, filter = 'top', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, dom = 'Blfrtip', DT.warn.size=FALSE, buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
-```
+<h4>Load Z-Score Table</h4>
+This html file was shipped inside a folder -- likely called "final_analysis". The json files for the z-scores are located here: <b>final_analysis/tables/z_score_files/</b><br>&nbsp;<br>
+JSON files in this directory will have this naming structure (where projectName, normalizationMethod, integrationMethod, and resolution are variable names):<br>
+projectName_z_scores.normalizationMethod.integrationMethod_snn_resolution_celltypes.json<br>
+projectName_z_scores.normalizationMethod.integrationMethod_snn_resolution_celltypes_experiment.json<br>
+projectName_z_scores.normalizationMethod.integrationMethod_snn_resolution_celltypes_experiment_sample.json<br>&nbsp;<br>
+</h4><br>
 
-### Split by Cluster + Experiment
-```{r zscore_c_experiment, include=T, echo=F, out.width="100%", warning=FALSE}
-datatable(data=z_score_celltypes_experiment, class = 'cell-border stripe', caption = 'Table 7: Z-Scores by Cluster + Exerimental Condition.', rownames= FALSE, filter = 'top', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
-```
+It will take ~10 seconds for the tables to load.
+<p>Select a <code>.json</code> file for each z-score summary type:</p>
+<div style="display: flex; gap: 1em; flex-wrap: wrap; margin-bottom: 1em;">
+   <div>
+   <button onclick="document.getElementById('fileInput_celltypes').click()">Load Z-scores by Celltypes</button>
+   <input type="file" id="fileInput_celltypes" accept=".json" style="display:none" />
+   </div>
 
-### Split by Cluster + Experiment + Sample
-```{r zscore_c_experiment_sample, include=T, echo=F, out.width="100%", warning=FALSE}
-datatable(data=z_scores_celltypes_experiment_sample, class = 'cell-border stripe', caption = 'Table 7: Z-Scores by Cluster + Exerimental Condition.', rownames= FALSE, filter = 'top', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
-```
+   <div>
+   <button onclick="document.getElementById('fileInput_experiment').click()">Load Z-scores by Celltypes + Experiment</button>
+   <input type="file" id="fileInput_experiment" accept=".json" style="display:none" />
+   </div>
 
+   <div>
+   <button onclick="document.getElementById('fileInput_sample').click()">Load Z-scores by Celltypes + Experiment + Sample</button>
+   <input type="file" id="fileInput_sample" accept=".json" style="display:none" />
+   </div>
+</div>
+
+<div id="zscoreTableContainer"></div>
+
+<script>
+	const inputTypes = 
+	{
+		celltypes: "Cluster Only", experiment: "Cluster + Condition", sample: "Cluster + Condition + Sample"
+	};
+
+	Object.keys(inputTypes).forEach(id => 
+	{
+		document.getElementById(`fileInput_${id}`).addEventListener('change', function () 
+		{
+			const file = this.files[0];
+			if (!file) return;
+
+			const reader = new FileReader();
+			reader.onload = function (e) 
+			{
+				let data;
+				try 
+				{
+				data = JSON.parse(e.target.result);
+				} catch (err) {
+					document.getElementById("zscoreTableContainer").innerHTML = "<p style='color:red;'>❌ Failed to parse JSON.</p>";
+					return;
+					}
+
+				renderZscoreTable(data, inputTypes[id]);
+			};
+
+			reader.readAsText(file);
+		});
+	});
+
+	function renderZscoreTable(data, label) 
+	{
+		const container = document.getElementById("zscoreTableContainer");
+		container.innerHTML = '<table id="zscoreTable" class="display cell-border stripe" style="width:100%"></table>';
+		const columns = Object.keys(data[0] || {}).map(k => ({ title: k, data: k }));
+
+		$('#zscoreTable').DataTable({
+			destroy: true,
+			data: data,
+			columns: columns,
+			pageLength: 10,
+			lengthMenu: [10, 25, 50, 100],
+			dom: 'Blfrtip',
+			buttons: ['colvis', 'copy', 'excel', 'pdf', 'print'],
+			autoWidth: true,
+			columnDefs: [
+				{ width: '130px', targets: 0 },          // optional wider column
+				{ width: '50px', targets: '_all' },
+			],
+			initComplete: function () 
+			{
+				this.api().columns().every(function () 
+				{
+					const column = this;
+					const input = document.createElement("input");
+					$(column.header()).append('<br>').append(input);
+					$(input).on('keyup change clear', function () 
+					{
+						if (column.search() !== this.value) 
+						{
+								column.search(this.value).draw();
+						}
+					});
+				});
+			}
+		});
+
+		$('#zscoreTable').prepend(
+		`<caption style="caption-side: top; text-align: left; font-weight: bold; margin-bottom: 0.5em;">
+		Z-Score Table 6: ${label}
+		</caption>`
+		);
+	}
+</script>
  *** 
  
 ## UMAP + Cell Counts (Proportions) for each Cluster by Sample
@@ -497,7 +861,7 @@ datatable(data=z_scores_celltypes_experiment_sample, class = 'cell-border stripe
 </div>
 
 ```{r echo=FALSE, include=TRUE}
-datatable(data = counts_sample, caption = 'Table 8: Number of cells (Proportion of cells) in each Cluster by Sample.', options=list(pageLength=10, autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'print')))
+datatable(data = counts_sample, caption = 'Table 7: Number of cells (Proportion of cells) in each Cluster by Sample.', filter='none', options=list(pageLength=10, autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'print')))
 ```
 
 ***
@@ -521,7 +885,7 @@ knitr::include_graphics(heatmap_plot)
 <div class="column" style="flex: 1; padding: 5px;">
 <br>
 ```{r echo=FALSE, include=TRUE}
-datatable(data = variable_genes, rownames = FALSE, caption = 'Table 9: Variable Genes.', options=list(pageLength=10, autoWidth = TRUE, dom = 'Blfrtip', buttons = c('copy', 'excel', 'print')))
+datatable(data = variable_genes, rownames = FALSE, caption = 'Table 8: Variable Genes.', filter='none', options=list(pageLength=10, autoWidth = TRUE, dom = 'Blfrtip', buttons = c('copy', 'excel', 'print')))
 ```
 </div>
 </div>
@@ -536,7 +900,7 @@ NOTE: If there is single body split into multiple clusters, conserved markers fo
 ```{r conserved, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='Conserved_Genes'}
 if (conserved_genes == 'y' || conserved_genes == TRUE)
 {
-  datatable(data=conserved_genes_df, class = 'cell-border stripe', caption = 'Table 10: Conserved Genes by Across Exerimental Conditions by Cluster.', rownames = FALSE, filter = 'top', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
+  datatable(data=conserved_genes_df, class = 'cell-border stripe', caption = 'Table 9: Conserved Genes by Across Exerimental Conditions by Cluster.', rownames = FALSE, filter = 'bottom', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
 } else {
   print('Conserved gene analysis was not run.')
 }

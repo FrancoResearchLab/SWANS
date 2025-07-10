@@ -22,7 +22,7 @@ suppressPackageStartupMessages(library(pdftools))
 suppressPackageStartupMessages(library(magick))
 suppressPackageStartupMessages(library(yaml))
 
-suppressWarnings({proj_info <- read_yaml('local_configs.yaml')})
+suppressWarnings({proj_info <- read_yaml('prelim_configs.yaml')})
 
 # CONFIGURATION VARS
 project <- proj_info$`PROJECT`   

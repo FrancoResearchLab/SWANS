@@ -47,8 +47,8 @@ meta <- meta[, c(1, 2)]
 
 
 # Read in configs
-proj_info <- read_yaml(paste0('../../configs/local_configs.yaml'))
-final_info <- read_yaml(paste0('../../configs/final_configs.yaml'))
+proj_info <- read_yaml(paste0('../../configs/prelim_configs.yaml'))
+final_info <- read_yaml(paste0('../../configs/post_annotation_configs.yaml'))
 #proj_info <- read_yaml(paste0('../../configs/local_configs_dicer_test.yaml'))
 #final_info <- read_yaml(paste0('../../configs/final_configs_dicer_test.yaml'))
 

@@ -22,7 +22,7 @@ fi
 
 # confirm config file exists
 #-----------------------------------------------------------------------------
-config_file="configs/local_configs.yaml"
+config_file="configs/prelim_configs.yaml"
 
 if [ ! -e "$config_file" ]; then
 	echo "------------------------------"
@@ -75,7 +75,7 @@ sh helper_scripts/citations.sh
 
 #check if final config yaml exists
 #-----------------------------------------------------------------------------
-final_config_file="configs/final_configs.yaml"
+final_config_file="configs/post_annotation_configs.yaml"
 run_final=`python3 helper_scripts/cache_final.py RUN_FINAL_ANALYSIS:` #retrieves starting data from config file
 
 if [ -e "$final_config_file" ] && [[ $run_final == "y" ]]; then

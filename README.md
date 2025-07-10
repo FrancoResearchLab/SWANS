@@ -65,7 +65,7 @@ T5	mut4	/input_data/path_to_T5_starting_data
 T6	mut4	/input_data/path_to_T6_starting_data
 ```
 
-In `local_configs.yaml`, the path for the Cell Ranger reference genome should be set to the location of the genome in the target path:
+In `prelim_configs.yaml`, the path for the Cell Ranger reference genome should be set to the location of the genome in the target path:
 ```yaml
 CELLRANGER_REFERENCE: /reference_genome
 ```
@@ -113,7 +113,7 @@ T5	mut4	<path-to-test-data-location>/path_to_T5_starting_data
 T6	mut4	<path-to-test-data-location>/path_to_T6_starting_data
 ```
 
-In `local_configs.yaml`, the path for the Cell Ranger reference genome should be set to the location of the genome in the target path:
+In `prelim_configs.yaml`, the path for the Cell Ranger reference genome should be set to the location of the genome in the target path:
 
 ```yaml
 CELLRANGER_REFERENCE: <path-to-cellranger-reference>
@@ -142,12 +142,12 @@ yaml_2.3.10, magick_2.8.4, pdftools_3.4.0, rsconnect_1.3.1, dplyr_1.1.4, dt_0.33
 ## Quick Start Guide
 The SWANS pipeline will need to be run twice; the first pass will run the preliminary analysis, and the final pass will run the final analysis.  
 
-You must have  the following files in your working directory: `samples.sample_list`, `configs/local_configs.yaml`, `configs/final_configs.yaml`, and when running the final analysis, you must also have a `cluster_annotation_file`.
+You must have  the following files in your working directory: `samples.sample_list`, `configs/prelim_configs.yaml`, `configs/post_annotation_configs.yaml`, and when running the final analysis, you must also have a `cluster_annotation_file`.
 
 You must also have FASTQ files, [Cell Ranger](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/what-is-cell-ranger) output (w/ `outs` directory), <b>or</b> feature-barcode matrix file outputs for each sample you would like to analyze. 
 
 ### Running Pipeline
-In the directory containing `samples.sample_list`, `configs/local_configs.yaml`, and `configs/final_configs.yaml`, type `bash run_snakemake.sh`.   
+In the directory containing `samples.sample_list`, `configs/prelim_configs.yaml`, and `configs/post_annotation_configs.yaml`, type `bash run_snakemake.sh`.   
 
 * *******************************************************************************
 
@@ -181,11 +181,11 @@ In the `samples.sample_list`, one of the lines should look similar to below.
 `HTS_SO108_41_276_G1^IconditionX^Ipath_to_folder_holding_fastq_data/`
 </details>
 
-#### configs/local_configs.yaml
+#### configs/prelim_configs.yaml
 <details>
   <summary>Click to expand!</summary>
 
-Customize the [configs/example_local_configs.yaml](configs/example_local_configs.yaml) file by supplying your email and other options that best correspond to the analysis you would like to perform (*e.g.,* human vs mouse...). Be sure to remove `example_` from the file name.
+Customize the [configs/example_prelim_configs.yaml](configs/example_prelim_configs.yaml) file by supplying your email and other options that best correspond to the analysis you would like to perform (*e.g.,* human vs mouse...). Be sure to remove `example_` from the file name.
 
 ```yaml
 # contact (email will be sent when jobs complete) 
@@ -388,12 +388,12 @@ VISUALIZATION: dot
 
 </details>
 
-#### configs/final_configs.yaml
+#### configs/post_annotation_configs.yaml
 <details>
   <summary>Click to expand!</summary>
  <br> 
 
-Customize the [configs/example_final_configs.yaml](configs/example_final_configs.yaml) file by supplying your email and other options that best correspond to the analysis you would like to perform (*e.g.,* human vs mouse...). Be sure to remove `example_` from the file name.
+Customize the [configs/example_post_annotation_configs.yaml](configs/example_post_annotation_configs.yaml) file by supplying your email and other options that best correspond to the analysis you would like to perform (*e.g.,* human vs mouse...). Be sure to remove `example_` from the file name.
 
 **The first time running swans, set run_final_analysis to n!** do not set run_final_analysis to y until the initial analysis has completed and you are ready to label (annotate) your cells, perform dge across experimental conditions for each cluster, retrieve pathway analysis results, and optionally perform cursory trajectory analysis.
 
@@ -509,7 +509,7 @@ FINAL_THREADS: 30
 <details>
    <summary>Click to expand!</summary>
 
-The `CLUSTER_ANNOTATION_FILE` can have just about any name (the first character of the file name must be a letter (e.g., no numbers)). Include the _**relative path**_ to `CLUSTER_ANNOTATION_FILE` in `configs/final_configs.yaml`! The header must be tab-separated as below (e.g., `cluster^Icelltype^Ipartition` where `^I` represents a tab). On each line, the cluster number, cell type, and partition (for trajectory analysis) must also also separated by a tab.
+The `CLUSTER_ANNOTATION_FILE` can have just about any name (the first character of the file name must be a letter (e.g., no numbers)). Include the _**relative path**_ to `CLUSTER_ANNOTATION_FILE` in `configs/post_annotation_configs.yaml`! The header must be tab-separated as below (e.g., `cluster^Icelltype^Ipartition` where `^I` represents a tab). On each line, the cluster number, cell type, and partition (for trajectory analysis) must also also separated by a tab.
 
 If the user is running trajectory analysis with Monocle3 and wants to partition the cell clusters for trajectory analysis, an additional column named `partition` needs to be supplied in the `CLUSTER_ANNOTATION_FILE`. The partitions should be numbers (integrers). All clusters must be assigned to a partition (i.e., none can be left blank). If this column is not supplied in the `CLUSTER_ANNOTATION_FILE`, `PARTITION_TRAJECTORY` should be set to `n`, and the Monocle3 trajectory analysis will run without partitions.
 
@@ -713,7 +713,7 @@ Under figures will be PDFs named as follows: `project_name_DimPlot_Proportions_S
 An example snapshot of the PDF can be seen below:  
  ![PDF](markdown_images/pdf_report.png)
 
-**Note: feature plots are plotted by default, dotplots, violin plots, and ridgeplots must be specificed under `VISUALIZATION` in the `configs/local_configs.yaml` file.**
+**Note: feature plots are plotted by default, dotplots, violin plots, and ridgeplots must be specificed under `VISUALIZATION` in the `configs/prelim_configs.yaml` file.**
 
 For each possible configuration, there will be a proportions file and DEG results file (for each cluster) in the tables subfolders, and titled as follows:   
 a) `project_name_clusterProportions_SEURAT_NORMALIZATION_METHOD.SEURAT_INTEGRATION_METHOD_snn_res.RESOLUTION.txt`.   
@@ -731,7 +731,7 @@ b) will contain the upregulated genes for each cluster
 
 - This pipeline can create many UMAP configurations based on user input. Using the example above (2 normalization methods, 3 integration methods, and 3 resolutions), there will be 18 UMAP configurations...and that means there will also be 18 DGE files (each file is split by cluster therein). We have created a dynamic interactive report to help compare schemas/DEGs, but at the end of the day, someone will need to parse through all the data to make a decision. 
 
-- There is no way to run SWANS if the starting data is a mix of FASTQ files and `outs` from Cell Ranger. If this is your situation, run the pipeline on the FASTQ samples only by limiting the `samples.sample_list` to the FASTQ files and make sure you have configured the `local_configs.yaml`file to `y` for `RUN_CELLRANGER`.  Monitor your output (e.g., create MultiQC report), and when it appears, stop the pipeline. You will need to redo your samples file and your configuration file to include correct paths and to no longer run cellranger/multiqc, and consider using a different `PROJECT` name. 
+- There is no way to run SWANS if the starting data is a mix of FASTQ files and `outs` from Cell Ranger. If this is your situation, run the pipeline on the FASTQ samples only by limiting the `samples.sample_list` to the FASTQ files and make sure you have configured the `prelim_configs.yaml`file to `y` for `RUN_CELLRANGER`.  Monitor your output (e.g., create MultiQC report), and when it appears, stop the pipeline. You will need to redo your samples file and your configuration file to include correct paths and to no longer run cellranger/multiqc, and consider using a different `PROJECT` name. 
 
 - If you are doing differential gene expression analysis and the UMAP has a large single body split into multiple clusters, you will not get useful annotation markers for those clusters because `FindAllMarkers` compares each cluster to all cells in the remaining clusters in the data. Using the schema below as an example, when comparing cluster 0 to the combined cells in clusters 1, 2, 3, 4, 5, and 6, here are some things to note: 
 	- the largest cluster is `0` followed by cluster `1`
@@ -739,7 +739,7 @@ b) will contain the upregulated genes for each cluster
 	- dge results will likely highlight differences between clusters `0` and `1` when using `FindAllMarkers`, ditto for cluster `1` vs all cells 
  ![two_clusters_one_body](markdown_images/two_clusters_one_body.png)
 
- In such cases, a) if there are annotation candidates, those could be provided in a file and listed under `USER_GENE_FILE` in the `local_configs.yaml` file or b) the two clusters could be combined manually. Authors suggest `a)` as there are expected names/formats in the Seurat object that would not be present if manually altered, but we have attempted to address this by providing z-scores transformation on transcript expression.
+ In such cases, a) if there are annotation candidates, those could be provided in a file and listed under `USER_GENE_FILE` in the `prelim_configs.yaml` file or b) the two clusters could be combined manually. Authors suggest `a)` as there are expected names/formats in the Seurat object that would not be present if manually altered, but we have attempted to address this by providing z-scores transformation on transcript expression.
 </details>
 
 * *******************************************************************************

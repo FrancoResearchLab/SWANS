@@ -37,7 +37,7 @@ samples <- meta$samples
 
 
 # Configs
-proj_info <- read_yaml('../../configs/local_configs.yaml')
+proj_info <- read_yaml('../../configs/prelim_configs.yaml')
 project <- proj_info$`PROJECT`   
 organism <- proj_info$`ORGANISM`
 
@@ -53,7 +53,7 @@ split_layers <- proj_info$`SPLIT_LAYERS_BY`
 num_var_features <- proj_info$`NUM_VARIABLE_FEATURES`
 scale_data <- proj_info$`SCALE_DATA_FEATURES`
 
-final_info <- read_yaml('../../configs/final_configs.yaml')
+final_info <- read_yaml('../../configs/post_annotation_configs.yaml')
 normalization <- final_info$`FINAL_SEURAT_NORMALIZATION_METHOD`
 integration <- final_info$`FINAL_SEURAT_INTEGRATION_METHOD`
 resolution <- final_info$`FINAL_RESOLUTION`

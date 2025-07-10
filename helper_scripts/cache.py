@@ -5,7 +5,7 @@ reference_type, reference = '', ''
 config = sys.argv[1]
 
 def get_config(search_config):
-	with open('configs/local_configs.yaml') as input_file:
+	with open('configs/prelim_configs.yaml') as input_file:
 		for line in input_file.readlines():
 			line = line.lstrip()
 			if line.startswith(search_config):

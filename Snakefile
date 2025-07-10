@@ -13,7 +13,7 @@ import subprocess
 from helper_scripts.sample_list import get_samples
 import shutil
 
-configfile: 'configs/local_configs.yaml'
+configfile: 'configs/prelim_configs.yaml'
 
 # set config parameters
 # -------------------------------------------------------------------------
@@ -111,7 +111,7 @@ def replace_spaces_commas(config_param_name, config_param):
 	for o in options:
 		if config_param_name == 'SEURAT_NORMALIZATION_METHOD':
 			if o not in normalization_options:
-				print('Please write \'standard\' or \'sct\' in ' + config_param_name + ' the configs/local_configs.yaml file, then run this script again')
+				print('Please write \'standard\' or \'sct\' in ' + config_param_name + ' the configs/prelim_configs.yaml file, then run this script again')
 				sys.exit()
 			else:
 				flag = 0
@@ -119,14 +119,14 @@ def replace_spaces_commas(config_param_name, config_param):
 
 		if config_param_name == 'SEURAT_INTEGRATION_METHOD':
 			if o not in integration_options:
-				print('Please write \'cca\', \'rpca\',  or \'harmony\' for ' + config_param_name + ' in the configs/local_configs.yaml file, then run this script again')
+				print('Please write \'cca\', \'rpca\',  or \'harmony\' for ' + config_param_name + ' in the configs/prelim_configs.yaml file, then run this script again')
 				sys.exit()
 			else:
 				flag = 0
 
 		if config_param_name == 'STORAGE':
 			if o not in storage_options:
-				print('If you would like to save output as RDS, enter \'rds\' for ' + config_param_name + ' in the configs/local_configs.yaml file, then run this script again')
+				print('If you would like to save output as RDS, enter \'rds\' for ' + config_param_name + ' in the configs/prelim_configs.yaml file, then run this script again')
 				sys.exit()
 			else:
 				flag = 0
@@ -166,7 +166,7 @@ def not_null_check_no_yes(config_param, config_param_name):
 
 	if config_param is None or type(config_param) == 'NoneType' or config_param == ' ':
 		print(config_param_name + ' cannot be empty.')
-		print('Please write a value for ' + config_param_name + ' in the configs/local_configs.yaml file, then run this script again')
+		print('Please write a value for ' + config_param_name + ' in the configs/prelim_configs.yaml file, then run this script again')
 		sys.exit()
 
 	if config_param is not None and config_param != ' ':
@@ -186,7 +186,7 @@ def not_null_check_no_yes(config_param, config_param_name):
 				config_param = 'n'
 			if config_param not in yes_no_options:
 				print('You must provide a \'y\' or a \'n\' for', config_param_name)
-				print('Please write \'y\' or \'n\' in the configs/local_configs.yaml file, then run this script again')
+				print('Please write \'y\' or \'n\' in the configs/prelim_configs.yaml file, then run this script again')
 				sys.exit()
 		
 		if config_param_name in numeric_values:
@@ -196,7 +196,7 @@ def not_null_check_no_yes(config_param, config_param_name):
 				if config_param.isdigit() == False:
 					print(config_param_name)
 					print('You must provide a numeric value for ', config_param_name)
-					print('Please write a numeric value (e.g., 12) for this parameter in the configs/local_configs.yaml file, then run this script again')
+					print('Please write a numeric value (e.g., 12) for this parameter in the configs/prelim_configs.yaml file, then run this script again')
 					sys.exit()
 
 			if config_param_name == 'RESOLUTION':
@@ -209,7 +209,7 @@ def not_null_check_no_yes(config_param, config_param_name):
 
 					if temp_res.isdigit() == False:
 						print('You must provide a decimal value for ', config_param_name)
-						print('Please write decimal value(s) (e.g., 1.2 or 0.1,0.2) for this parameter in the configs/local_configs.yaml file, then run this script again')
+						print('Please write decimal value(s) (e.g., 1.2 or 0.1,0.2) for this parameter in the configs/prelim_configs.yaml file, then run this script again')
 						sys.exit()
 
 		if config_param_name in multi_options:
@@ -247,7 +247,7 @@ if RUN_CELLRANGER == 'y':
 
 	if CELLRANGER_REFERENCE is None:
 		print('You have selected \'y\' for RUN_CELLRANGER; the path for CELLRANGER_REFERENCE cannot be empty.')
-		print('Please list the path to the genome to be used as reference for Cell Ranger in the configs/local_configs.yaml file, then run this script again')
+		print('Please list the path to the genome to be used as reference for Cell Ranger in the configs/prelim_configs.yaml file, then run this script again')
 		sys.exit()
 	
 	# Re-naming
@@ -255,12 +255,12 @@ if RUN_CELLRANGER == 'y':
 
 	if CELLRANGER is None:
 		print('You have selected \'y\' for RUN_CELLRANGER; the path for CELLRANGER cannot be empty.')
-		print('Please list the path to the Cell Ranger executable in the configs/local_configs.yaml file, then run this script again')
+		print('Please list the path to the Cell Ranger executable in the configs/prelim_configs.yaml file, then run this script again')
 		sys.exit()
 
 	if STARTING_DATA != 'fastq':
 		print('You have selected \'y\' for RUN_CELLRANGER; the STARTING_DATA for CELLRANGER should be FASTQ files.')
-		print('Please make sure data are FASTQ files and that STARTING_DATA is \'fastq\' in the configs/local_configs.yaml file, then run this script again')
+		print('Please make sure data are FASTQ files and that STARTING_DATA is \'fastq\' in the configs/prelim_configs.yaml file, then run this script again')
 		sys.exit()
 
 	if OUTPUT_BAM is None:
@@ -280,34 +280,34 @@ if RUN_CELLRANGER == 'y' and (STARTING_DATA == 'fastq' or STARTING_DATA == 'cell
 if RUN_MULTIQC == 'y':
 	if MULTIQC is None:
 		print('You have selected \'y\' for RUN_MULTIQC; MULTIQC cannot be empty.')
-		print('Please list the path to the MULTIQC executable in the configs/local_configs.yaml file, then run this script again')
+		print('Please list the path to the MULTIQC executable in the configs/prelim_configs.yaml file, then run this script again')
 		sys.exit()
 
 	if STARTING_DATA != 'fastq' and STARTING_DATA != 'cellranger':
 		print('You have selected \'y\' for RUN_MULTIQC; STARTING_DATA must be \'cellranger\' or RUN_CELLRANGER must \'y\' and STARTING_DATA must be \'fastq\'.')
-		print('Please write \'cellranger\' for STARTING_DATA or \'y\' for RUN_CELLRANGER and \'fastq\' for STARTING_DATA in the configs/local_configs.yaml file, then run this script again')
+		print('Please write \'cellranger\' for STARTING_DATA or \'y\' for RUN_CELLRANGER and \'fastq\' for STARTING_DATA in the configs/prelim_configs.yaml file, then run this script again')
 		sys.exit()
 
 if RUN_CELLRANGER == 'n' and RUN_SOUPX == 'y' and STARTING_DATA != 'cellranger':
-		print('SoupX requires cellranger output files, please provide cellranger output files and write \'cellranger\' for STARTING_DATA or change RUN_SOUPX to \'n\' in the configs/local_configs.yaml file, then run this script again')
+		print('SoupX requires cellranger output files, please provide cellranger output files and write \'cellranger\' for STARTING_DATA or change RUN_SOUPX to \'n\' in the configs/prelim_configs.yaml file, then run this script again')
 		sys.exit()
 
 if RUN_SOUPX == 'y':
 	if (SOUPX_START != 'outs' and SOUPX_START != 'no_clusters' and SOUPX_START != 'h5') or SOUPX_START is None:
-		print('Please write \'outs\', \'no_clusters\', or \'h5\' for SOUPX_START in the configs/local_configs.yaml file, then run this script again')
+		print('Please write \'outs\', \'no_clusters\', or \'h5\' for SOUPX_START in the configs/prelim_configs.yaml file, then run this script again')
 		sys.exit()
 
 if (SPLIT_LAYERS_BY != 'Sample' and SPLIT_LAYERS_BY != 'Experiment'):
-	print('Please write \'Sample\' or \'Experiment\' for SPLIT_LAYERS_BY in the configs/local_configs.yaml file for SPLIT_LAYERS_BY, then run this script again')
+	print('Please write \'Sample\' or \'Experiment\' for SPLIT_LAYERS_BY in the configs/prelim_configs.yaml file for SPLIT_LAYERS_BY, then run this script again')
 	sys.exit()
 
 if (SCALE_DATA_FEATURES != 'all' and SCALE_DATA_FEATURES != 'variable'):
-	print('Please write \'variable\' or \'all\' for SCALE_DATA_FEATURES in the configs/local_configs.yaml file, then run this script again')
+	print('Please write \'variable\' or \'all\' for SCALE_DATA_FEATURES in the configs/prelim_configs.yaml file, then run this script again')
 	sys.exit()
 
 if CELL_CYCLE_REGRESSION == 'y':
 	if (CELL_CYCLE_METHOD != 'standard' and CELL_CYCLE_METHOD != 'alternative') or CELL_CYCLE_METHOD is None:
-		print('Please write \'standard\' or \'alternative\' for CELL_CYCLE_METHOD in the configs/local_configs.yaml file, then run this script again')
+		print('Please write \'standard\' or \'alternative\' for CELL_CYCLE_METHOD in the configs/prelim_configs.yaml file, then run this script again')
 		sys.exit()
 
 # if specific seurat options are being run, check that the additional parameters are present and correct
@@ -335,7 +335,7 @@ if REFERENCE_BASED_INTEGRATION == 'y':
 	if ref_flag == 1:
 		print('You have selected to run REFERENCE_BASED_INTEGRATION but the reference sample(s) you provided does not exist in the sample list:')
 		print('Here is the sample list:', SAMPLE_LIST)
-		print('Enter a new sample name or names for \'REFERENCE_SAMPLES\' in the configs/local_configs.yaml file, then run this script again')
+		print('Enter a new sample name or names for \'REFERENCE_SAMPLES\' in the configs/prelim_configs.yaml file, then run this script again')
 		sys.exit()
 
 	if ref_flag == 0:
@@ -355,7 +355,7 @@ if RUN_AZIMUTH == 'y':
 
 	if (AZIMUTH_REFERENCE not in azimuth_ref_list) or AZIMUTH_REFERENCE is None:
 		print('You have select \'y\' for RUN_AZIMUTH; AZIMUTH_REFERENCE must be selected.')
-		print('Please write one of the following: (' + ", ".join(str(x) for x in azimuth_ref_list)  + ') for AZIMUTH_REFERENCE in the configs/local_configs.yaml file, then run this script again')
+		print('Please write one of the following: (' + ", ".join(str(x) for x in azimuth_ref_list)  + ') for AZIMUTH_REFERENCE in the configs/prelim_configs.yaml file, then run this script again')
 		sys.exit()
 
 elif RUN_AZIMUTH == 'n':
@@ -367,7 +367,7 @@ elif RUN_AZIMUTH == 'n':
 if RUN_TRANSFERDATA == 'y':
 	if TRANSFERDATA_REF_FILE is None:
 		print('You have select \'y\' for RUN_TRANSFERDATA; TRANSFERDATA_REF_FILE must be selected.')
-		print('Please provide a path (absolute or relative) to the Seurat object file (.rds or .qs) to be used as the TRANSFERDATA_REF_FILE in the configs/local_configs.yaml file, then run this script again.')
+		print('Please provide a path (absolute or relative) to the Seurat object file (.rds or .qs) to be used as the TRANSFERDATA_REF_FILE in the configs/prelim_configs.yaml file, then run this script again.')
 		sys.exit()
 
 	if os.path.exists(TRANSFERDATA_REF_FILE) == False:
@@ -377,12 +377,12 @@ if RUN_TRANSFERDATA == 'y':
 
 	if TRANSFERDATA_REDUCTION is None:
 		print('You have select \'y\' for RUN_TRANSFERDATA; TRANSFERDATA_REDUCTION must be selected.')
-		print('Please provide the name of the reduction (such as pca) to be used in the TransferData process in the configs/local_configs.yaml file, then run this script again.')
+		print('Please provide the name of the reduction (such as pca) to be used in the TransferData process in the configs/prelim_configs.yaml file, then run this script again.')
 		sys.exit()
 
 	if TRANSFERDATA_ANNOCOL is None:
 		print('You have select \'y\' for RUN_TRANSFERDATA; TRANSFERDATA_ANNOCOL must be selected.')
-		print('Please provide the name of a column in the Seurat reference object metadata to be used for TransferData annotation of the project dataset in the configs/local_configs.yaml file, then run this script again.')
+		print('Please provide the name of a column in the Seurat reference object metadata to be used for TransferData annotation of the project dataset in the configs/prelim_configs.yaml file, then run this script again.')
 		sys.exit()
 
 elif RUN_TRANSFERDATA == 'n':
@@ -396,7 +396,7 @@ elif RUN_TRANSFERDATA == 'n':
 def user_files(user_file, user_file_name):
 	if user_file is not None:
 		if os.path.exists(user_file) == False:
-			out_line = 'The file you have listed in configs/local_configs.yaml : ' + user_file_name + ' does not exist.'
+			out_line = 'The file you have listed in configs/prelim_configs.yaml : ' + user_file_name + ' does not exist.'
 			print(out_line)
 			print('Please provide a proper name/path for the listed file')
 			sys.exit()
@@ -413,11 +413,11 @@ print(USER_GENE_FILE)
 
 if (ORGANISM != 'mouse' and ORGANISM != 'human') or ORGANISM is None:
 	print('This pipeline only works with mouse or human data')
-	print('Please write \'human\' or \'mouse\' in the configs/local_configs.yaml file, then run this script again')
+	print('Please write \'human\' or \'mouse\' in the configs/prelim_configs.yaml file, then run this script again')
 	sys.exit()
 
 if (STARTING_DATA != 'fastq' and STARTING_DATA != 'cellranger' and STARTING_DATA != 'matrix'):
-	print('Please write \'fastq\', \'cellranger\' or \'matrix\' in the configs/local_configs.yaml file, then run this script again')
+	print('Please write \'fastq\', \'cellranger\' or \'matrix\' in the configs/prelim_configs.yaml file, then run this script again')
 	sys.exit()
 
 '''
@@ -542,8 +542,8 @@ if not os.path.exists(compare_images_path):
 # --------------------------------------------------------------------------------------
 
 # ----------- ADD TO REPORT DIRECTORIES ------------------------------------------------
-config_file = 'configs/local_configs.yaml'
-new_config_file = report_path + 'local_configs.yaml'
+config_file = 'configs/prelim_configs.yaml'
+new_config_file = report_path + 'prelim_configs.yaml'
 
 interactive_report = 'src/rmd/Interactive_report.Rmd'
 new_interactive_report = report_path + 'Interactive_report.Rmd'

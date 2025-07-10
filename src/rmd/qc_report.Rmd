@@ -138,7 +138,7 @@ samples <- meta$samples
 
 ```{r configs, include=FALSE}
 # Read in configs
-proj_info <- read_yaml(paste0('../../configs/local_configs.yaml'))
+proj_info <- read_yaml(paste0('../../configs/prelim_configs.yaml'))
 
 ## Main project info
 project <- proj_info$`PROJECT`   

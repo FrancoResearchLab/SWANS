@@ -15,8 +15,8 @@ import re
 from helper_scripts.sample_list import get_samples
 import shutil
 
-configfile: 'configs/local_configs.yaml'
-configfile: 'configs/final_configs.yaml'
+configfile: 'configs/prelim_configs.yaml'
+configfile: 'configs/post_annotation_configs.yaml'
 
 # set config parameters
 # -------------------------------------------------------------------------
@@ -93,7 +93,7 @@ def replace_spaces_commas(config_param_name, config_param):
 	for index,o in enumerate(options):
 		if config_param_name == 'FINAL_STORAGE':
 			if o not in storage_options:
-				print('If you would like to save output as RDS, enter \'rds\' for ' + config_param_name + ' in the configs/final_configs.yaml file, then run this script again')
+				print('If you would like to save output as RDS, enter \'rds\' for ' + config_param_name + ' in the configs/post_annotation_configs.yaml file, then run this script again')
 				print('P.S. you can have \'sceo\', but that format must be saved as a RDS or QS file.')
 				sys.exit()
 			else:
@@ -129,7 +129,7 @@ def not_null_check_no_yes(config_param, config_param_name):
 
 	if config_param is None or type(config_param) == 'NoneType' or config_param == ' ':
 		print(config_param_name + ' cannot be empty.')
-		print('Please write a value for ' + config_param_name + ' in the configs/final_configs.yaml file, then run this script again')
+		print('Please write a value for ' + config_param_name + ' in the configs/post_annotation_configs.yaml file, then run this script again')
 		sys.exit()
 
 	if config_param is not None and config_param != ' ':
@@ -137,7 +137,7 @@ def not_null_check_no_yes(config_param, config_param_name):
 			m_options = ['avg_log2fc', 'p_val_adj', 'standard', 'sct', 'cca', 'rpca', 'harmony']
 			if config_param not in m_options:
 				print('You must provide valid options for ', config_param_name)
-				print('Please consult configs/final_configs.yaml for valid options, then run this script again')
+				print('Please consult configs/post_annotation_configs.yaml for valid options, then run this script again')
 				sys.exit()
 
 		if config_param_name not in numeric_values:
@@ -160,7 +160,7 @@ def not_null_check_no_yes(config_param, config_param_name):
 				config_param = 'n'
 			if config_param not in yes_no_options:
 				print('You must provide a \'y\' or a \'n\' for', config_param_name)
-				print('Please write \'y\' or \'n\' in the configs/final_configs.yaml file, then run this script again')
+				print('Please write \'y\' or \'n\' in the configs/post_annotation_configs.yaml file, then run this script again')
 				sys.exit()
 		
 		if config_param_name in numeric_values:
@@ -169,7 +169,7 @@ def not_null_check_no_yes(config_param, config_param_name):
 
 				if config_param.isdigit() == False:
 					print('You must provide a numeric value for ', config_param_name)
-					print('Please write a whole number (e.g., 12) for this parameter in the configs/final_configs.yaml file, then run this script again')
+					print('Please write a whole number (e.g., 12) for this parameter in the configs/post_annotation_configs.yaml file, then run this script again')
 					sys.exit()
 
 			if config_param_name != 'FINAL_THREADS':
@@ -181,7 +181,7 @@ def not_null_check_no_yes(config_param, config_param_name):
 
 					if temp_res.isdigit() == False:
 						print('You must provide a decimal value for ', config_param_name)
-						print('Please write decimal value(s) (e.g., 1.2 or 0.18) for this parameter in the configs/final_configs.yaml file, then run this script again')
+						print('Please write decimal value(s) (e.g., 1.2 or 0.18) for this parameter in the configs/post_annotation_configs.yaml file, then run this script again')
 						sys.exit()
 
 		if config_param_name in multi_options:
@@ -211,7 +211,7 @@ for index,n in enumerate(no_nulls):
 
 if (ORGANISM != 'mouse' and ORGANISM != 'human') or ORGANISM is None:
    print('This pipeline only works with mouse or human data')
-   print('Please write \'human\' or \'mouse\' in the configs/local_configs.yaml file, then run this script again')
+   print('Please write \'human\' or \'mouse\' in the configs/prelim_configs.yaml file, then run this script again')
    sys.exit()
 
 # trajectory analysis
@@ -335,10 +335,10 @@ if not os.path.exists(benchmark_dir):
 
 # ------------- ADD TO FINAL DIRECTORY ------------------------------------------------
 # cp local,final config files & samples/cell annotation file
-local_config = 'configs/local_configs.yaml'
-new_local_config = final_path + PROJECT + '_local_configs.yaml'
-final_config = 'configs/final_configs.yaml'
-new_final_config = final_path + PROJECT + '_final_configs.yaml'
+local_config = 'configs/prelim_configs.yaml'
+new_local_config = final_path + PROJECT + '_prelim_configs.yaml'
+final_config = 'configs/post_annotation_configs.yaml'
+new_final_config = final_path + PROJECT + '_post_annotation_configs.yaml'
 new_cluster_annotation_file = final_path + PROJECT + '_cluster_annotation.txt'
 new_samples_file = final_path + PROJECT + '_samples.sample_list'
 
@@ -363,12 +363,12 @@ if PROVIDE_ANALYZED_SEURAT_OBJECT == 'y' and os.path.isfile(USER_ANALYZED_SEURAT
 	# check for reduction naming convention
 	if USER_UMAP_REDUCTION is None:
 		print('USER_UMAP_REDUCTION cannot be empty when user supplies a seurat object.')
-		print('Inspect the seurat object & provide exact umap reduction name in configs/final_configs.yaml!!!')
+		print('Inspect the seurat object & provide exact umap reduction name in configs/post_annotation_configs.yaml!!!')
 		sys.exit()
 
 	if USER_TNSE_REDUCTION is None and TSNE == 'y':
 		print('USER_TNSE_REDUCTION cannot be empty when user supplies a seurat object.')
-		print('Inspect the seurat object & provide exact tsne reduction name in configs/final_configs.yaml!!!')
+		print('Inspect the seurat object & provide exact tsne reduction name in configs/post_annotation_configs.yaml!!!')
 		sys.exit()
 # -------------------------------------------------------------------------------------
 
@@ -422,7 +422,7 @@ if 'cloupe' in options:
 	eula_loc = re.search(r'"\s*([^"]+)\s*"', eula_loc)
 	if not os.path.exists(eula_loc.group(1) + '/eula_agreement'):
 		# print error message with instructions if EULA agreement for loupeR is not present
-		print("You have selected the 'cloupe' option for FINAL_STORAGE in final_configs.yaml.\n" + 
+		print("You have selected the 'cloupe' option for FINAL_STORAGE in post_annotation_configs.yaml.\n" + 
 			  "The .cloupe file format is part of the loupeR R package from 10x Genomics and\n" +
 			  "requires acceptance of the 10x Genomics loupeR End User License Agreement (EULA).\n")
 		print("Follow the instructions below to accept the loupeR EULA:\n" +

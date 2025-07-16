@@ -1,0 +1,21 @@
+# SWANS folders and files to ignore
+__pycache__/
+logs/
+data/
+benchmarks/
+benchmark_report/
+count_stamps/
+helper_scripts/make_symbolic_links.sh
+.Renviron
+
+# Snakemake folder to ignore
+.snakemake/
+
+# File types to ignore in the main dir
+/*.txt
+/*.pdf
+
+# User files to ignore
+samples.sample_list
+configs/prelim_configs.yaml
+configs/post_annotation_configs.yaml

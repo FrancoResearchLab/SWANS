@@ -191,6 +191,26 @@ if (run_doubletFinder == TRUE) {
 # -----
 ```
 
+```{r get_soupX_images_stats, include=FALSE}
+
+soupX_stats = vector(mode = 'list')
+soupX_imgs = vector(mode = 'list')
+
+# SoupX data ----
+if (run_soupX == TRUE) 
+{
+  for (sample in samples) 
+  {
+    sample_soupX_dir = paste0('../../data/endpoints/', project, '/', sample, '/', 'soupX/')
+
+    # Path to figure
+    soupX_imgs[[sample]] = paste0(sample_soupX_dir, project, '_', sample, '_contam_plot.png')
+  }
+}
+
+```
+
+
 ```{r get qc images from initial Seurat object}
 # Seurat QC plots -----
 
@@ -233,9 +253,96 @@ Ribosomal Filtering Threshold: `r ribo_thresh`
 Minimum Features (per cell) Threshold: `r minfeat_thresh`    
 Maximum Features (per cell) Threshold: `r maxfeat_thresh`    
 
+# DoubletFinder + SoupX
 <hr style="border:1px solid gray"/>
+```{r DoubletFinder_SoupX, echo=FALSE, include=TRUE, out.width="50%", results="asis"}
+if (run_doubletFinder == FALSE)
+{
+	 cat("  \n####", "DoubletFinder was not run.  \n")
+}
 
-## DoubletFinder
+if (run_soupX == FALSE)
+{
+	 cat("  \n####", "SoupX was not run.  \n")
+}
+
+for (sample in samples) 
+{
+	if (run_soupX == TRUE && run_doubletFinder == FALSE) 
+	{
+        cat("  \n###",  "SoupX -- Sample: ", sample)
+        # Option with zoom
+        cat('  \n', '<div class="image-container">')
+        cat('  \n',  '<img src=', '"', soupX_imgs[[sample]], '"', ' alt="Click to enlarge" width="60%"/>  \n', sep = '')
+        cat('  \n', '</div>')
+
+        if (sample != samples[length(samples)])
+        {
+            cat("  \n***  \n")
+        }
+	} 
+
+	if (run_doubletFinder == TRUE && run_soupX == FALSE) 
+	{
+        n_cells = doublet_stats[[sample]]$cell_count
+        n_doublets = doublet_stats[[sample]]$doublet_count
+        doublet_rate = doublet_stats[[sample]]$doublet_rate
+        n_cells_diff = as.numeric(n_cells) - as.numeric(n_doublets)
+
+        cat("  \n###",  "DoubletFinder -- Sample: ", sample)
+        cat("  \n",  "Total number of cells: ", n_cells)
+        cat("  \n",  "Doublet rate: ", doublet_rate)
+        cat("  \n",  "Total number of doublets: ", n_doublets)
+        cat("  \n",  "Number of cells after doublet removal: ", n_cells_diff)
+
+        # Option without zoom
+        # to control width: ![](path/png'){width=50%}
+        # cat("  \n", "![](", qc_report_imgs, "doubletFinder/", project, "_", sample, "_doublet", ".png){width=75%}", "  \n", sep = "")
+
+        # Option with zoom
+        cat('  \n', '<div class="image-container">')
+        cat('  \n',  '<img src=', '"', doublet_imgs[[sample]], '"', ' alt="Click to enlarge" width="60%"/>  \n', sep = '')
+        cat('  \n', '</div>')
+
+        if (sample != samples[length(samples)])
+        {
+            cat("  \n***  \n")
+        }
+	} 
+
+	if (run_doubletFinder == TRUE && run_soupX == TRUE) 
+	{
+        n_cells = doublet_stats[[sample]]$cell_count
+        n_doublets = doublet_stats[[sample]]$doublet_count
+        doublet_rate = doublet_stats[[sample]]$doublet_rate
+        n_cells_diff = as.numeric(n_cells) - as.numeric(n_doublets)
+
+        cat("  \n###",  "DoubletFinder -- Sample: ", sample)
+        cat("  \n",  "Total number of cells: ", n_cells)
+        cat("  \n",  "Doublet rate: ", doublet_rate)
+        cat("  \n",  "Total number of doublets: ", n_doublets)
+        cat("  \n",  "Number of cells after doublet removal: ", n_cells_diff)
+
+        # Option with zoom
+        cat('  \n', '<div class="image-container">')
+        cat('  \n',  '<img src=', '"', doublet_imgs[[sample]], '"', ' alt="Click to enlarge" width="60%"/>  \n', sep = '')
+        cat('  \n', '</div>')
+
+        cat("  \n###",  "SoupX -- Sample: ", sample)
+        cat('  \n', '<div class="image-container">')
+        cat('  \n',  '<img src=', '"', soupX_imgs[[sample]], '"', ' alt="Click to enlarge" width="60%"/>  \n', sep = '')
+        cat("  \n#####",  "This plot shows the estimated contamination fraction (ρ) — the proportion of RNA counts originating from ambient background rather than true cellular expression. The x-axis represents possible contamination levels, while the solid curve on the y-axis shows the posterior density: how likely each contamination level is, given the observed data. The teal vertical line marks the most probable contamination fraction, which is used to adjust the counts. The curve’s shape reflects confidence in the estimate — a sharp peak indicates a well-defined contamination level, while a flatter curve suggests more uncertainty. The dashed line represents assumptions on how likely contamination occurs.")
+        cat('  \n', '</div>')
+
+        if (sample != samples[length(samples)])
+        {
+            cat("  \n***  \n")
+        }
+	} 
+}
+```
+
+<!-- 
 ```{r DoubletFinder, echo=FALSE, include=TRUE, out.width="50%", results="asis"}
 
 if (run_doubletFinder == TRUE) {
@@ -270,6 +377,7 @@ if (run_doubletFinder == TRUE) {
     cat("  \n####", "DoubletFinder not run.  \n")
 }
 ```
+-->
 
 <hr style="border:1px solid gray"/>
  

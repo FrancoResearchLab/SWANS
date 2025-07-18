@@ -50,7 +50,7 @@ suppressMessages(library(DoubletFinder, lib.loc = lib_path))
 # PARALLEL w/ FUTURE + SET SEED
 # --------------------------------------------------------------------
 options(future.globals.maxSize = 20000 * 1024^2)
-plan(multisession(workers = as.integer(6)))
+plan(multisession(workers = as.integer(processes)))
 
 set.seed(42)
 # --------------------------------------------------------------------

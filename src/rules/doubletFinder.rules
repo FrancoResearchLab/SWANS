@@ -29,7 +29,7 @@ rule doubletFinder:
 		processes = THREADS
 	output:
 		doublet_list = 'data/endpoints/' + PROJECT + '/' + '{s}/doubletFinder/tables/' + PROJECT + '_{s}_doublet_ids.txt'
-	threads: round(THREADS/6, 0)
+	threads: 2
 	log:
 		log_output = doubletFinder_log + PROJECT + '_{s}_doubletFinder.log'
 	benchmark: benchmark_log + PROJECT.lower() + '_{s}_doubletFinder.benchmark'  #added 12.4.2024 ERR
@@ -43,6 +43,6 @@ rule doubletFinder:
 		{params.components} \
 		{params.organism} \
 		{params.lib_path} \
-		{params.processes} \
+		{params.threads} \
 		2> {log.log_output}"
 

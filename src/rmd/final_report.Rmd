@@ -128,7 +128,7 @@ for (cl in ucluster)
 # make named list of data.frames, one per cluster
 cluster_data_list <- lapply(ucluster, function(cl) {
   final_markers %>% filter(cluster == cl) %>%
- Final select(gene, cluster, comparison, avg_log2FC, p_val, p_val_adj, pct_1, pct_2)
+  select(gene, cluster, comparison, avg_log2FC, p_val, p_val_adj, pct_1, pct_2)
 
 })
 

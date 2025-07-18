@@ -12,39 +12,93 @@ data_type <- ''
 project <- ''
 soupX_input_path <- ''
 soupX_ouput_path <- ''
+starter_data <- ''
+
 args = commandArgs(trailingOnly=TRUE)
 
 # test if there is at least one argument: if not, return an error
-if (length(args) < 6) {
+if (length(args) < 7) {
   stop('At least six arguments must be supplied.', call.=FALSE)
-} else if (length(args)==6) {
+} else if (length(args)==7) {
 	lib_path = args[1]
 	sam = args[2] #name of sample
 	data_type = args[3] # starting data_type (out, filtered, h5)
 	project = args[4] #project name
 	soupX_input_path = args[5]
 	soupX_ouput_path = args[6]
+	starter_data = args[7]
 }
 
 library('SoupX', lib.loc=lib_path)
 library('DropletUtils', lib.loc=lib_path)
+library('ggplot2', lib.loc=lib_path)
 
 set.seed(42)
+
+# contamination plot function
+#--------------------------------------------------------------------
+contam_plot = function(sc)
+{
+	fit  <- sc$fit
+	dd   <- fit$dd$rhoEst   # all individual contamination estimates
+	#post <- fit$posterior   # the averaged posterior density data.frame
+
+	x_vals <- seq(0, 0.5, length.out = length(fit$posterior))
+   post <- data.frame(x = x_vals, y = fit$posterior)
+
+	print('fit\n')
+	print(summary(fit))
+	print('dd\n')
+	print(summary(dd))
+	print('post\n')
+	print(summary(post))
+
+	p_contam <- ggplot(post, aes(x = x, y = y)) +
+		geom_line(color = '#440154FF', size = 1.2) +  # blue solid line
+		geom_vline(xintercept = fit$rhoEst, color = '#26828EFF', size = 1, linetype = 'solid') +  # red estimate line
+		stat_function(fun = function(x) 
+		{
+			dgamma(x, shape = (fit$priorRho / fit$priorRhoStdDev)^2, rate  = fit$priorRho / (fit$priorRhoStdDev^2))
+		},
+		color = '#C0C0C0', linetype = 'dashed', size = 1) +  # gray dashed prior
+		labs(
+			x = expression('Contamination Fraction ('*rho*')'),
+			y = 'Posterior Density',
+			title = 'Estimated Contamination Fraction',
+			subtitle = paste0('Estimated ρ = ', round(fit$rhoEst, 3))
+		) +
+		theme_classic(base_size = 14) +
+		theme(
+			plot.title = element_text(face = 'bold', size = 16),
+			plot.subtitle = element_text(size = 12, margin = margin(b = 10)),
+			axis.title = element_text(face = 'bold')
+		)
+	
+	return(p_contam)
+}
+#--------------------------------------------------------------------
+
 
 # CLEAN DATA: outs #
 #--------------------------------------------------------------------
 soupify_outs <- function(in_path, out_path)
 {
 	print('loading')
+	print(in_path)
+	print(out_path)
 	sc <- load10X(in_path)
+
 	print('estimating')
-	pdf(file = paste0(soupX_ouput_path, project, '_', sam, '_', 'contam_plot.pdf'), height = 8, width = 8)
 	sc=autoEstCont(sc)
-	dev.off()
+
 	print('adjusting')
 	out=adjustCounts(sc, roundToInt=TRUE)
 	print('writing')
 	write10xCounts(out_path, out, version='3', overwrite=TRUE)
+
+	png(filename = paste0(out_path, '/', project, '_', sam, '_', 'contam_plot.png'), height = 2000, width = 2700, res=300)
+	print(contam_plot(sc))
+	dev.off()
 }
 
 if (data_type == 'outs')
@@ -65,8 +119,15 @@ soupify_noclusters <- function(in_path, out_path)
 
 	print(in_path)
 	print(out_path)
-	r=paste(in_path, 'raw_feature_bc_matrix/', sep='')
-	f=paste(in_path, 'filtered_feature_bc_matrix/', sep='')
+
+	r = in_path
+	f = out_path
+
+	if (starter_data == 'cellranger' || starter_data == 'fastq')
+	{
+		r=paste(in_path, 'outs/raw_feature_bc_matrix/', sep='')
+		f=paste(in_path, 'outs/filtered_feature_bc_matrix/', sep='')
+	}
 
 	raw <- Read10X(data.dir=r)
 	filt <- Read10X(data.dir=f)
@@ -86,11 +147,15 @@ soupify_noclusters <- function(in_path, out_path)
 	filt <-Read10X(data.dir=f)
 	sc=SoupChannel(raw,filt)
 	sc=setClusters(sc,clusters)
-	pdf(file = paste0(soupX_ouput_path, project, '_', sam, '_', 'contam_plot.pdf'), height = 8, width = 8)
-	sc=autoEstCont(sc)
-	dev.off()
+
+	sc=autoEstCont(sc, doPlot=TRUE)
+
 	out=adjustCounts(sc, roundToInt=TRUE)
 	write10xCounts(out_path, out, version='3', overwrite = TRUE)
+
+	png(filename = paste0(out_path, '/', project, '_', sam, '_', 'contam_plot.png'), height = 2000, width = 2700, res=300)
+	print(contam_plot(sc))
+	dev.off()
 }
 
 # users need sub-directories (57,58), and no outs dir
@@ -125,11 +190,13 @@ soupify_h5 <- function(in_path, out_path)
 
 	sc = SoupChannel(raw,filt)
 	sc = setClusters(sc,clusters)
-	pdf(file = paste0(soupX_ouput_path, project, '_', sam, '_', 'contam_plot.pdf'), height = 8, width = 8)
 	sc=autoEstCont(sc)
-	dev.off()
 	out = adjustCounts(sc, roundToInt=TRUE)
 	write10xCounts(out_path, out, version='3', overwrite = TRUE)
+
+	png(filename = paste0(out_path, '/', project, '_', sam, '_', 'contam_plot.png'), height = 2000, width = 2700, res=300)
+	print(contam_plot(sc))
+	dev.off()
 }
 
 # users need files (98,99), and no outs dir

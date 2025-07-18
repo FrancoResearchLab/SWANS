@@ -22,6 +22,7 @@ rule soupX:
 		input_type = SOUPX_START,
 		soupX_input = 'data/endpoints/' + PROJECT + '/{s}/' + STARTING_DATA + '/',
 		soupx_output = 'data/endpoints/' + PROJECT + '/' + '{s}/soupX/',
+		starting_data = STARTING_DATA
 	output:
 		barcodes_path = 'data/endpoints/' + PROJECT + '/' + '{s}/soupX/barcodes.tsv.gz',
 		features_path = 'data/endpoints/' + PROJECT + '/' + '{s}/soupX/features.tsv.gz',
@@ -30,4 +31,4 @@ rule soupX:
 		log_output = soupX_log  + PROJECT + '_{s}_soupX.log'
 	benchmark: benchmark_log + PROJECT.lower() + '_{s}_soupX.benchmark' #added 12.4.2024 ERR
 	shell:
-		"Rscript {input.script} {params.r_lib_path} {params.sample} {params.input_type} {params.project} {params.soupX_input} {params.soupx_output} 2> {log.log_output}"
+		"Rscript {input.script} {params.r_lib_path} {params.sample} {params.input_type} {params.project} {params.soupX_input} {params.soupx_output} {params.starting_data} 2> {log.log_output}"

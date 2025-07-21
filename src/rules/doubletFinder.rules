@@ -43,6 +43,6 @@ rule doubletFinder:
 		{params.components} \
 		{params.organism} \
 		{params.lib_path} \
-		{params.threads} \
+		{threads} \
 		2> {log.log_output}"
 

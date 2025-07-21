@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # Author:	E. Reichenberger
 # Date:		2.16.2021
 
@@ -113,7 +114,7 @@ if (data_type == 'outs')
 
 # CLEAN DATA: no cluster information  #
 #--------------------------------------------------------------------
-soupify_noclusters <- function(in_path, out_path)
+soupify_noclusters <- function(sam, in_path, out_path)
 {
 	library('Seurat', lib.loc=lib_path)
 
@@ -125,8 +126,8 @@ soupify_noclusters <- function(in_path, out_path)
 
 	if (starter_data == 'cellranger' || starter_data == 'fastq')
 	{
-		r=paste(in_path, 'outs/raw_feature_bc_matrix/', sep='')
-		f=paste(in_path, 'outs/filtered_feature_bc_matrix/', sep='')
+		r=file.path(in_path, 'outs/raw_feature_bc_matrix/')
+		f=file.path(in_path, 'outs/filtered_feature_bc_matrix/')
 	}
 
 	raw <- Read10X(data.dir=r)
@@ -153,7 +154,7 @@ soupify_noclusters <- function(in_path, out_path)
 	out=adjustCounts(sc, roundToInt=TRUE)
 	write10xCounts(out_path, out, version='3', overwrite = TRUE)
 
-	png(filename = paste0(out_path, '/', project, '_', sam, '_', 'contam_plot.png'), height = 2000, width = 2700, res=300)
+	png(filename = file.path(out_path, paste0('/', project, '_', sam, '_', 'contam_plot.png')), height = 2000, width = 2700, res=300)
 	print(contam_plot(sc))
 	dev.off()
 }
@@ -161,7 +162,7 @@ soupify_noclusters <- function(in_path, out_path)
 # users need sub-directories (57,58), and no outs dir
 if (data_type == 'no_clusters')
 {
-	soupify_noclusters(soupX_input_path, soupX_ouput_path)
+	soupify_noclusters(sam, soupX_input_path, soupX_ouput_path)
 }
 #--------------------------------------------------------------------
 
@@ -194,7 +195,7 @@ soupify_h5 <- function(in_path, out_path)
 	out = adjustCounts(sc, roundToInt=TRUE)
 	write10xCounts(out_path, out, version='3', overwrite = TRUE)
 
-	png(filename = paste0(out_path, '/', project, '_', sam, '_', 'contam_plot.png'), height = 2000, width = 2700, res=300)
+	png(filename = file.path(out_path, paste0('/', project, '_', sam, '_', 'contam_plot.png')), height = 2000, width = 2700, res=300)
 	print(contam_plot(sc))
 	dev.off()
 }
@@ -207,5 +208,5 @@ if (data_type == 'h5')
 	#cellranger_data = paste(soupX_input_path, 'outs/', sep='')
 	#soupify_outs(cellranger_data, soupX_ouput_path)
 
-	soupify_noclusters(soupX_input_path, soupX_ouput_path)
+	soupify_noclusters(sam, soupX_input_path, soupX_ouput_path)
 }

@@ -228,8 +228,8 @@ run_doubletfinder <- function(seurat.object, doublet.rate, pk.value)
   nExp.poi <- round(doublet.rate * nrow(seurat.object@meta.data))
   nExp.poi.adj <- round(nExp.poi * (1 - homotypic.prop))
 
-  seurat.object <- doubletFinder(seurat.object, PCs = 1:components, pN = pN, pK = pk.value, nExp = nExp.poi, reuse.pANN = FALSE, sct = FALSE)
-  seurat.object <- doubletFinder(seurat.object, PCs = 1:components, pN = pN, pK = pk.value, nExp = nExp.poi.adj, reuse.pANN = FALSE, sct = FALSE)
+  seurat.object <- doubletFinder(seurat.object, PCs = 1:components, pN = pN, pK = pk.value, nExp = nExp.poi, reuse.pANN = NULL, sct = FALSE)
+  seurat.object <- doubletFinder(seurat.object, PCs = 1:components, pN = pN, pK = pk.value, nExp = nExp.poi.adj, reuse.pANN = NULL, sct = FALSE)
 
   return(seurat.object)
 }

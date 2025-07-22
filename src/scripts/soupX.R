@@ -12,7 +12,7 @@ lib_path <- ''
 data_type <- ''
 project <- ''
 soupX_input_path <- ''
-soupX_ouput_path <- ''
+soupX_output_path <- ''
 starter_data <- ''
 
 args = commandArgs(trailingOnly=TRUE)
@@ -26,7 +26,7 @@ if (length(args) < 7) {
 	data_type = args[3] # starting data_type (out, filtered, h5)
 	project = args[4] #project name
 	soupX_input_path = args[5]
-	soupX_ouput_path = args[6]
+	soupX_output_path = args[6]
 	starter_data = args[7]
 }
 
@@ -35,6 +35,9 @@ library('DropletUtils', lib.loc=lib_path)
 library('ggplot2', lib.loc=lib_path)
 
 set.seed(42)
+
+# CREATE OUT PATH
+dir.create(soupX_output_path, recursive=TRUE, showWarnings=FALSE)
 
 # contamination plot function
 #--------------------------------------------------------------------
@@ -45,7 +48,7 @@ contam_plot = function(sc)
 	#post <- fit$posterior   # the averaged posterior density data.frame
 
 	x_vals <- seq(0, 0.5, length.out = length(fit$posterior))
-   post <- data.frame(x = x_vals, y = fit$posterior)
+    post <- data.frame(x = x_vals, y = fit$posterior)
 
 	print('fit\n')
 	print(summary(fit))
@@ -108,7 +111,7 @@ if (data_type == 'outs')
 
 	cellranger_data = paste(soupX_input_path, 'outs/', sep='')
 	print(cellranger_data)
-	soupify_outs(cellranger_data, soupX_ouput_path)
+	soupify_outs(cellranger_data, soupX_output_path)
 }
 #--------------------------------------------------------------------
 
@@ -162,7 +165,7 @@ soupify_noclusters <- function(sam, in_path, out_path)
 # users need sub-directories (57,58), and no outs dir
 if (data_type == 'no_clusters')
 {
-	soupify_noclusters(sam, soupX_input_path, soupX_ouput_path)
+	soupify_noclusters(sam, soupX_input_path, soupX_output_path)
 }
 #--------------------------------------------------------------------
 
@@ -206,7 +209,7 @@ if (data_type == 'h5')
 	print('h5')
 
 	#cellranger_data = paste(soupX_input_path, 'outs/', sep='')
-	#soupify_outs(cellranger_data, soupX_ouput_path)
+	#soupify_outs(cellranger_data, soupX_output_path)
 
-	soupify_noclusters(sam, soupX_input_path, soupX_ouput_path)
+	soupify_noclusters(sam, soupX_input_path, soupX_output_path)
 }

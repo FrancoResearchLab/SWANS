@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # Author:		K. Beigel
 # Date:			9.30.2024
 

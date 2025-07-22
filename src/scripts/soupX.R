@@ -113,7 +113,7 @@ if (data_type == 'outs')
 
 # CLEAN DATA: no cluster information  #
 #--------------------------------------------------------------------
-soupify_noclusters <- function(in_path, out_path)
+soupify_noclusters <- function(sam, in_path, out_path)
 {
 	library('Seurat', lib.loc=lib_path)
 

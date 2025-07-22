@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # Author:		K. Beigel
 # Original code: E. Reichenberger
 # Date:			6.20.2024
@@ -63,13 +64,16 @@ pN <- 0.25
 # OUTPUT PATHS FOR FIGURES AND DATATABLES
 #--------------------------------------------------------------------
 # Define figure and tables folders under sample folder
-fig_dir <- paste0(output_path, '/figures/')
-tbl_dir <- paste0(output_path, '/tables/')
+fig_dir <- file.path(output_path, 'figures')
+tbl_dir <- file.path(output_path, 'tables')
+print(paste0('Output path for figures: ', fig_dir))
 #--------------------------------------------------------------------
 
-# MAKE FIGURE DIR
+# MAKE OUTPUT DIRS
 #--------------------------------------------------------------------
+dir.create(output_path, showWarnings = FALSE, recursive = TRUE)
 dir.create(fig_dir, showWarnings = FALSE)
+dir.create(tbl_dir, showWarnings = FALSE)
 #--------------------------------------------------------------------
 
 # MAKE THRESHOLDS NUMERIC
@@ -91,14 +95,15 @@ make_seuratobj <- function(inpath, starting.data, project, sample)
   }
 
   if (starting.data == 'cellranger') {
-    outs.dir <- paste0(inpath, 'outs/filtered_feature_bc_matrix')
+    outs.dir <- file.path(inpath, 'outs/filtered_feature_bc_matrix')
   }
-
+  print(paste0('Reading in data from: ', outs.dir))
   sample.data <- Read10X(data.dir = outs.dir)
   so <- CreateSeuratObject(counts = sample.data,
-                           project = paste0(project, '_', sample),
-                           min.cells = 0,
-                           min.features = 0)
+    project = paste0(project, '_', sample),
+    min.cells = 0,
+    min.features = 0
+  )
 
   return(so)
 }
@@ -139,7 +144,7 @@ determine_multiplet_rate <- function(seurat.object)
   print(paste0('Mutiplet rate for ', cell.count, ' cells: ', doublet.predictor))
   write.table(
     data.frame(cell_count = cell.count, doublet_rate = doublet.predictor),
-    file = paste0(tbl_dir, project, '_', sample, '_', 'doubletfinder_stats.csv'),
+    file = file.path(tbl_dir, paste0(project, '_', sample, '_', 'doubletfinder_stats.csv')),
     quote = FALSE, sep = ',', row.names = FALSE
   )
 

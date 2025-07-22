@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # Author:		E. Reichenberger
 # Date:			Winter 24/25
 # Purpose: Combine benchmarking files into one, make pretty images.

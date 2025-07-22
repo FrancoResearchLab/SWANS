@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # Author:	E. Reichenberger
 # Date:		8.08.2024
 

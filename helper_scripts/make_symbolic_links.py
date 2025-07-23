@@ -37,8 +37,9 @@ def get_samples(project, starting_data):
 						SAMPLE_LIST.append(sample)
 						if sample not in sample_path_dic:
 							sample_path_dic[sample] = path
-							
-		with open('helper_scripts/make_symbolic_links.sh', 'w') as output_file:
+		# get location of script to easily find others
+		parent = Path(sys.argv[0]).resolve().parent
+		with open(f"{parent}/make_symbolic_links.sh", 'w') as output_file:
 			for s in SAMPLE_LIST:
 				path_list = ''
 

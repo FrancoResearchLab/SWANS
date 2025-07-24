@@ -26,8 +26,8 @@ if (length(args) < nargs) {
 	organism = args[3]
 	seurat_creation_source = args[4]
 	run_doubletfinder = args[5]
-	mito_cutoff = args[6] #mito cut-off for scRNA
-	ribo_cutoff = args[7] #mito cut-off for scRNA
+	mito_cutoff = args[6] # mito cut-off for scRNA
+	ribo_cutoff = args[7] # ribo cut-off for scRNA
 	min_feature_threshold = args[8]
 	max_feature_threshold = args[9]
 	seurat_file_name = args[10]
@@ -44,13 +44,13 @@ library(dplyr, lib.loc = lib_path)
 # CREATE DIRECTORIES
 #--------------------------------------------------------------------
 # Output
-base_directory = paste0('data/endpoints/', project, '/analysis/')
-figure_dir = paste0(base_directory, '/figures')
-rds_dir = paste0(base_directory, '/RDS')
-table_dir = paste0(base_directory, '/tables')
+base_directory = file.path('data/endpoints', project, 'analysis')
+figure_dir = file.path(base_directory, 'figures')
+rds_dir = file.path(base_directory, 'RDS')
+table_dir = file.path(base_directory, 'tables')
 
 for (dir in c(figure_dir, rds_dir, table_dir)) {
-	dir.create(dir, showWarnings = FALSE)
+	dir.create(dir, showWarnings = FALSE, recursive = TRUE)
 }
 #--------------------------------------------------------------------
 
@@ -60,8 +60,8 @@ mito = '^MT-'
 ribo = '^RP[LS]'
 
 if (tolower(organism) == 'mouse') {
-	 mito = '^mt-'
-	 ribo = '^Rp[ls]'
+	mito = '^mt-'
+	ribo = '^Rp[ls]'
 }
 #--------------------------------------------------------------------
 
@@ -96,11 +96,11 @@ make_list_seuobjs = function(sample.list, merge.data.source)
 
 		# determine location of files
 		if (merge.data.source == 'matrix' || merge.data.source == 'soupX') {
-			data.path = paste0('data/endpoints/', project, '/', sample, '/', merge.data.source, '/')
+			data.path = file.path('data/endpoints/', project, sample, merge.data.source)
 		}
 
 		if (merge.data.source == 'cellranger') {
-			data.path = paste0('data/endpoints/', project, '/', sample, '/', merge.data.source, '/outs/filtered_feature_bc_matrix/')
+			data.path = file.path('data/endpoints/', project, sample, merge.data.source, 'outs/filtered_feature_bc_matrix')
 		}
 
 		print(paste('Loading 10X data for', sample, 'from', data.path))
@@ -114,7 +114,7 @@ make_list_seuobjs = function(sample.list, merge.data.source)
 		seu.obj[['percent.ribo']] = PercentageFeatureSet(seu.obj, pattern = ribo)
 		print(paste(project, sample, 'doublet_ids', sep = '_'))
 		if (run_doubletfinder == 'y') {
-			doublet.file = paste0('data/endpoints/', project, '/', sample, '/doubletFinder/tables/', project, '_', sample, '_', 'doublet_ids.txt')
+			doublet.file = file.path('data/endpoints/', project, sample, 'doubletFinder/tables', paste0(project, '_', sample, '_', 'doublet_ids.txt'))
 			doublet.ids = read.table(doublet.file, header = TRUE)
 			doublet.ids = doublet.ids[, 'doublet_ids']
 			print(paste0('Number of doublets: ', length(doublet.ids)))
@@ -170,7 +170,7 @@ seu_qc_plots = function(seu.obj, plot.set, title, caption)
 	}
 	
 	n_cells <- ncol(seu.obj)
-	f <- paste0(figure_dir, '/', project, '_qc_', plot.set)
+	f <- file.path(figure_dir, paste0(project, '_qc_', plot.set))
 	png(file = paste0(f, '_vln.png'), width = 11, height = 8.5, res = 300, units = 'in')
 	print(
 		VlnPlot(

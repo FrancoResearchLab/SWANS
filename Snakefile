@@ -11,6 +11,7 @@ import os
 import os.path
 import subprocess
 from helper_scripts.sample_list import get_samples
+from pathlib import Path 
 import shutil
 
 configfile: 'configs/prelim_configs.yaml'
@@ -65,6 +66,7 @@ AZIMUTH_REFERENCE = config['AZIMUTH_REFERENCE']
 USER_GENE_FILE = config['USER_GENE_FILE']
 REGRESSION_FILE = config['REGRESSION_FILE']
 VISUALIZATION = config['VISUALIZATION']
+
 #-------------------------------------------------------------------------------------
 
 # Set storage type to qs if none provided

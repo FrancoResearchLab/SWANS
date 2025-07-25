@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # Author: K. Beigel
 # Date: 8.18.2024
 # Purpose: Trajectory analysis using monocle3.

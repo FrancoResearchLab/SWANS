@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # Author: K. Beigel
 # Date: 7.22.2024
 # Purpose: Processing of Seurat object. This script will handle either an individual sample Seurat object or merged Seurat.

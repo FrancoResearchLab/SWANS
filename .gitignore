@@ -19,3 +19,7 @@ helper_scripts/make_symbolic_links.sh
 samples.sample_list
 configs/prelim_configs.yaml
 configs/post_annotation_configs.yaml
+
+# IDE development files to ignore
+.idea/
+.vscode/

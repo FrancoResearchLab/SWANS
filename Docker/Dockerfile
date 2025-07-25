@@ -85,7 +85,7 @@ RUN pip3 install \
 ################################
 
 # Add Cell Ranger - download link needs to be update with every build the key pair expires
-RUN wget -O cellranger-9.0.1.tar.gz "https://cf.10xgenomics.com/releases/cell-exp/cellranger-9.0.1.tar.gz?Expires=1743119823&Key-Pair-Id=APKAI7S6A5RYOXBWRPDA&Signature=MX69g5QtCy~6dg9go0i2q8hd9gUl2WOKaoz50XUpVkM3oN6-uwLUT38F2OmGQP-E52GmEtmX1s5xgTNltgmafCev~OREczi-KxOxlYYeq~cpnC3i-tgPr04m9FtSVEu7jVBUpNMYuAKtirW0CEYVdAyA1D8R5aNsjHVm9RgcO9cx7ZSqbM6S~Chs-6OMKdjf7jkVypKotS0bLunyrFyzb5730nphBbyx37a9E6dWilUG5830NuXF~HSmHeqAeQFtl85IpzMlWborfvDgBrz~FIzn5T6HDjzZ9A5iTJ5Kf6XFeKPaG1Lhw137kfAzORDlTV2m7ik3nb~BsQGIGE-9Dw__" && \
+RUN wget -O cellranger-9.0.1.tar.gz "https://cf.10xgenomics.com/releases/cell-exp/cellranger-9.0.1.tar.gz?Expires=1749881778&Key-Pair-Id=APKAI7S6A5RYOXBWRPDA&Signature=aLWS0DZHXLNBHx14vWAvn52VJst8ddZ9rPcvowW5IIRLLlaYRIlF-33WFqH01uEUiJaOG5VAx6OlpyhJX8zlfT-KYskxxjjjEId2MgtOqIPP50syD9zCdLQn657UQVswrUkkYioHdt-yZ~wn0N5BNjbQR2OHQbLZqQsPvGou4Ix7YxbJn7T8ZcOjl0sXNDAdGorqio8Iici65SuMTVZ4dSv8Aj38abUMTtUBsPB3NcHslDhCitcniFcjug-Po0wZY8fYWtNzpU7Wm2Ju-CdVXv6g3bYf9bERiiVv4kXbh9xjp2NrfLZnGxbm4F0ZsGkhfQFrU21dk4yVwELagPpMWw__" && \
     tar -zxvf cellranger-9.0.1.tar.gz && rm -f cellranger-9.0.1.tar.gz && \
     mv cellranger-9.0.1 /usr/local/bin/ && \
     ln -s /usr/local/bin/cellranger-9.0.1/cellranger /usr/local/bin/cellranger
@@ -163,7 +163,9 @@ RUN R -e 'BiocManager::install(c( \
   "NMF", \
   "rcartocolor", \
   "gprofiler2", \
-  "hdf5r" \
+  "hdf5r", \
+  "jsonlite", \
+  "htmltools" \
   ))'
 
 # Install Mononle3

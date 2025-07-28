@@ -7,7 +7,7 @@
 # this script does not work for filtered only output...yet.
 #sample_name = basename(sample) #https://stackoverflow.com/questions/9693877/how-do-i-extract-a-file-folder-name-only-from-a-path
 
-sam <- ''
+sample <- ''
 lib_path <- ''
 data_type <- ''
 project <- ''
@@ -22,7 +22,7 @@ if (length(args) < 7) {
   stop('At least six arguments must be supplied.', call.=FALSE)
 } else if (length(args)==7) {
 	lib_path = args[1]
-	sam = args[2] #name of sample
+	sample = args[2] # name of sample
 	data_type = args[3] # starting data_type (out, filtered, h5)
 	project = args[4] #project name
 	soupX_input_path = args[5]
@@ -37,7 +37,8 @@ library('ggplot2', lib.loc=lib_path)
 set.seed(42)
 
 # CREATE OUT PATH
-dir.create(soupX_output_path, recursive=TRUE, showWarnings=FALSE)
+soupX_sample_path <- file.path(soupX_output_path, project, sample, "soupX")
+dir.create(soupX_sample_path, recursive=TRUE, showWarnings=FALSE)
 
 # contamination plot function
 #--------------------------------------------------------------------
@@ -100,7 +101,7 @@ soupify_outs <- function(in_path, out_path)
 	print('writing')
 	write10xCounts(out_path, out, version='3', overwrite=TRUE)
 
-	png(filename = paste0(out_path, '/', project, '_', sam, '_', 'contam_plot.png'), height = 2000, width = 2700, res=300)
+	png(filename = paste0(out_path, '/', project, '_', sample, '_', 'contam_plot.png'), height = 2000, width = 2700, res=300)
 	print(contam_plot(sc))
 	dev.off()
 }
@@ -111,13 +112,13 @@ if (data_type == 'outs')
 
 	cellranger_data = paste(soupX_input_path, 'outs/', sep='')
 	print(cellranger_data)
-	soupify_outs(cellranger_data, soupX_output_path)
+	soupify_outs(cellranger_data, soupX_sample_path)
 }
 #--------------------------------------------------------------------
 
 # CLEAN DATA: no cluster information  #
 #--------------------------------------------------------------------
-soupify_noclusters <- function(sam, in_path, out_path)
+soupify_noclusters <- function(sample, in_path, out_path)
 {
 	library('Seurat', lib.loc=lib_path)
 
@@ -157,7 +158,7 @@ soupify_noclusters <- function(sam, in_path, out_path)
 	out=adjustCounts(sc, roundToInt=TRUE)
 	write10xCounts(out_path, out, version='3', overwrite = TRUE)
 
-	png(filename = file.path(out_path, paste0('/', project, '_', sam, '_', 'contam_plot.png')), height = 2000, width = 2700, res=300)
+	png(filename = file.path(out_path, paste0('/', project, '_', sample, '_', 'contam_plot.png')), height = 2000, width = 2700, res=300)
 	print(contam_plot(sc))
 	dev.off()
 }
@@ -165,7 +166,7 @@ soupify_noclusters <- function(sam, in_path, out_path)
 # users need sub-directories (57,58), and no outs dir
 if (data_type == 'no_clusters')
 {
-	soupify_noclusters(sam, soupX_input_path, soupX_output_path)
+	soupify_noclusters(sample, soupX_input_path, soupX_sample_path)
 }
 #--------------------------------------------------------------------
 
@@ -198,7 +199,7 @@ soupify_h5 <- function(in_path, out_path)
 	out = adjustCounts(sc, roundToInt=TRUE)
 	write10xCounts(out_path, out, version='3', overwrite = TRUE)
 
-	png(filename = file.path(out_path, paste0('/', project, '_', sam, '_', 'contam_plot.png')), height = 2000, width = 2700, res=300)
+	png(filename = file.path(out_path, paste0('/', project, '_', sample, '_', 'contam_plot.png')), height = 2000, width = 2700, res=300)
 	print(contam_plot(sc))
 	dev.off()
 }
@@ -209,7 +210,7 @@ if (data_type == 'h5')
 	print('h5')
 
 	#cellranger_data = paste(soupX_input_path, 'outs/', sep='')
-	#soupify_outs(cellranger_data, soupX_output_path)
+	#soupify_outs(cellranger_data, soupX_sample_path)
 
-	soupify_noclusters(sam, soupX_input_path, soupX_output_path)
+	soupify_noclusters(sample, soupX_input_path, soupX_output_path)
 }

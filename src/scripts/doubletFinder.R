@@ -64,16 +64,16 @@ pN <- 0.25
 # OUTPUT PATHS FOR FIGURES AND DATATABLES
 #--------------------------------------------------------------------
 # Define figure and tables folders under sample folder
-fig_dir <- file.path(output_path, 'figures')
-tbl_dir <- file.path(output_path, 'tables')
+sample_path <- file.path(output_path, project, sample, "doubletFinder")
+fig_dir <- file.path(sample_path, 'figures')
+tbl_dir <- file.path(sample_path, 'tables')
 print(paste0('Output path for figures: ', fig_dir))
 #--------------------------------------------------------------------
 
 # MAKE OUTPUT DIRS
 #--------------------------------------------------------------------
-dir.create(output_path, showWarnings = FALSE, recursive = TRUE)
-dir.create(fig_dir, showWarnings = FALSE)
-dir.create(tbl_dir, showWarnings = FALSE)
+dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
+dir.create(tbl_dir, showWarnings = FALSE , recursive = TRUE)
 #--------------------------------------------------------------------
 
 # MAKE THRESHOLDS NUMERIC

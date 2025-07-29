@@ -2,37 +2,8 @@
 # Author:		K. Beigel
 # Date:			9.30.2024
 
-sample_file <- ''
-project <- ''
-organism <- ''
-seurat_creation_source <- ''
-run_doubletfinder <- ''
-mito_cutoff <- ''
-ribo_cutoff <- ''
-min_feature_threshold <- ''
-max_feature_threshold <- ''
-seurat_file_name <- ''
-lib_path <- ''
-
 args <- commandArgs(trailingOnly = TRUE)
-
-# test if there is at least 10 arguments: if not, return an error
-nargs <- 11
-if (length(args) < nargs) {
-  stop(paste('At least ', nargs, 'arguments must be supplied.'), call. = FALSE)
-} else if (length(args) == nargs) {
-	sample_file = args[1]
-	project = args[2]
-	organism = args[3]
-	seurat_creation_source = args[4]
-	run_doubletfinder = args[5]
-	mito_cutoff = args[6] #mito cut-off for scRNA
-	ribo_cutoff = args[7] #mito cut-off for scRNA
-	min_feature_threshold = args[8]
-	max_feature_threshold = args[9]
-	seurat_file_name = args[10]
-	lib_path = args[11]
-}
+lib_path <- args[-1]
 
 library(tidyverse, lib.loc = lib_path)
 library(rcartocolor, lib.loc = lib_path)
@@ -40,17 +11,54 @@ library(Seurat, lib.loc = lib_path)
 library(qs, lib.loc = lib_path)
 library(patchwork, lib.loc = lib_path)
 library(dplyr, lib.loc = lib_path)
+library("optparse", lib.loc = lib_path)
+
+option_list <- list(
+  make_option(c("-s", "--sample_file"), type="character",
+              help="TSV with header, sample name in first column, condition in second column, path to starting data in third column"),
+  make_option(c("-p", "--project"), type="character",
+              help="Name of the project"),
+  make_option(c("-o", "--organism"), type="character",
+              help="Organism (human or mouse)"),
+  make_option(c("-e", "--seurat_creation_source"), type="character",
+              help="Use count matrices from cellranger or soupX"),
+  make_option(c("-d", "--run_doubletfinder"), type="character",
+              help="'y' to incorporate doubletFinder data'"),
+  make_option(c("-m", "--mito_cutoff"), type="integer",
+              help="Mitochondrial percentage cutoff for filtering as an integer"),
+  make_option(c("-r", "--ribo_cutoff"), type="integer",
+              help="Ribosomal cutoff for filtering as an integer"),
+  make_option(c("-x", "--min_feature_threshold"), type="integer",
+              help="Minimum number of features per cell for filtering as an integer"),
+  make_option(c("-y", "--max_feature_threshold"), type="integer",
+              help="Maximum number of features per cell for filtering as an integer"),
+  make_option(c("-f", "--seurat_file_name"), type="character",
+              help="Name of the Seurat object file to save")
+)
+
+# Since the last args is positional, object sticks the options in a separate key
+opt <- parse_args(OptionParser(option_list=option_list), positional_arguments=TRUE, args=args)
+sample_file <- opt$options$sample_file
+project <- opt$options$project
+organism <- opt$options$organism
+seurat_creation_source <- opt$options$seurat_creation_source
+run_doubletfinder <- opt$options$run_doubletfinder
+mito_cutoff <- opt$options$mito_cutoff
+ribo_cutoff <- opt$options$ribo_cutoff
+min_feature_threshold <- opt$options$min_feature_threshold
+max_feature_threshold <- opt$options$max_feature_threshold
+seurat_file_name <- opt$options$seurat_file_name
 
 # CREATE DIRECTORIES
 #--------------------------------------------------------------------
 # Output
-base_directory = paste0('data/endpoints/', project, '/analysis/')
-figure_dir = paste0(base_directory, '/figures')
-rds_dir = paste0(base_directory, '/RDS')
-table_dir = paste0(base_directory, '/tables')
+base_directory = file.path('data/endpoints', project, '/analysis/')
+figure_dir = file.path(base_directory, '/figures')
+rds_dir = file.path(base_directory, '/RDS')
+table_dir = file.path(base_directory, '/tables')
 
 for (dir in c(figure_dir, rds_dir, table_dir)) {
-	dir.create(dir, showWarnings = FALSE)
+	dir.create(dir, showWarnings = FALSE, recursive = TRUE)
 }
 #--------------------------------------------------------------------
 
@@ -60,8 +68,8 @@ mito = '^MT-'
 ribo = '^RP[LS]'
 
 if (tolower(organism) == 'mouse') {
-	 mito = '^mt-'
-	 ribo = '^Rp[ls]'
+	mito = '^mt-'
+	ribo = '^Rp[ls]'
 }
 #--------------------------------------------------------------------
 

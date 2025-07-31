@@ -67,8 +67,9 @@ base_directory = file.path('data/endpoints', project, '/analysis/')
 figure_dir = file.path(base_directory, '/figures')
 rds_dir = file.path(base_directory, '/RDS')
 table_dir = file.path(base_directory, '/tables')
+report_dir = file.path(base_directory, '/report/qc_report')
 
-for (dir in c(figure_dir, rds_dir, table_dir)) {
+for (dir in c(figure_dir, rds_dir, table_dir, report_dir)) {
   dir.create(dir, showWarnings = FALSE, recursive = TRUE)
 }
 #--------------------------------------------------------------------

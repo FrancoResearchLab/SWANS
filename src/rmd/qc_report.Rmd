@@ -1,4 +1,14 @@
+---
+showWarnings: FALSE
+title: "`r project`"
+subtitle: "Quality Control Report"
+date: "`r format(Sys.time())`"
+output: html_document
+params:
+  root_dir: ../../
+  data_dir: ../../data/endpoints/
 
+---
 
 <style>
   .main-container {
@@ -117,9 +127,6 @@
 # Don't echo the code blocks
 knitr::opts_chunk$set(echo = FALSE)
 
-# get the working dir for the input files
-wd = paste0(gsub('(.*?)(src\\/rmd\\/.*)', '\\1', getwd()))
-
 ```
 
 ```{r packages, include=FALSE}
@@ -132,7 +139,7 @@ library(DT)
 
 ```{r metadata, include=FALSE}
 # Read in metadata, make sample list
-meta <- read.csv(paste0('../../samples.sample_list'), sep = '\t', header = TRUE)
+meta <- read.csv(file.path(params$root_dir, 'samples.sample_list'), sep = '\t', header = TRUE)
 samples <- meta$samples
 ```
 
@@ -227,14 +234,6 @@ postfilt_scat1 = paste0(analysis_dir, project, '_', 'qc_2_scatter1.png')
 postfilt_scat2 = paste0(analysis_dir, project, '_', 'qc_2_scatter2.png')
 
 ```
-
----
-showWarnings: FALSE
-title: "`r project`"
-subtitle: "Quality Control Report"
-date: "`r format(Sys.time())`"
-output: html_document
----
 
 <div class="main-container">
 

@@ -7,6 +7,7 @@ output: html_document
 params:
   root_dir: ../../
   data_dir: ../../data/endpoints/
+  qc_config: ../../configs/prelim_configs.yaml
 
 ---
 
@@ -145,7 +146,7 @@ samples <- meta$samples
 
 ```{r configs, include=FALSE}
 # Read in configs
-proj_info <- read_yaml(paste0('../../configs/prelim_configs.yaml'))
+proj_info <- read_yaml(params$qc_config)
 
 ## Main project info
 project <- proj_info$`PROJECT`   
@@ -170,20 +171,20 @@ if (run_doubletFinder == TRUE) {
 
   for (sample in samples) {
 
-    sample_dir = paste0('../../data/endpoints/', project, '/', sample, '/', 'doubletFinder/')
+    sample_dir = file.path($params$data_dir, project, '/', sample, '/', 'doubletFinder/')
 
     # Path to figure
     doublet_imgs[[sample]] = paste0(sample_dir, 'figures/', project, '_', sample, '_doublet.png')
 
     # Data
     stats = read.table(
-        file = paste0(sample_dir, 'tables/', project, '_', sample, '_doubletfinder_stats.csv'),
+        file = file.path(sample_dir, 'tables/', project, '_', sample, '_doubletfinder_stats.csv'),
         sep = ',',
         header = TRUE
     )
 
     doublet_count = read.table(
-        file = paste0(sample_dir, 'tables/', project, '_', sample, '_doublet_ids.txt'),
+        file = file.path(sample_dir, 'tables/', project, '_', sample, '_doublet_ids.txt'),
         sep = ',',
         header = TRUE
     ) %>% pull('doublet_ids') %>% length()
@@ -208,10 +209,10 @@ if (run_soupX == TRUE)
 {
   for (sample in samples) 
   {
-    sample_soupX_dir = paste0('../../data/endpoints/', project, '/', sample, '/', 'soupX/')
+    sample_soupX_dir = file.path($params$data_dir, project, '/', sample, '/', 'soupX/')
 
     # Path to figure
-    soupX_imgs[[sample]] = paste0(sample_soupX_dir, project, '_', sample, '_contam_plot.png')
+    soupX_imgs[[sample]] = file.path(sample_soupX_dir, project, '_', sample, '_contam_plot.png')
   }
 }
 
@@ -221,17 +222,17 @@ if (run_soupX == TRUE)
 ```{r get qc images from initial Seurat object}
 # Seurat QC plots -----
 
-analysis_dir = paste0('../../data/endpoints/', project, '/analysis/figures/')
+analysis_dir = file.path($params$data_dir, project, '/analysis/figures/')
 
 # Pre-filt images (qc_1)
-prefilt_vln = paste0(analysis_dir, project, '_', 'qc_1_vln.png')
-prefilt_scat1 = paste0(analysis_dir, project, '_', 'qc_1_scatter1.png')
-prefilt_scat2 = paste0(analysis_dir, project, '_', 'qc_1_scatter2.png')
+prefilt_vln = file.path(analysis_dir, project, '_', 'qc_1_vln.png')
+prefilt_scat1 = file.path(analysis_dir, project, '_', 'qc_1_scatter1.png')
+prefilt_scat2 = file.path(analysis_dir, project, '_', 'qc_1_scatter2.png')
 
 # Post-filt images (qc_2)
-postfilt_vln = paste0(analysis_dir, project, '_', 'qc_2_vln.png')
-postfilt_scat1 = paste0(analysis_dir, project, '_', 'qc_2_scatter1.png')
-postfilt_scat2 = paste0(analysis_dir, project, '_', 'qc_2_scatter2.png')
+postfilt_vln = file.path(analysis_dir, project, '_', 'qc_2_vln.png')
+postfilt_scat1 = file.path(analysis_dir, project, '_', 'qc_2_scatter1.png')
+postfilt_scat2 = file.path(analysis_dir, project, '_', 'qc_2_scatter2.png')
 
 ```
 

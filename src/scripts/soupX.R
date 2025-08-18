@@ -56,7 +56,7 @@ library('ggplot2', lib.loc=lib_path)
 set.seed(42)
 
 # CREATE OUT PATH
-dir.create(soupX_sample_path, recursive=TRUE, showWarnings=FALSE)
+dir.create(soupX_output_path, recursive=TRUE, showWarnings=FALSE)
 
 # contamination plot function
 #--------------------------------------------------------------------

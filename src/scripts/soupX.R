@@ -56,7 +56,6 @@ library('ggplot2', lib.loc=lib_path)
 set.seed(42)
 
 # CREATE OUT PATH
-soupX_sample_path <- file.path(soupX_output_path, project, sample, "soupX")
 dir.create(soupX_sample_path, recursive=TRUE, showWarnings=FALSE)
 
 # contamination plot function

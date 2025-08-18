@@ -85,9 +85,8 @@ pN <- 0.25
 # OUTPUT PATHS FOR FIGURES AND DATATABLES
 #--------------------------------------------------------------------
 # Define figure and tables folders under sample folder
-sample_path <- file.path(output_path, project, sample, "doubletFinder")
-fig_dir <- file.path(sample_path, 'figures')
-tbl_dir <- file.path(sample_path, 'tables')
+fig_dir <- file.path(output_path, 'figures')
+tbl_dir <- file.path(output_path, 'tables')
 print(paste0('Output path for figures: ', fig_dir))
 #--------------------------------------------------------------------
 

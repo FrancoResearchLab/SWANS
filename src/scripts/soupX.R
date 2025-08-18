@@ -130,7 +130,7 @@ if (data_type == 'outs')
 
   cellranger_data = paste(soupX_input_path, 'outs/', sep='')
   print(cellranger_data)
-  soupify_outs(cellranger_data, soupX_sample_path)
+  soupify_outs(cellranger_data, soupX_output_path)
 }
 #--------------------------------------------------------------------
 
@@ -184,7 +184,7 @@ soupify_noclusters <- function(sample, in_path, out_path)
 # users need sub-directories (57,58), and no outs dir
 if (data_type == 'no_clusters')
 {
-  soupify_noclusters(sample, soupX_input_path, soupX_sample_path)
+  soupify_noclusters(sample, soupX_input_path, soupX_output_path)
 }
 #--------------------------------------------------------------------
 
@@ -228,7 +228,7 @@ if (data_type == 'h5')
   print('h5')
 
   #cellranger_data = paste(soupX_input_path, 'outs/', sep='')
-  #soupify_outs(cellranger_data, soupX_sample_path)
+  #soupify_outs(cellranger_data, soupX_output_path)
 
   soupify_noclusters(sample, soupX_input_path, soupX_output_path)
 }

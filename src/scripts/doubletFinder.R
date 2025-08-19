@@ -5,37 +5,59 @@
 # Purpose: Identify doublets from sample data. The script should be called on each individual sample (on original/raw data).
 # Notes: Doublets are identified and the cell barcodes for doublets are written to a .txt file.
 
-sample <- ''
-project <- ''
-starting_data <- ''
-input_path <- ''
-output_path <- ''
-mito_cutoff <- ''
-min_feature_threshold <- ''
-components <- ''
-organism <- ''
-lib_path <- ''
-processes <- ''
+# set a default library path for optparse to give help
+lib_path <- '/usr/local/lib/R/site-library'
 
 args <- commandArgs(trailingOnly = TRUE)
+tryCatch(
+  expr = {
+    suppressMessages(library("optparse", lib.loc = lib_path))
+  },
+  error = function(e) {
+    if (dir.exists(tail(args, n=1))) lib_path <- tail(args, n=1) else stop("Valid library path specified at the end as a positional arg required.")
+    # if lib path provided, override default
+    suppressMessages(library("optparse", lib.loc = lib_path))
+  }
+)
 
-# test if there is at least n arguments: if not, return an error
-nargs <- 11
-if (length(args) < nargs) {
-  stop(paste('At least ', nargs, 'arguments must be supplied.'), call. = FALSE)
-} else if (length(args) == nargs) {
-  sample <- args[1]
-  project <- args[2]
-  starting_data <- args[3]
-  input_path <- args[4]
-  output_path <- args[5]
-  mito_cutoff <- args[6]
-  min_feature_threshold <- args[7]
-  components <- args[8]
-  organism <- args[9]
-  lib_path <- args[10]
-  processes <- args[11]
-}
+
+# Set and define opts
+option_list <- list(
+  make_option(c("-s", "--sample"), type="character",
+              help="Sample name as str"),
+  make_option(c("-p", "--project"), type="character",
+              help="Name of the project"),
+  make_option(c("-d", "--starting_data"), type="character",
+              help="Source if input data is a matrix or cellranger output (matrix or cellranger)"),
+  make_option(c("-i", "--input_path"), type="character",
+              help="Path to input data as str"),
+  make_option(c("-r", "--output_path"), type="character",
+              help="Path to output data as str"),
+  make_option(c("-o", "--organism"), type="character",
+              help="Organism (human or mouse)"),
+  make_option(c("-m", "--mito_cutoff"), type="integer",
+              help="Mitochondrial percentage cutoff for filtering as an integer"),
+  make_option(c("-x", "--min_feature_threshold"), type="integer",
+              help="Minimum number of features per cell for filtering as an integer"),
+  make_option(c("-c", "--components"), type="integer",
+              help="Number of components to use for PCA and UMAP as an integer"),
+  make_option(c("-n", "--processes"), type="integer", default=4,
+              help="Number of processes to use for parallelization as an integer")
+)
+
+# Since the last args is positional, object sticks the options in a separate key
+opt <- parse_args(OptionParser(option_list=option_list), positional_arguments=TRUE, args=args)
+sample <- if (is.null(opt$options$sample)) stop("--sample is required. See --help for all opts") else opt$options$sample
+project <- if (is.null(opt$options$project)) stop("--project is required. See --help for all opts") else opt$options$project
+starting_data <- if (is.null(opt$options$starting_data)) stop("--starting_data is required. See --help for all opts") else opt$options$starting_data
+# also check to make sure input path exists
+input_path <- if (is.null(opt$options$input_path) | !dir.exists(opt$options$input_path)) stop("Valid --input_path is required. See --help for all opts") else opt$options$input_path
+output_path <- if (is.null(opt$options$output_path)) stop("--output_path is required. See --help for all opts") else opt$options$output_path
+organism <- if (is.null(opt$options$organism)) stop("--organism is required. See --help for all opts") else opt$options$organism
+mito_cutoff <- if (is.null(opt$options$mito_cutoff)) stop("--mito_cutoff is required. See --help for all opts") else opt$options$mito_cutoff
+components <- if (is.null(opt$options$components)) stop("--components is required. See --help for all opts") else opt$options$components
+processes <- if (is.null(opt$options$processes)) stop("--processes is required. See --help for all opts") else opt$options$processes
+min_feature_threshold <- if (is.null(opt$options$min_feature_threshold)) stop("--min_feature_threshold is required. See --help for all opts") else opt$options$min_feature_threshold
 
 # LOAD LIBRARIES
 #--------------------------------------------------------------------
@@ -47,7 +69,6 @@ suppressMessages(library(cowplot, lib.loc = lib_path))
 suppressMessages(library(Seurat, lib.loc = lib_path))
 suppressMessages(library(DoubletFinder, lib.loc = lib_path))
 #--------------------------------------------------------------------
-
 # PARALLEL w/ FUTURE + SET SEED
 # --------------------------------------------------------------------
 options(future.globals.maxSize = 20000 * 1024^2)
@@ -71,9 +92,8 @@ print(paste0('Output path for figures: ', fig_dir))
 
 # MAKE OUTPUT DIRS
 #--------------------------------------------------------------------
-dir.create(output_path, showWarnings = FALSE, recursive = TRUE)
-dir.create(fig_dir, showWarnings = FALSE)
-dir.create(tbl_dir, showWarnings = FALSE)
+dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
+dir.create(tbl_dir, showWarnings = FALSE , recursive = TRUE)
 #--------------------------------------------------------------------
 
 # MAKE THRESHOLDS NUMERIC

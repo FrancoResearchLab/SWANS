@@ -81,18 +81,9 @@ RUN pip3 install \
     "wheel==0.34.2" \
     && rm -rf /root/.cache/pip/wheels
 
-# Standalone tools and libraries
-################################
-
-# Add Cell Ranger - download link needs to be update with every build the key pair expires
-RUN wget -O cellranger-9.0.1.tar.gz "https://cf.10xgenomics.com/releases/cell-exp/cellranger-9.0.1.tar.gz?Expires=1749881778&Key-Pair-Id=APKAI7S6A5RYOXBWRPDA&Signature=aLWS0DZHXLNBHx14vWAvn52VJst8ddZ9rPcvowW5IIRLLlaYRIlF-33WFqH01uEUiJaOG5VAx6OlpyhJX8zlfT-KYskxxjjjEId2MgtOqIPP50syD9zCdLQn657UQVswrUkkYioHdt-yZ~wn0N5BNjbQR2OHQbLZqQsPvGou4Ix7YxbJn7T8ZcOjl0sXNDAdGorqio8Iici65SuMTVZ4dSv8Aj38abUMTtUBsPB3NcHslDhCitcniFcjug-Po0wZY8fYWtNzpU7Wm2Ju-CdVXv6g3bYf9bERiiVv4kXbh9xjp2NrfLZnGxbm4F0ZsGkhfQFrU21dk4yVwELagPpMWw__" && \
-    tar -zxvf cellranger-9.0.1.tar.gz && rm -f cellranger-9.0.1.tar.gz && \
-    mv cellranger-9.0.1 /usr/local/bin/ && \
-    ln -s /usr/local/bin/cellranger-9.0.1/cellranger /usr/local/bin/cellranger
-
 #### R packages
 ###############
-
+RUN R -e "install.packages('optparse', dependencies=TRUE)"
 # Set the Bioconductor repository as the primary repository
 RUN R -e "options(repos = BiocManager::repositories())"
 
@@ -188,7 +179,7 @@ RUN R -e "remotes::install_github('jokergoo/ComplexHeatmap')"
 RUN R -e "remotes::install_github('jinworks/CellChat')"
 
 # Install LoupeR from 10x genomics 
-# Will require interactively running "loupeR::setup()" in the constainer 
+# Will require interactively running "loupeR::setup()" in the container 
 # to accept the license to install finalize installing executables.
 # Otherwise, loading the library, "library(loupeR)" will prompt use to 
 # run "loupeR::setup()".

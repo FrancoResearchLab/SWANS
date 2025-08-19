@@ -31,4 +31,11 @@ rule soupX:
 		log_output = soupX_log  + PROJECT + '_{s}_soupX.log'
 	benchmark: benchmark_log + PROJECT.lower() + '_{s}_soupX.benchmark' #added 12.4.2024 ERR
 	shell:
-		"Rscript {input.script} {params.r_lib_path} {params.sample} {params.input_type} {params.project} {params.soupX_input} {params.soupx_output} {params.starting_data} 2> {log.log_output}"
+		"Rscript {input.script} \
+		--sample {params.sample} \
+		--data_type {params.input_type} \
+		--project {params.project} \
+		--soupX_input_path {params.soupX_input} \
+		--soupX_output_path  {params.soupx_output} \
+		--starter_data {params.starting_data} \
+		{params.r_lib_path} 2> {log.log_output}"

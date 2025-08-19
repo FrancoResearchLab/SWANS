@@ -1,4 +1,4 @@
-FROM francothyroidlab/swans
+FROM pond:1.0
 
 LABEL maintainer="Miguel Brown (brownm28@chop.edu)"
 LABEL description="SWANS, best built with platform linux/amd64"

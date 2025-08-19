@@ -5,12 +5,12 @@
 
 #--------------------MESSAGES-----------------------------------
 onsuccess:
-    print("The doubletFinder pipeline completed with no errors.")
-    shell("mail -s 'The doubletFinder pipeline completed with no errors.' "+ config['contact']+" < {log}")
+    print("The analyze Seurat object pipeline completed with no errors.")
+    shell("mail -s 'The analyze Seurat object pipeline completed with no errors.' "+ config['contact']+" < {log}")
 
 onerror:
-    print("The doubletFinder pipeline did not complete without errors."),
-    shell("mail -s 'The doubletFinder pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
+    print("The analyze Seurat object pipeline did not complete without errors."),
+    shell("mail -s 'The analyze Seurat object pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
 
 #--------------------RULES---------------------------------------
 # noinspection SmkAvoidTabWhitespace
@@ -58,16 +58,32 @@ rule analyze_sc_object:
     shell:
         "Rscript \
         {input.script} \
-        {params.initial_seurat_object} \
-        {params.project} {params.organism} {params.n_components} \
-        {params.mito_regression} {params.ribo_regression} {params.cc_regression} {params.cc_method} \
-        {params.num_var_features} {params.scale_data_features} {params.split_layers_by} \
-        {params.normalization_config} {params.integration_config} \
-        {params.ref_based_integration} {params.ref_samples} \
-        {params.run_azimuth} {params.azimuth_ref} \
-        {params.run_transferdata} {params.transferdata_ref_file} \
-        {params.transferdata_reduction} {params.transferdata_annocol} \
-        {params.resolution_config} {params.include_tsne} \
-        {params.analyzed_seurat_object} {params.report_path_figures} \
-        {params.lib_path} {params.processes} {input.m_file} \
-        {params.memory} {params.regression_file} 2> {log.log_output}"
+        --initial_seurat_object {params.initial_seurat_object} \
+        --project {params.project} \
+        --organism {params.organism} \
+        --n_components {params.n_components} \
+        --mito_regression {params.mito_regression} \
+        --ribo_regression {params.ribo_regression} \
+        --cc_regression {params.cc_regression} \
+        --cc_method {params.cc_method} \
+        --num_var_features {params.num_var_features} \
+        --scale_data_features {params.scale_data_features} \
+        --split_layers_by {params.split_layers_by} \
+        --normalization_config {params.normalization_config} \
+        --integration_config {params.integration_config} \
+        --ref_based_integration {params.ref_based_integration} \
+        --ref_samples {params.ref_samples} \
+        --run_azimuth {params.run_azimuth} \
+        --azimuth_ref {params.azimuth_ref} \
+        --run_transferdata {params.run_transferdata} \
+        --transferdata_ref_file {params.transferdata_ref_file} \
+        --transferdata_reduction {params.transferdata_reduction} \
+        --transferdata_annocol {params.transferdata_annocol} \
+        --resolution_config {params.resolution_config} \
+        --include_tsne {params.include_tsne} \
+        --analyzed_seurat_object {params.analyzed_seurat_object} \
+        --report_path_figures {params.report_path_figures} \
+        --lib_path {params.lib_path} \
+        --processes {params.processes} --memory_file {input.m_file} \
+        --memory {params.memory} \
+        --regression_file {params.regression_file} 2> {log.log_output}"

@@ -37,8 +37,17 @@ rule cluster_plots_DGE:
 		log_output = create_images_DGE_log + PROJECT.lower() + '_create_images_DGE.log'
 	benchmark: benchmark_log + PROJECT.lower() + '_cluster_plots.benchmark'  #added 12.4.2024 ERR
 	shell:
-		"Rscript {input.script} {params.project} {params.rpath} {params.storage} \
-			{params.normalization_method} {params.integration_method} \
-			{params.resolution} {params.conserved_genes} {input.analyzed_object} \
-			{params.threads} {params.tsne} {params.report_path} {params.user_gene_file} \
-			{params.visualization} 2> {log.log_output} && touch {output}"
+		"Rscript {input.script} \
+			--project {params.project} \
+			--rpath {params.rpath} \
+			--storage {params.storage} \
+			--normalization_method {params.normalization_method} \
+			--integration_method {params.integration_method} \
+			--resolution {params.resolution} \
+			--conserved_genes {params.conserved_genes} \
+			--analyzed_seurat_object {input.analyzed_object} \
+			--processes {params.threads} \
+			--tsne_plot {params.tsne} \
+			--report_table_path {params.report_path} \
+			--user_gene_file {params.user_gene_file} \
+			--visualization {params.visualization} 2> {log.log_output} && touch {output}"

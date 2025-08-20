@@ -9,7 +9,6 @@
 
 # set a default library path for optparse to give help
 lib_path <- '/usr/local/lib/R/site-library'
-processes <- ''
 
 args <- commandArgs(trailingOnly = TRUE)
 tryCatch(
@@ -136,8 +135,8 @@ for (n in normalization_method)
   normalization_base = paste0(base_directory, n)
   dir.create(normalization_base, showWarnings=FALSE)
 
-  dir_figures=paste(normalization_base, '/figures/', sep='')
-  dir_tables=paste(normalization_base, '/tables/', sep='')
+  dir_figures=file.path(normalization_base, 'figures')
+  dir_tables=file.path(normalization_base, 'tables')
 
   dir.create(dir_figures, showWarnings=FALSE)
   dir.create(dir_tables, showWarnings=FALSE)
@@ -156,8 +155,8 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
     # set assay, if sct <- SCT, standard <- RNA
     assay <- ''
 
-    dir_fig=paste0(start_directory, n, '/figures/')
-    dir_table=paste0(start_directory, n, '/tables/')
+    dir_fig=file.path(paste0(start_directory, n), 'figures')
+    dir_table=file.path(paste0(start_directory, n), 'tables')
 
     print('Setting assay....')
 
@@ -299,13 +298,13 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
         npce <- reshape2::melt(Z)
         colnames(npce) <- c('expCond', 'cluster', 'numCells')
 
-        proportion_table_name_experiment = paste(report_table_path, '/', project, '_clusterProportions.experiment_', name, '.txt', sep='')
+        proportion_table_name_experiment = file.path(report_table_path, paste0(project, '_clusterProportions.experiment_', name, '.txt'))
         write.table(npce, file=proportion_table_name_experiment, sep='\t', quote=F, col.names=TRUE, row.names=TRUE, append=FALSE)
 
         print('Calculating proportions by sample...')
         number_perCluster <- table(seurat_object@meta.data$Sample, seurat_object@meta.data[[name]])
 
-        proportion_table_name = paste(dir_table, '/', project, '_clusterProportions_', name, '.txt', sep='')
+        proportion_table_name = file.path(dir_table, paste0(project, '_clusterProportions_', name, '.txt'))
         write.table(number_perCluster, file=proportion_table_name, sep='\t', quote=F, col.names=TRUE, row.names=TRUE, append=FALSE)
 
         # will need to melt table
@@ -446,7 +445,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 
         if (length(project.markers$cluster) > 0)
         {
-          markers_filename = paste(dir_table, '/', project, '_markers_', name, '.txt', sep='')
+          markers_filename = file.path(dir_table, paste0(project, '_markers_', name, '.txt'))
           print(markers_filename)
           project.markers %>% group_by(cluster) 
           write.table(project.markers, file=markers_filename, sep='\t', quote=F, col.names=TRUE, row.names=FALSE)
@@ -454,12 +453,12 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
           project.markers %>% group_by(cluster) %>% top_n(n = 2, wt = avg_log2FC)
           top100 <- project.markers %>% group_by(cluster) %>% top_n(n = 100, wt = avg_log2FC)
 
-          markers_filename100 = paste(dir_table, '/', project, '_top100_markers_avg_log2FC_', name, '.txt', sep='')
+          markers_filename100 = file.path(dir_table, paste0(project, '_top100_markers_avg_log2FC_', name, '.txt'))
           print(markers_filename100)
           write.table(top100, file=markers_filename100, sep='\t', quote=F, col.names=TRUE, row.names=FALSE)
 
           # for shiny app
-          markers_filename100_report = paste(report_table_path, '/', project, '_top100_markers_avg_log2FC_', name, '.txt', sep='')
+          markers_filename100_report = file.path(report_table_path, paste0(project, '_top100_markers_avg_log2FC_', name, '.txt'))
           write.table(top100, file=markers_filename100_report, sep='\t', quote=F, col.names=TRUE, row.names=FALSE)
         }
         # ---------------------------------------------------------
@@ -467,13 +466,13 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
         # Conserved Genes -----------------------------------------
         if (conserved_genes == 'y' & num_samples > 1)
         {
-          conserved_dir=paste0(start_directory, n, '/tables/conserved_genes/')
+          conserved_dir=file.path(paste0(start_directory, n), 'tables/conserved_genes')
           dir.create(conserved_dir, showWarnings=FALSE)
 
-          conserved_dir=paste0(start_directory, n, '/tables/conserved_genes/', i)
+          conserved_dir=file.path(paste0(start_directory, n), 'tables/conserved_genes', i)
           dir.create(conserved_dir, showWarnings=FALSE)
 
-          conserved_dir=paste0(start_directory, n, '/tables/conserved_genes/', i, '/', r)
+          conserved_dir=file.path(paste0(start_directory, n), 'tables/conserved_genes', i, r)
           dir.create(conserved_dir, showWarnings=FALSE)
 
           print('Finding conserved DGEs...')
@@ -513,7 +512,9 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
     if (store == 'rds')
     {
       print('saving object as RDS')
-      filename <- file.path('data/endpoints', project, 'analysis/RDS', paste0(project, '_analyzed_seurat_object.RDS') )
+      rds_path = file.path('data/endpoints', project, 'analysis/RDS')
+      dir.create(rds_path, showWarnings=FALSE, recursive=TRUE)
+      filename <- file.path(rds_path, paste0(project, '_analyzed_seurat_object.RDS') )
       saveRDS(seurat_object, file=filename)
     }
   }

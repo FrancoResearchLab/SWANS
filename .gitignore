@@ -11,6 +11,12 @@ helper_scripts/make_symbolic_links.sh
 # Snakemake folder to ignore
 .snakemake/
 
+# Cell Ranger cache to ignore
+.cache/
+
+# R local dir to ignore (SeuratData)
+.local/
+
 # File types to ignore in the main dir
 /*.txt
 /*.pdf
@@ -23,3 +29,11 @@ configs/post_annotation_configs.yaml
 # IDE development files to ignore
 .idea/
 .vscode/
+
+# Container-related items to ignore
+pond:1.0
+swans
+run/
+
+# User files to ignore
+setup/

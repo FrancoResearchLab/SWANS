@@ -132,7 +132,7 @@ dir.create(report_table_path, recursive = TRUE, showWarnings = FALSE)
 
 for (n in normalization_method)
 {
-  normalization_base = paste0(base_directory, n)
+  normalization_base = file.path(base_directory, n)
   dir.create(normalization_base, showWarnings=FALSE)
 
   dir_figures=file.path(normalization_base, 'figures')
@@ -155,8 +155,8 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
     # set assay, if sct <- SCT, standard <- RNA
     assay <- ''
 
-    dir_fig=file.path(paste0(start_directory, n), 'figures')
-    dir_table=file.path(paste0(start_directory, n), 'tables')
+    dir_fig=file.path(start_directory, n, 'figures')
+    dir_table=file.path(start_directory, n, 'tables')
 
     print('Setting assay....')
 

@@ -23,25 +23,25 @@ tryCatch(
 
 # Set and define opts
 option_list <- list(
-  make_option(c("-s", "--sample"), type="character",
+  make_option(c("--sample"), type="character",
               help="Sample name as str"),
-  make_option(c("-p", "--project"), type="character",
+  make_option(c("--project"), type="character",
               help="Name of the project"),
-  make_option(c("-d", "--starting_data"), type="character",
+  make_option(c("--starting_data"), type="character",
               help="Source if input data is a matrix or cellranger output (matrix or cellranger)"),
-  make_option(c("-i", "--input_path"), type="character",
+  make_option(c("--input_path"), type="character",
               help="Path to input data as str"),
-  make_option(c("-r", "--output_path"), type="character",
+  make_option(c("--output_path"), type="character",
               help="Path to output data as str"),
-  make_option(c("-o", "--organism"), type="character",
+  make_option(c("--organism"), type="character",
               help="Organism (human or mouse)"),
-  make_option(c("-m", "--mito_cutoff"), type="integer",
+  make_option(c("--mito_cutoff"), type="integer",
               help="Mitochondrial percentage cutoff for filtering as an integer"),
-  make_option(c("-x", "--min_feature_threshold"), type="integer",
+  make_option(c("--min_feature_threshold"), type="integer",
               help="Minimum number of features per cell for filtering as an integer"),
-  make_option(c("-c", "--components"), type="integer",
+  make_option(c("--components"), type="integer",
               help="Number of components to use for PCA and UMAP as an integer"),
-  make_option(c("-n", "--processes"), type="integer", default=4,
+  make_option(c("--processes"), type="integer", default=4,
               help="Number of processes to use for parallelization as an integer")
 )
 

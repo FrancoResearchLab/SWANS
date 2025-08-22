@@ -19,25 +19,25 @@ tryCatch(
 )
 
 option_list <- list(
-  make_option(c("-s", "--sample_file"), type="character",
+  make_option(c("--sample_file"), type="character",
               help="TSV with header, sample name in first column, condition in second column, path to starting data in third column"),
-  make_option(c("-p", "--project"), type="character",
+  make_option(c("--project"), type="character",
               help="Name of the project"),
-  make_option(c("-o", "--organism"), type="character",
+  make_option(c("--organism"), type="character",
               help="Organism (human or mouse)"),
-  make_option(c("-e", "--seurat_creation_source"), type="character",
+  make_option(c("--seurat_creation_source"), type="character",
               help="Use count matrices from cellranger or soupX"),
-  make_option(c("-d", "--run_doubletfinder"), type="character",
+  make_option(c("--run_doubletfinder"), type="character",
               help="'y' to incorporate doubletFinder data'"),
-  make_option(c("-m", "--mito_cutoff"), type="integer",
+  make_option(c("--mito_cutoff"), type="integer",
               help="Mitochondrial percentage cutoff for filtering as an integer"),
-  make_option(c("-r", "--ribo_cutoff"), type="integer",
+  make_option(c("--ribo_cutoff"), type="integer",
               help="Ribosomal cutoff for filtering as an integer"),
-  make_option(c("-x", "--min_feature_threshold"), type="integer",
+  make_option(c("--min_feature_threshold"), type="integer",
               help="Minimum number of features per cell for filtering as an integer"),
-  make_option(c("-y", "--max_feature_threshold"), type="integer",
+  make_option(c("--max_feature_threshold"), type="integer",
               help="Maximum number of features per cell for filtering as an integer"),
-  make_option(c("-f", "--seurat_file_name"), type="character",
+  make_option(c("--seurat_file_name"), type="character",
               help="Name of the Seurat object file to save")
 )
 

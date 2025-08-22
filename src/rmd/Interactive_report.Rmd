@@ -58,6 +58,10 @@ integration_choices <- integrations
 #table_choices <- c('_top100_markers_avg_log2FC_', '_z_scores.', '_clusterProportions.experiment_', '_phase_experiment_', '_phase_sample_')
 table_choices <- c('_top100_markers_avg_log2FC_', '_z_scores.', '_clusterProportions.experiment_', '_phase_experiment_')
 
+# Create image output dir if not exists
+if (!dir.exists('compare_images')){
+  dir.create('compare_images')
+}
 # -----------------------------------------
 
 shinyApp(

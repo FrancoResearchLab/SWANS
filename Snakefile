@@ -97,6 +97,9 @@ def replace_spaces_commas(config_param_name, config_param):
 	visualization_options = ['feature', 'violin', 'ridge', 'dot']
 	flag = 1
 
+	if type(config_param) == float:
+		config_param = str(config_param)
+
 	while ' ' in config_param:
 		config_param = config_param.replace(' ', ',')
 	config_param = config_param.replace(',,', ',')

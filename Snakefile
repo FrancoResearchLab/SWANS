@@ -91,11 +91,16 @@ if os.path.exists(sample_file) == True:
 # DEFINITIONS/FUNCTIONS ----------------------------------------------------
 # for params with potential for > 1 selection ---------------
 def replace_spaces_commas(config_param_name, config_param):
+	print(config_param_name)
 	normalization_options = ['standard', 'sct']
 	integration_options = ['cca', 'harmony', 'rpca']
 	storage_options = ['qs', 'rds']
 	visualization_options = ['feature', 'violin', 'ridge', 'dot']
 	flag = 1
+
+	# added 8.26 to handle single resolution values
+	if type(config_param) == float:
+			config_param = str(config_param)
 
 	while ' ' in config_param:
 		config_param = config_param.replace(' ', ',')
@@ -109,6 +114,13 @@ def replace_spaces_commas(config_param_name, config_param):
 		options = config_param.split(',')
 	if ',' not in config_param:
 		options = [config_param]
+		print(type(options))
+
+	# added 8.26-----
+	if config_param_name == 'RESOLUTION' and ',' not in config_param:
+		return(config_param)
+	#	flag = 0
+	# added 8.26-----
 
 	for o in options:
 		if config_param_name == 'SEURAT_NORMALIZATION_METHOD':
@@ -139,16 +151,13 @@ def replace_spaces_commas(config_param_name, config_param):
 					if o not in visualization_options:
 						print('You have selected NO feature, dot, ridge, or violin plots')
 						print('and e.g., you typed \'viola\' instead of \'violin\', CTRL+c, and correct your error...')
-
-						flag = 0
-
+						#flag = 0 #i think this should be an error instead of passing on the flag
+						sys.exit()
 					else:
 						flag = 0
 
-
 	if flag == 0:
 		return(config_param)
-
 
 # VISUALIZATION can be blank
 # -----------------------------------------------------------------------------------------
@@ -226,12 +235,13 @@ def not_null_check_no_yes(config_param, config_param_name):
 if str(RESOLUTION).isnumeric() == True: 
 	RESOLUTION = RESOLUTION 
 elif ',' in str(RESOLUTION): 
-	temp_res = str(RESOLUTION).replace(',', '').strip() 
-	temp_res = temp_res.replace('.', '') 
-	temp_res = check_numeric('RESOLUTION', temp_res) 
+	replace_spaces_commas('RESOLUTION', RESOLUTION)
+	#temp_res = str(RESOLUTION).replace(',', '').strip() 
+	#temp_res = temp_res.replace('.', '') 
+	#temp_res = check_numeric('RESOLUTION', temp_res) 
  
-RESOLUTION = RESOLUTION.strip() 
-replace_spaces_commas('RESOLUTION', RESOLUTION)
+#RESOLUTION = RESOLUTION.strip() 
+#replace_spaces_commas('RESOLUTION', RESOLUTION)
 '''
 # -------------------------------------------------------------------------
 
@@ -590,6 +600,17 @@ qc_report_html = string_path + 'analysis/report/qc_report/' + PROJECT + '_qc_rep
 
 initial_seurat_list = [f1, f2, storage_file, qc_report_html]
 # -------------------------------------------------------------------------------------
+
+# memory
+# this would be a good space for 10X vs Flex (conditionally assign folder names)
+#-------------------------------------------------------------------------------------
+barcodes_files = 'data/endpoints/' + PROJECT + '/*/' + SEURAT_CREATION_SOURCE + '/barcodes.tsv.gz',
+features_files = 'data/endpoints/' + PROJECT + '/*/' + SEURAT_CREATION_SOURCE + '/features.tsv.gz',
+
+if SEURAT_CREATION_SOURCE == 'cellranger':
+   barcodes_files = 'data/endpoints/' + PROJECT + '/*/' + SEURAT_CREATION_SOURCE + '/outs/filtered_feature_bc_matrix/barcodes.tsv.gz',
+   features_files = 'data/endpoints/' + PROJECT + '/*/' + SEURAT_CREATION_SOURCE + '/outs/filtered_feature_bc_matrix/features.tsv.gz',
+#-------------------------------------------------------------------------------------
 
 # main analyzed seurat object
 #-------------------------------------------------------------------------------------

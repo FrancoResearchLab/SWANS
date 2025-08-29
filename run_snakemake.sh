@@ -1,6 +1,25 @@
 set -e
 
+for arg in "$@"; do
+  case $arg in
+    --sampledir=*)
+      sampledir="${arg#*=}"
+      shift
+      ;;
+    --genomedir=*)
+      genomedir="${arg#*=}"
+      shift
+      ;;
+    *)
+      ;;
+  esac
+done
+
+echo "Sample directory: $sampledir"
+echo "Reference genome directory: $genomedir"
+
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 # show citations
 #-----------------------------------------------------------------------------
 sh $SCRIPT_DIR/helper_scripts/citations.sh
@@ -62,11 +81,16 @@ rpath=`python3 $SCRIPT_DIR/helper_scripts/cache.py RPATH:` #retrieves rpath name
 echo "R_LIBS_USER=$rpath" > .Renviron
 #-----------------------------------------------------------------------------
 
-# call Snakemake 
+# call Snakemake (sans Singularity)
 #-----------------------------------------------------------------------------
 # snakemake --snakefile Snakefile --printshellcmds --dryrun 
 # snakemake --snakefile Snakefile --printshellcmds --dryrun --rerun-triggers mtime
-snakemake --cores $threads --snakefile $SCRIPT_DIR/Snakefile --printshellcmds 
+# snakemake --cores $threads --snakefile $SCRIPT_DIR/Snakefile
+#-----------------------------------------------------------------------------
+
+# call Snakemake with Singualarity
+#-----------------------------------------------------------------------------
+snakemake --cores $threads --snakefile $SCRIPT_DIR/Snakefile --printshellcmds --use-singularity --singularity-args "-B $sampledir,$genomedir"
 #-----------------------------------------------------------------------------
 
 # show citations again

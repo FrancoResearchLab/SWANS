@@ -15,7 +15,6 @@ onerror:
 #--------------------RULES---------------------------------------
 rule multiqc_cellranger_report:
 	input: 
-		tool = MULTIQC,
 		input_data = qc_cellranger
 	output: cellranger_report
 	params:
@@ -28,6 +27,6 @@ rule multiqc_cellranger_report:
 		log_output = multiqc_log + 'multiqc_cellranger_report.log'
 	benchmark: benchmark_log + PROJECT.lower() + '_multiqc_cellranger.benchmark'  #added 12.4.2024 ERR
 	shell:
-		"{input.tool} {params.search_dir} -m {params.module} \
+		"multiqc {params.search_dir} -m {params.module} \
 			 --filename {params.report_name} -o {params.outdir} \
 			 --verbose --force 2> {log.log_output}" 

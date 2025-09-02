@@ -1,5 +1,8 @@
 #!/usr/bin/env Rscript
 # Author:  E. Reichenberger
+# Modified by: M. Brown
+# Mod note: M. Brown add preprocessing directive, converted positional args to flags with input checks and a default lib path for compatibility with argparse and nextflow integration
+
 # Date:    7.31.2024
 
 # Purpose:  Create cluster UMAP/TsNE images, create cells/cluster proportions plots+table, and find conserved and DE markers (upregulated only)

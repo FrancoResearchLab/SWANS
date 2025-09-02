@@ -1,12 +1,13 @@
 #!/usr/bin/env Rscript
 # Author: K. Beigel
+# Modified by: M. Brown
+# Mod note: M. Brown add preprocessing directive, converted positional args to flags with input checks and a default lib path for compatibility with argparse and nextflow integration
 # Date: 7.22.2024
 # Purpose: Processing of Seurat object. This script will handle either an individual sample Seurat object or merged Seurat.
 # Details: Runs normalization, integration (if more than once sample), PCA, UMAP.
 
 # set a default library path for optparse to give help
 lib_path <- '/usr/local/lib/R/site-library'
-processes <- ''
 
 args <- commandArgs(trailingOnly = TRUE)
 tryCatch(

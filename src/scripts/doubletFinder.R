@@ -1,6 +1,8 @@
 #!/usr/bin/env Rscript
 # Author:		K. Beigel
 # Original code: E. Reichenberger
+# Modified by: M. Brown
+# Mod note: M. Brown add preprocessing directive, converted positional args to flags with input checks and a default lib path for compatibility with argparse and nextflow integration
 # Date:			6.20.2024
 # Purpose: Identify doublets from sample data. The script should be called on each individual sample (on original/raw data).
 # Notes: Doublets are identified and the cell barcodes for doublets are written to a .txt file.

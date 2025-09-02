@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 # Author:  E. Reichenberger
+# Modified by: M. Brown
+# Mod note: M. Brown add preprocessing directive, converted positional args to flags with input checks and a default lib path for compatibility with argparse and nextflow integration
 # Date:    2.16.2021
 
 # Purpose:   Remove contaminant RNA w/ SoupX.

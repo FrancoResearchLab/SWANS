@@ -39,7 +39,6 @@ rule cluster_plots_DGE:
 	shell:
 		"Rscript {input.script} \
 			--project {params.project} \
-			--rpath {params.rpath} \
 			--storage {params.storage} \
 			--normalization_method {params.normalization_method} \
 			--integration_method {params.integration_method} \
@@ -50,4 +49,5 @@ rule cluster_plots_DGE:
 			--tsne_plot {params.tsne} \
 			--report_table_path {params.report_path} \
 			--user_gene_file {params.user_gene_file} \
-			--visualization {params.visualization} 2> {log.log_output} && touch {output}"
+			--visualization {params.visualization} \
+			{params.rpath} 2> {log.log_output} && touch {output}"

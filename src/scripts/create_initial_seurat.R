@@ -1,10 +1,12 @@
 #!/usr/bin/env Rscript
 # Author:    K. Beigel
+# Modified by: M. Brown
+# Mod note: M. Brown add preprocessing directive, converted positional args to flags with input checks and a default lib path for compatibility with argparse and nextflow integration
+
 # Date:      9.30.2024
 
 # set a default library path for optparse to give help
 lib_path <- '/usr/local/lib/R/site-library'
-processes <- ''
 
 args <- commandArgs(trailingOnly = TRUE)
 tryCatch(

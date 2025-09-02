@@ -37,3 +37,12 @@ run/
 
 # User files to ignore
 setup/
+
+# Ignore cellranger pipestance files
+*.mro
+
+# Ignore SIF container files
+*.sif
+
+# Ignore user R library (created if Azimuth is run)
+R/library/*

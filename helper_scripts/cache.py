@@ -11,8 +11,8 @@ def get_config(search_config):
 			if line.startswith(search_config):
 				reference = line.split(search_config)[1].replace('\n', '')
 				reference = reference.replace(':', '').lstrip().rstrip()
-				# if the config is not the RPATH, lower it
-				if not line.startswith('RPATH'):
+				# if the config is not the RPATH or CELLRANGER_REFERENCE, lower it
+				if not line.startswith(('RPATH', 'CELLRANGER_REFERENCE')):
 					reference = reference.lower() # guarantees everything is lowercase
 				#if search_config.startswith('PROJECT'):
 				#	reference = reference.lower()

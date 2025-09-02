@@ -6,17 +6,12 @@ for arg in "$@"; do
       sampledir="${arg#*=}"
       shift
       ;;
-    --genomedir=*)
-      genomedir="${arg#*=}"
-      shift
-      ;;
     *)
       ;;
   esac
 done
 
 echo "Sample directory: $sampledir"
-echo "Reference genome directory: $genomedir"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
@@ -67,6 +62,7 @@ path=$path$project
 
 starting_data=`python3 $SCRIPT_DIR/helper_scripts/cache.py STARTING_DATA:` #retrieves starting data from config file
 run_cellranger=`python3 $SCRIPT_DIR/helper_scripts/cache.py RUN_CELLRANGER:` #retrieves starting data from config file
+cellranger_reference=`python3 $SCRIPT_DIR/helper_scripts/cache.py CELLRANGER_REFERENCE:` #retrieves cellranger reference genome from config file
 
 mkdir -p $path
 python3 $SCRIPT_DIR/helper_scripts/setup.py $project $starting_data $run_cellranger #makes project_name/sample_name/[matrix]or[cellranger] for each sample
@@ -90,7 +86,7 @@ echo "R_LIBS_USER=$rpath" > .Renviron
 
 # call Snakemake with Singualarity
 #-----------------------------------------------------------------------------
-snakemake --cores $threads --snakefile $SCRIPT_DIR/Snakefile --printshellcmds --use-singularity --singularity-args "-B $sampledir,$genomedir"
+snakemake --cores $threads --snakefile $SCRIPT_DIR/Snakefile --printshellcmds --use-singularity --singularity-args "-B $sampledir,$cellranger_reference"
 #-----------------------------------------------------------------------------
 
 # show citations again

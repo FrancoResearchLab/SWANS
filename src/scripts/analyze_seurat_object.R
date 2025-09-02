@@ -752,8 +752,6 @@ if (tolower(organism) == 'mouse') {
 # GET A VECTOR OF THE REGRESSION VARIABLES TO USE IN DATA SCALING + ADD USER-SUPPLIED REGRESSION VARS
 regression_vars = get_regression_variables(cc_regression, cc_method, mito_regression, ribo_regression, regression_file)
 
-print(regression_vars)
-
 # GET SCORING
 S = get_scoring(S, s_genes, g2m_genes, regression_vars, regression_file)
 

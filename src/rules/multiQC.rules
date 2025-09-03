@@ -25,7 +25,7 @@ rule multiqc_cellranger_report:
 		title = PROJECT + 'Cell Ranger Summary',
 	log:
 		log_output = multiqc_log + 'multiqc_cellranger_report.log'
-	benchmark: benchmark_log + PROJECT.lower() + '_multiqc_cellranger.benchmark'  #added 12.4.2024 ERR
+	benchmark: benchmark_log + PROJECT.lower() + '_multiqc_cellranger.benchmark'
 	shell:
 		"multiqc {params.search_dir} -m {params.module} \
 			 --filename {params.report_name} -o {params.outdir} \

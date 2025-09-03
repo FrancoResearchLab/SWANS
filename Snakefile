@@ -116,11 +116,9 @@ def replace_spaces_commas(config_param_name, config_param):
 		options = [config_param]
 		print(type(options))
 
-	# added 8.26-----
 	if config_param_name == 'RESOLUTION' and ',' not in config_param:
 		return(config_param)
 	#	flag = 0
-	# added 8.26-----
 
 	for o in options:
 		if config_param_name == 'SEURAT_NORMALIZATION_METHOD':

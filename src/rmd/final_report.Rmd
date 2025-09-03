@@ -571,7 +571,7 @@ if (is.data.frame(final_pathways_adjP)) {
     options = list(
       autoWidth = TRUE,
       dom = 'Blfrtip',
-      buttons = c('colvis', 'copy', 'excel', 'pdf', 'print'), #added comma at end
+      buttons = c('colvis', 'copy', 'excel', 'pdf', 'print'),
       initComplete = JS("
   function() {
     var api = this.api();

@@ -45,7 +45,7 @@ rule final_analysis:
 	output: 
 		storage_files = storage_items,
 		seurat_object = final_analyzed_seurat_object,
-	benchmark: benchmark_log + PROJECT + '_final_analysis.benchmark' #added 12.4.2024 ERR
+	benchmark: benchmark_log + PROJECT + '_final_analysis.benchmark'
 	log:
 		log_output = final_log + PROJECT + '_final_analysis.log'
 	#resources:
@@ -81,7 +81,7 @@ rule trajectory_analysis:
 	output: touch_trajectory_file
 	log:
 		log_output = final_log + PROJECT.lower() + '_trajectory_analysis.log'
-	benchmark: benchmark_log + PROJECT.lower() + '_trajectory_analysis.benchmark' #added 12.4.2024 ERR
+	benchmark: benchmark_log + PROJECT.lower() + '_trajectory_analysis.benchmark'
 	shell:
 		"Rscript {input.script} \
 			{params.project} {input.seurat_object} {params.celltype_assignment_file} \

@@ -317,7 +317,7 @@ rename_and_visualize <- function(seurat_object, celltype_file, ident, genes, mar
 	print('...by experiment...')
 	#-----------------------------------------------------------
 
-	# add in totals (w/ + without %)  #added 12.4.2024 ERR
+	# add in totals (w/ + without %)
 	number_perCluster_experiment <- table(seurat_object@meta.data$Experiment, seurat_object@meta.data[['celltypes']])
 	number_perCluster_experiment_prop <- round(proportions(as.matrix(number_perCluster_experiment), 1), 3)
 

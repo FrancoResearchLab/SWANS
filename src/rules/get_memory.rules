@@ -9,14 +9,14 @@ onsuccess:
 onerror:
 	print("The memory pipeline did not complete without errors."),
 	shell("mail -s 'The memory pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
-
+#
 #--------------------RULES---------------------------------------
 rule memory:
 	input:
 		initial_seurat_object = storage_file
 	params:
-		barcodes_files = 'data/endpoints/' + PROJECT + '/*/' + SEURAT_CREATION_SOURCE + '/barcodes.tsv.gz',
-		features_files = 'data/endpoints/' + PROJECT + '/*/' + SEURAT_CREATION_SOURCE + '/features.tsv.gz'
+		barcodes_files = barcodes_files,
+		features_files = features_files
 	output:
 		m_file = memory_file
 	log:

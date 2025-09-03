@@ -115,6 +115,7 @@ memory_file <- if (is.null(opt$options$memory_file)) stop("Valid --memory_file i
 regression_file <- if (is.null(opt$options$regression_file) || !file.exists(opt$options$regression_file)) "does_not_exist" else opt$options$regression_file
 # LOAD PACKAGES
 # --------------------------------------------------------------------
+suppressMessages(library(future, lib.loc = lib_path))
 suppressMessages(library(tools, lib.loc = lib_path))
 suppressMessages(library(qs, lib.loc = lib_path))
 suppressMessages(library(Seurat, lib.loc = lib_path))
@@ -140,16 +141,7 @@ if (run_azimuth == 'y')
   # Arrange .libPaths() so user library is first
   .libPaths(c(user_lib, .libPaths()))
 }
-suppressMessages(library(tools, lib.loc = lib_path))
-suppressMessages(library(qs, lib.loc = lib_path))
-suppressMessages(library(Seurat, lib.loc = lib_path))
-suppressMessages(library(clustree, lib.loc = lib_path))
-if (run_azimuth == 'y')
-{
-  suppressMessages(library(SeuratData, lib.loc = lib_path))
-  suppressMessages(library(Azimuth, lib.loc = lib_path))
-}
-# --------------------------------------------------------------------
+
 
 # GET MEMORY DEMAND
 # --------------------------------------------------------------------

@@ -86,4 +86,4 @@ rule analyze_sc_object:
         --processes {params.processes} \
         --memory_file {input.m_file} \
         --regression_file {params.regression_file} \
-        (params.lib_path} 2> {log.log_output}"
+        {params.lib_path} 2> {log.log_output}"

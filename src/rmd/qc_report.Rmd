@@ -1,4 +1,16 @@
+---
+title: "`r params$project`"
+subtitle: "Quality Control Report"
+date: "`r format(Sys.time())`"
+params:
+  root_dir: ../..
+  data_dir: ../../data/endpoints
+  qc_config: ../../configs/prelim_configs.yaml
+  project: PROJECT_NAME
+showWarnings: FALSE
+output: html_document
 
+---
 
 <style>
   .main-container {
@@ -117,9 +129,6 @@
 # Don't echo the code blocks
 knitr::opts_chunk$set(echo = FALSE)
 
-# get the working dir for the input files
-wd = paste0(gsub('(.*?)(src\\/rmd\\/.*)', '\\1', getwd()))
-
 ```
 
 ```{r packages, include=FALSE}
@@ -131,17 +140,18 @@ library(DT)
 ```
 
 ```{r metadata, include=FALSE}
+# Allow direct reference to all variables in params
+attach(params)
 # Read in metadata, make sample list
-meta <- read.csv(paste0('../../samples.sample_list'), sep = '\t', header = TRUE)
+meta <- read.csv(file.path(root_dir, 'samples.sample_list'), sep = '\t', header = TRUE)
 samples <- meta$samples
 ```
 
 ```{r configs, include=FALSE}
 # Read in configs
-proj_info <- read_yaml(paste0('../../configs/prelim_configs.yaml'))
-
+proj_info <- read_yaml(qc_config)
 ## Main project info
-project <- proj_info$`PROJECT`   
+project <- proj_info$`PROJECT`
 organism <- proj_info$`ORGANISM`
 
 ## Configs relevant to QC
@@ -163,20 +173,20 @@ if (run_doubletFinder == TRUE) {
 
   for (sample in samples) {
 
-    sample_dir = paste0('../../data/endpoints/', project, '/', sample, '/', 'doubletFinder/')
+    sample_dir = file.path(data_dir, project, sample, 'doubletFinder')
 
     # Path to figure
-    doublet_imgs[[sample]] = paste0(sample_dir, 'figures/', project, '_', sample, '_doublet.png')
+    doublet_imgs[[sample]] = file.path(sample_dir, 'figures', paste0(project, '_', sample, '_doublet.png'))
 
     # Data
     stats = read.table(
-        file = paste0(sample_dir, 'tables/', project, '_', sample, '_doubletfinder_stats.csv'),
+        file = file.path(sample_dir, 'tables', paste0(project, '_', sample, '_doubletfinder_stats.csv')),
         sep = ',',
         header = TRUE
     )
 
     doublet_count = read.table(
-        file = paste0(sample_dir, 'tables/', project, '_', sample, '_doublet_ids.txt'),
+        file = file.path(sample_dir, 'tables', paste0(project, '_', sample, '_doublet_ids.txt')),
         sep = ',',
         header = TRUE
     ) %>% pull('doublet_ids') %>% length()
@@ -201,10 +211,10 @@ if (run_soupX == TRUE)
 {
   for (sample in samples) 
   {
-    sample_soupX_dir = paste0('../../data/endpoints/', project, '/', sample, '/', 'soupX/')
+    sample_soupX_dir = file.path(data_dir, project, sample,'soupX')
 
     # Path to figure
-    soupX_imgs[[sample]] = paste0(sample_soupX_dir, project, '_', sample, '_contam_plot.png')
+    soupX_imgs[[sample]] = file.path(sample_soupX_dir, paste0(project, '_', sample, '_contam_plot.png'))
   }
 }
 
@@ -214,27 +224,19 @@ if (run_soupX == TRUE)
 ```{r get qc images from initial Seurat object}
 # Seurat QC plots -----
 
-analysis_dir = paste0('../../data/endpoints/', project, '/analysis/figures/')
+analysis_dir = file.path(data_dir, project, '/analysis/figures')
 
 # Pre-filt images (qc_1)
-prefilt_vln = paste0(analysis_dir, project, '_', 'qc_1_vln.png')
-prefilt_scat1 = paste0(analysis_dir, project, '_', 'qc_1_scatter1.png')
-prefilt_scat2 = paste0(analysis_dir, project, '_', 'qc_1_scatter2.png')
+prefilt_vln = file.path(analysis_dir, paste0(project, '_', 'qc_1_vln.png'))
+prefilt_scat1 = file.path(analysis_dir, paste0(project, '_', 'qc_1_scatter1.png'))
+prefilt_scat2 = file.path(analysis_dir, paste0(project, '_', 'qc_1_scatter2.png'))
 
 # Post-filt images (qc_2)
-postfilt_vln = paste0(analysis_dir, project, '_', 'qc_2_vln.png')
-postfilt_scat1 = paste0(analysis_dir, project, '_', 'qc_2_scatter1.png')
-postfilt_scat2 = paste0(analysis_dir, project, '_', 'qc_2_scatter2.png')
+postfilt_vln = file.path(analysis_dir, paste0(project, '_', 'qc_2_vln.png'))
+postfilt_scat1 = file.path(analysis_dir, paste0(project, '_', 'qc_2_scatter1.png'))
+postfilt_scat2 = file.path(analysis_dir, paste0(project, '_', 'qc_2_scatter2.png'))
 
 ```
-
----
-showWarnings: FALSE
-title: "`r project`"
-subtitle: "Quality Control Report"
-date: "`r format(Sys.time())`"
-output: html_document
----
 
 <div class="main-container">
 
@@ -258,12 +260,12 @@ Maximum Features (per cell) Threshold: `r maxfeat_thresh`
 ```{r DoubletFinder_SoupX, echo=FALSE, include=TRUE, out.width="50%", results="asis"}
 if (run_doubletFinder == FALSE)
 {
-	 cat("  \n####", "DoubletFinder was not run.  \n")
+  cat("  \n####", "DoubletFinder was not run.  \n")
 }
 
 if (run_soupX == FALSE)
 {
-	 cat("  \n####", "SoupX was not run.  \n")
+  cat("  \n####", "SoupX was not run.  \n")
 }
 
 for (sample in samples) 
@@ -380,7 +382,7 @@ if (run_doubletFinder == TRUE) {
 -->
 
 <hr style="border:1px solid gray"/>
- 
+
 ## Seurat QC plots
 <div class="row">
 

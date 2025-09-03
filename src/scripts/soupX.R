@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 # Author:  E. Reichenberger
+# Modified by: M. Brown
+# Mod note: M. Brown add preprocessing directive, converted positional args to flags with input checks and a default lib path for compatibility with argparse and nextflow integration
 # Date:    2.16.2021
 
 # Purpose:   Remove contaminant RNA w/ SoupX.
@@ -25,17 +27,17 @@ tryCatch(
 
 # Set and define opts
 option_list <- list(
-  make_option(c("-s", "--sample"), type="character",
+  make_option(c("--sample"), type="character",
               help="Sample name as str"),
-  make_option(c("-p", "--project"), type="character",
+  make_option(c("--project"), type="character",
               help="Name of the project"),
-  make_option(c("-d", "--data_type"), type="character",
+  make_option(c("--data_type"), type="character",
               help="outs, no_clusters, or h5"),
-  make_option(c("-i", "--soupX_input_path"), type="character",
+  make_option(c("--soupX_input_path"), type="character",
               help="Path to input data as str"),
-  make_option(c("-o", "--soupX_output_path"), type="character",
+  make_option(c("--soupX_output_path"), type="character",
               help="Path to output data as str"),
-  make_option(c("-t", "--starter_data"), type="character", 
+  make_option(c("--starter_data"), type="character", 
               help="Type of starting data: cellranger, fastq")
 )
 

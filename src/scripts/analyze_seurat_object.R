@@ -1,78 +1,118 @@
 #!/usr/bin/env Rscript
 # Author: K. Beigel
+# Modified by: M. Brown
+# Mod note: M. Brown add preprocessing directive, converted positional args to flags with input checks and a default lib path for compatibility with argparse and nextflow integration
 # Date: 7.22.2024
 # Purpose: Processing of Seurat object. This script will handle either an individual sample Seurat object or merged Seurat.
 # Details: Runs normalization, integration (if more than once sample), PCA, UMAP.
 
-initial_seurat_object = ''
-project = ''
-organism = ''
-n_components = ''
-mito_regression = ''
-ribo_regression = ''
-cc_regression = ''
-cc_method = ''
-num_var_features = ''
-scale_data_features = ''
-split_layers_by = ''
-normalization_config = ''
-integration_config = ''
-ref_based_integration = ''
-ref_samples = ''
-run_azimuth = ''
-azimuth_ref = ''
-run_transferdata = ''
-transferdata_ref_file = ''
-transferdata_reduction = ''
-transferdata_annocol = ''
-resolution_config = ''
-include_tsne = ''
-analyzed_seurat_object = ''
-report_path_figures = ''
-lib_path = ''
-processes = ''
-memory_file = ''
-max_memory_config = ''
-regression_file = ''
+# set a default library path for optparse to give help
+lib_path <- '/usr/local/lib/R/site-library'
 
-args = commandArgs(trailingOnly = TRUE)
+args <- commandArgs(trailingOnly = TRUE)
+tryCatch(
+  expr = {
+    suppressMessages(library("optparse", lib.loc = lib_path))
+  },
+  error = function(e) {
+    if (dir.exists(tail(args, n=1))) lib_path <- tail(args, n=1) else stop("Valid library path specified at the end as a positional arg required.")
+    # if lib path provided, override default
+    suppressMessages(library("optparse", lib.loc = lib_path))
+  }
+)
 
-nargs = 30
-if (length(args) != nargs) {
-  stop(paste(nargs, 'arguments must be supplied.'), call. = FALSE)
-} else if (length(args) == nargs) {
-  initial_seurat_object = args[1]
-  project = args[2]
-  organism = args[3]
-  n_components = args[4]
-  mito_regression = args[5]
-  ribo_regression = args[6]
-  cc_regression = args[7]
-  cc_method = args[8]
-  num_var_features = args[9]
-  scale_data_features = args[10]
-  split_layers_by = args[11]
-  normalization_config = args[12]
-  integration_config = args[13]
-  ref_based_integration = args[14]
-  ref_samples = args[15]
-  run_azimuth = args[16]
-  azimuth_ref = args[17]
-  run_transferdata = args[18]
-  transferdata_ref_file = args[19]
-  transferdata_reduction = args[20]
-  transferdata_annocol = args[21]
-  resolution_config = args[22]
-  include_tsne = args[23]
-  analyzed_seurat_object = args[24]
-  report_path_figures = args[25]
-  lib_path = args[26]
-  processes = args[27]
-  memory_file = args[28]
-  max_memory_config = args[29]
-  regression_file = args[30]
-}
+option_list <- list(
+  make_option(c("--initial_seurat_object"), type = "character",
+              help = "Path to the initial Seurat object (qs or rds), likely from create_initial_seurat.R."),
+  make_option(c("--project"), type = "character",
+              help = "Project name for output files."),
+  make_option(c("--organism"), type = "character",
+              help = "Organism: human or mouse."),
+  make_option(c("--n_components"), type = "integer",
+              help = "Number of components to use for PCA."),
+  make_option(c("--mito_regression"), type = "character",
+              help = "Whether to regress out mitochondrial gene expression (y/n)."),
+  make_option(c("--ribo_regression"), type = "character",
+              help = "Whether to regress out ribosomal gene expression (y/n)."),
+  make_option(c("--cc_regression"), type = "character",
+              help = "Whether to regress out cell cycle scores (y/n)."),
+  make_option(c("--cc_method"), type = "character",
+              help = "Method for cell cycle scoring: standard or alternative."),
+  make_option(c("--num_var_features"), type = "integer",
+              help = "Number of variable features (genes) to use in normalization."),
+  make_option(c("--scale_data_features"), type = "character",
+              help = "Features to use for scaling data: all or variable."),
+  make_option(c("--split_layers_by"), type = "character",
+              help = "Metadata column by which to split layers in Seurat object (Experiment, Sample)."),
+  make_option(c("--normalization_config"), type = "character",
+              help = "Normalization methods to use: standard, sct, or both (comma-separated)."),
+  make_option(c("--integration_config"), type = "character",
+              help = "Integration methods to use: cca, rpca, harmony, pca, or all (comma-separated)."),
+  make_option(c("--ref_based_integration"), type = "character",
+              help = "Whether to use reference-based integration (y/n)."),
+  make_option(c("--ref_samples"), type = "character",
+              help = "Reference samples (sample ID list, comma-separated) for reference-based integration."),
+  make_option(c("--run_azimuth"), type = "character",
+              help = "Whether to run Azimuth annotation (y/n)."),
+  make_option(c("--azimuth_ref"), type = "character",
+              help = "Azimuth reference dataset to use for annotation."),
+  make_option(c("--run_transferdata"), type = "character",
+              help = "Whether to run TransferData annotation (y/n)."),
+  make_option(c("--transferdata_ref_file"), type = "character",
+              help = "Path to the TransferData reference file (qs or rds)."),
+  make_option(c("--transferdata_reduction"), type = "character",
+              help = "Reduction to use for TransferData (e.g., pca, umap)."),
+  make_option(c("--transferdata_annocol"), type = "character",
+              help = "Metadata column in the TransferData reference to use for annotation."),
+  make_option(c("--resolution_config"), type = "character",
+              help = "Resolution values (float) for clustering (comma-separated)."),
+  make_option(c("--include_tsne"), type = "character",
+              help = "Whether to include tSNE reduction (y/n)."),
+  make_option(c("--analyzed_seurat_object"), type = "character",
+              help = "Path to save the analyzed Seurat object (qs)."),
+  make_option(c("--report_path_figures"), type = "character",
+              help = "Path to save figures for the report."),
+  make_option(c("--processes"), type = "integer", default = 4,
+              help = "Number of processes to use for parallel processing."),
+  make_option(c("--memory_file"), type = "character",
+              help = "Path to the file containing memory limit in bytes."),
+  # make_option(c("--max_memory_config"), type = "character",
+  #             help = "Maximum memory limit in bytes (if specified, will override the value in memory_file)."),
+  make_option(c("--regression_file"), type = "character",
+              help = "Path to the file containing gene module scores for regression (if applicable).")
+)
 
+# Since the last args is positional, object sticks the options in a separate key
+opt <- parse_args(OptionParser(option_list=option_list), positional_arguments=TRUE, args=args)
+initial_seurat_object <- if (is.null(opt$options$initial_seurat_object) || !file.exists(opt$options$initial_seurat_object)) stop("Valid --initial_seurat_object is required. See --help for all opts") else opt$options$initial_seurat_object
+project <- if (is.null(opt$options$project)) stop("Valid --project is required. See --help for all opts") else opt$options$project
+organism <- if (is.null(opt$options$organism)) stop("Valid --organism is required. See --help for all opts") else opt$options$organism
+n_components <- if (is.null(opt$options$n_components)) stop("Valid --n_components is required. See --help for all opts") else opt$options$n_components
+mito_regression <- if (is.null(opt$options$mito_regression)) stop("Valid --mito_regression is required. See --help for all opts") else opt$options$mito_regression
+ribo_regression <- if (is.null(opt$options$ribo_regression)) stop("Valid --ribo_regression is required. See --help for all opts") else opt$options$ribo_regression
+cc_regression <- if (is.null(opt$options$cc_regression)) stop("Valid --cc_regression is required. See --help for all opts") else opt$options$cc_regression
+cc_method <- if (is.null(opt$options$cc_method) && cc_regression=="y") stop("You specified y for cell cycle regression, but did not give a method.") else if(is.null(opt$options$cc_method) && cc_regression=="n") "" else opt$options$cc_method
+num_var_features <- if (is.null(opt$options$num_var_features)) stop("Valid --num_var_features is required. See --help for all opts") else opt$options$num_var_features
+scale_data_features <- if (is.null(opt$options$scale_data_features)) stop("Valid --scale_data_features is required. See --help for all opts") else opt$options$scale_data_features
+split_layers_by <- if (is.null(opt$options$split_layers_by)) stop("Valid --split_layers_by is required. See --help for all opts") else opt$options$split_layers_by
+normalization_config <- if (is.null(opt$options$normalization_config)) stop("Valid --normalization_config is required. See --help for all opts") else opt$options$normalization_config
+integration_config <- if (is.null(opt$options$integration_config)) stop("Valid --integration_config is required. See --help for all opts") else opt$options$integration_config
+ref_based_integration <- if (is.null(opt$options$ref_based_integration)) stop("Valid --ref_based_integration is required. See --help for all opts") else opt$options$ref_based_integration
+ref_samples <- if (is.null(opt$options$ref_samples) && ref_based_integration=="y") stop("You specified y for ref_based_integration but did not give a csv list of samples") else if (is.null(opt$options$ref_samples) && ref_based_integration=="n") "" else opt$options$ref_samples
+run_azimuth <- if (is.null(opt$options$run_azimuth)) stop("Valid --run_azimuth is required. See --help for all opts") else opt$options$run_azimuth
+azimuth_ref <- if ( is.null(opt$options$azimuth_ref) && run_azimuth=="y") stop("You specified y for run_azimuth but did not give a preset value") else if (is.null(opt$options$azimuth_ref) && run_azimuth=="n") "" else opt$options$azimuth_ref
+run_transferdata <- if (is.null(opt$options$run_transferdata)) stop("Valid --run_transferdata is required. See --help for all opts") else opt$options$run_transferdata
+transferdata_ref_file <- if ( (is.null(opt$options$transferdata_ref_file) ||  !file.exists(opt$options$transferdata_ref_file))  && run_transferdata=="y") stop("You specified y for run_transferdata but did not give a reference file") else if (is.null(opt$options$transferdata_ref_file) && run_transferdata=="n") "" else opt$options$transferdata_ref_file
+transferdata_reduction <- if (is.null(opt$options$transferdata_reduction) && run_transferdata=="y") stop("You specified y for run_transferdata but did not give a reduction") else if (is.null(opt$options$transferdata_reduction) && run_transferdata=="n") "" else opt$options$transferdata_reduction
+transferdata_annocol <- if (is.null(opt$options$transferdata_annocol) && run_transferdata=="y") stop("You specified y for run_transferdata but did not give a metadata column for annotation") else if (is.null(opt$options$transferdata_annocol) && run_transferdata=="n") "" else opt$options$transferdata_annocol
+resolution_config <- if (is.null(opt$options$resolution_config)) stop("Valid --resolution_config is required. See --help for all opts") else opt$options$resolution_config
+include_tsne <- if (is.null(opt$options$include_tsne)) stop("Valid --include_tsne is required. See --help for all opts") else opt$options$include_tsne
+analyzed_seurat_object <- if (is.null(opt$options$analyzed_seurat_object)) stop("Valid --analyzed_seurat_object is required. See --help for all opts") else opt$options$analyzed_seurat_object
+report_path_figures <- if (is.null(opt$options$report_path_figures)) stop("Valid --report_path_figures is required. See --help for all opts") else opt$options$report_path_figures
+processes <- if (is.null(opt$options$processes)) stop("Valid --processes is required. See --help for all opts") else opt$options$processes
+memory_file <- if (is.null(opt$options$memory_file)) stop("Valid --memory_file is required. See --help for all opts") else opt$options$memory_file
+# max_memory_config <- if (is.null(opt$options$max_memory_config)) stop("Valid --max_memory_config is required. See --help for all opts") else opt$options$max_memory_config
+regression_file <- if (is.null(opt$options$regression_file) || !file.exists(opt$options$regression_file)) "does_not_exist" else opt$options$regression_file
 # LOAD PACKAGES
 # --------------------------------------------------------------------
 suppressMessages(library(future, lib.loc = lib_path))
@@ -84,8 +124,24 @@ if (run_azimuth == 'y')
 {
   suppressMessages(library(SeuratData, lib.loc = lib_path))
   suppressMessages(library(Azimuth, lib.loc = lib_path))
+
+  # Extend timeout
+  options(timeout = 3000)
+
+  # Set user library path for SeuratData::InstallData(), create if it does not exist
+  # Do this in the working directory, NOT in a path that is in the container
+  user_lib = file.path(getwd(), 'R/library')
+  if (!dir.exists(user_lib)) {
+    message(paste('Creating directory', user_lib, 'for SeuratData datasets.'))
+    dir.create(user_lib, recursive = TRUE)
+  } else {
+      message(paste('Directory', user_lib, 'for SeuratData datasets already exists.'))
+  }
+
+  # Arrange .libPaths() so user library is first
+  .libPaths(c(user_lib, .libPaths()))
 }
-# --------------------------------------------------------------------
+
 
 # GET MEMORY DEMAND
 # --------------------------------------------------------------------
@@ -139,27 +195,27 @@ ref_samples = single_or_list(ref_samples)
 # Normalization: list of which assay each config term for normalization will need
 normalization_assay_dict = list('standard' = 'RNA', 'sct' = 'SCT')
 
-# Subset to a ist of the norm methods from config
+# Subset to a list of the norm methods from config
 normalization_method_list = normalization_assay_dict[normalization_config_list]
 
 # INTEGRATION METHODS: list of what each config term for integration will be
 integration_dict = list('cca' = 'CCAIntegration', 'rpca' = 'RPCAIntegration', 'harmony' = 'HarmonyIntegration',
                         'pca' = 'PCA') # need this here so this passes properly to fns that use the integration_method_list
 
-# Subset to a ist of the input methods from config with Seurat int names
+# Subset to a list of the input methods from config with Seurat int names
 integration_method_list = integration_dict[integration_config_list]
 # --------------------------------------------------------------------
 
 # OUTPUT PATHS
 #--------------------------------------------------------------------
 # Output that will be unchanged by component #s go here
-base_directory = paste0('data/endpoints/', project, '/analysis')
-figure_dir = paste0(base_directory, '/figures')
-rds_dir = paste0(base_directory, '/RDS')
-table_dir = paste0(base_directory, '/tables')
+base_directory = file.path('data/endpoints', project, 'analysis')
+figure_dir = file.path(base_directory, 'figures')
+rds_dir = file.path(base_directory, 'RDS')
+table_dir = file.path(base_directory, 'tables')
 
 # Create directories
-dir.create(rds_dir, showWarnings = FALSE)
+dir.create(rds_dir, showWarnings = FALSE, recursive = TRUE)
 dir.create(table_dir, showWarnings = FALSE)
 dir.create(figure_dir, showWarnings = FALSE)
 dir.create(report_path_figures, recursive = TRUE, showWarnings = FALSE)
@@ -167,7 +223,7 @@ dir.create(report_path_figures, recursive = TRUE, showWarnings = FALSE)
 # If there is more than one resolution, make dir for clustree fig(s)
 if (length(resolution_config_list) > 1)
 {
-  dir.create(paste0(report_path_figures, '/clustree'), showWarnings = FALSE)
+  dir.create(file.path(report_path_figures, 'clustree'), showWarnings = FALSE)
 }
 #--------------------------------------------------------------------
 
@@ -189,19 +245,19 @@ import_data = function(filename, filetype)
 get_regression_variables = function(cc.regression, cc.method, mito.regression, ribo.regression, gene.module.file)
 {
   regression.vars = NULL
-  # If mito regression is specified, add to list of regression varaibles
+  # If mito regression is specified, add to list of regression variables
   if (mito.regression == 'y')
   {
     regression.vars = append(regression.vars, 'percent.mito')
   }
 
-  # If ribo regression is specified, add to list of regression varaibles
+  # If ribo regression is specified, add to list of regression variables
   if (ribo.regression == 'y')
   {
     regression.vars = append(regression.vars, 'percent.ribo')
   }
 
-  # If cell cycle regression is specified, add to list of regression varaibles
+  # If cell cycle regression is specified, add to list of regression variables
   if (cc.regression == 'y')
   {
     if (cc.method == 'standard')
@@ -284,7 +340,7 @@ seurat_processing = function(seurat.object, normalization.method.list, split.lay
   set.seed(42)
   print('---- Processing Seurat object. ----')
   if (n_samples > 1) {
-    # Split the object into layers according to whatever is specificed by split.layers.by
+    # Split the object into layers according to whatever is specified by split.layers.by
     print(paste0('Splitting Seurat object by ', split.layers.by, '.'))
     seurat.object[["RNA"]] = split(seurat.object[["RNA"]], f = get(split.layers.by, seurat.object@meta.data))
   }
@@ -618,14 +674,14 @@ find_neighbors_clusters_reductions = function(seurat.object, sig.pcs, reduction.
   {
     print(paste('---- Running Clustree for all', reduction.name, 'resolution', '(', paste(resolution.config.list, collapse = ', '), '). ----'))
 
-	 title_name = paste0('Normalization + Integration: ', reduction.name)
+    title_name = paste0('Normalization + Integration: ', reduction.name)
     clustree.result = clustree(seurat.object, prefix = paste0(graph.name, '_res.'))
 
     # PLOT: Clustree results
     pdf(file = paste0(report_path_figures, '/clustree/', project, '_', reduction.name, '_clustree_results.pdf'), width = 11, height = 8.5)
     print(clustree.result + ggtitle(title_name) + scale_colour_discrete(name = 'resolution') + scale_size_continuous(name = "cells/cluster", range = c(3, 15)) +
-	 guides(colour = guide_legend(order = 1), size = guide_legend(order = 2), alpha = guide_legend(order = 3), fill = guide_legend(order = 4)) +
-	 theme(legend.title = element_text(size = 14), legend.text  = element_text(size = 13), legend.key.size = unit(1.2, "lines")))
+    guides(colour = guide_legend(order = 1), size = guide_legend(order = 2), alpha = guide_legend(order = 3), fill = guide_legend(order = 4)) +
+    theme(legend.title = element_text(size = 14), legend.text  = element_text(size = 13), legend.key.size = unit(1.2, "lines")))
     dev.off()
   }
 

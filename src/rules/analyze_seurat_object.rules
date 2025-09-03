@@ -83,7 +83,7 @@ rule analyze_sc_object:
         --include_tsne {params.include_tsne} \
         --analyzed_seurat_object {params.analyzed_seurat_object} \
         --report_path_figures {params.report_path_figures} \
-        --processes {params.processes} --memory_file {input.m_file} \
-        --memory {params.memory} \
-        --regression_file {params.regression_file} 2> {log.log_output}"
-        {params.lib_path}
+        --processes {params.processes} \
+        --memory_file {input.m_file} \
+        --regression_file {params.regression_file} \
+        (params.lib_path} 2> {log.log_output}"

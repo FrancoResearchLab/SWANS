@@ -14,6 +14,7 @@ from helper_scripts.sample_list import get_samples
 from pathlib import Path 
 import shutil
 
+container: "docker://migbro/pond:1.1"
 configfile: 'configs/prelim_configs.yaml'
 
 # set config parameters
@@ -97,7 +98,7 @@ def replace_spaces_commas(config_param_name, config_param):
 	storage_options = ['qs', 'rds']
 	visualization_options = ['feature', 'violin', 'ridge', 'dot']
 	flag = 1
-
+	
 	if type(config_param) == float:
 		config_param = str(config_param)
 

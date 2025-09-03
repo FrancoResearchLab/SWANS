@@ -204,7 +204,37 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 				write.table(z_ae, file=z_scores_report, sep='\t', quote=F, col.names=TRUE, row.names=FALSE)
 				# ---------------------------------------------------------
 
-				# DimPlots -----------------------------------------------
+				# phase information ---------------------------------------
+				# added 9.2.2025
+				# Experiment
+				print('making table of phases across all clusters (by experiment)...')
+				cc_phase_cluster <- as.data.frame(table(seurat_object@meta.data$Experiment, seurat_object@meta.data[[name]], seurat_object@meta.data$Phase))
+				colnames(cc_phase_cluster) <- c('Experiment', 'Cluster', 'Phase', 'Frequency')
+
+				cc_phase_cluster_prop <- as.data.frame(prop.table(table(seurat_object@meta.data$Experiment, seurat_object@meta.data[[name]], seurat_object@meta.data$Phase), margin = 1) * 100)
+				colnames(cc_phase_cluster_prop) <- c('Experiment', 'Cluster', 'Phase', 'Frequency')
+
+				cc_phase_cluster$Combined_Frequency <- paste0(cc_phase_cluster$Frequency, ' (', round(cc_phase_cluster_prop$Frequency, 1), '%)')
+
+				cc_phase_cluster <- cc_phase_cluster[, c('Experiment', 'Cluster', 'Phase', 'Combined_Frequency')]
+				colnames(cc_phase_cluster) <- c('Experiment', 'Cluster', 'Phase', 'Frequency')
+
+				# write table
+				cc_phase_cluster <- cc_phase_cluster %>% arrange(Cluster, Phase)
+				phase_table = paste(report_table_path, '/', project, '_phase_experiment_', name, '.txt', sep='')
+				write.table(cc_phase_cluster, file=phase_table, sep='\t', quote=F, col.names=TRUE, row.names=FALSE)
+
+				# Sample
+				print('making table of phases across all clusters (by sample)...')
+				cc_phase_cluster_sample <- as.data.frame(table(seurat_object@meta.data$Sample, seurat_object@meta.data[[name]], seurat_object@meta.data$Phase))
+				colnames(cc_phase_cluster_sample) <- c('Sample', 'Cluster', 'Phase', 'Frequency')
+
+				# write table
+				phase_table_sample = paste(report_table_path, '/', project, '_phase_sample_', name, '.txt', sep='')
+				write.table(cc_phase_cluster_sample, file=phase_table_sample, sep='\t', quote=F, col.names=TRUE, row.names=FALSE)
+				# ---------------------------------------------------------
+
+				# DimPlots ------------------------------------------------
 				print('Making dimplots...')
 				dimplot_fig_name = paste(dir_fig, '/', project, '_DimPlot_Proportions_', name, '.pdf', sep='')
 				pdf(file=dimplot_fig_name, onefile=TRUE, width=11, height=8.5)
@@ -213,6 +243,19 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 				print(DimPlot(seurat_object, group.by = name, reduction = redux_umap, split.by = 'Experiment', repel=TRUE, label=TRUE)) + NoLegend()
 				print(DimPlot(seurat_object, group.by = name, reduction = redux_umap, split.by = 'Sample', repel=TRUE, label=TRUE)) + NoLegend()
 				print(DimPlot(seurat_object, reduction = redux_umap, group.by = 'Phase'))
+				# added september 25
+				print(DimPlot(seurat_object, reduction = redux_umap, group.by = 'Phase', split.by='Experiment'))
+				print(DimPlot(seurat_object, reduction = redux_umap, group.by = 'Phase', split.by='Sample'))
+
+				# added geompoint plots 9.2.2025
+				print(ggplot(cc_phase_cluster_sample, aes(x=Cluster, y=Frequency, shape=Phase, color=Sample)) + 
+				  geom_point(size=3) + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+				  labs(x='Cluster', y='Frequency', shape='Cell Cycle Phase', color='Sample'))
+
+				# added geompoint plots 9.2.2025
+				print(ggplot(cc_phase_cluster, aes(x=Cluster, y=Frequency, shape=Phase, color=Experiment)) + 
+				  geom_point(size=3) + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+				  labs(x='Cluster', y='Frequency', shape='Cell Cycle Phase', color='Experiment'))
 
 				if (tsne == 'y')
 				{

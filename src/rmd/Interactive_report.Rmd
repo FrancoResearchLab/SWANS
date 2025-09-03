@@ -55,7 +55,9 @@ resolutions = as.numeric(single_or_list(resolution))
 res_choices <- resolutions 
 normalization_choices <- normalizations
 integration_choices <- integrations
-table_choices <- c('_top100_markers_avg_log2FC_', '_z_scores.', '_clusterProportions.experiment_')
+#table_choices <- c('_top100_markers_avg_log2FC_', '_z_scores.', '_clusterProportions.experiment_', '_phase_experiment_', '_phase_sample_')
+table_choices <- c('_top100_markers_avg_log2FC_', '_z_scores.', '_clusterProportions.experiment_', '_phase_experiment_')
+
 # -----------------------------------------
 
 shinyApp(
@@ -86,7 +88,7 @@ shinyApp(
     
     h2('Tables'),
 	 h5('To look at a certain cluster of a resolution and normalization, enter the appropriate cluster number. If the entered number is negative, a table with all cluster numbers will be displayed. If a postive but invalid cluster number is entered, no table will be displayed.'),
-	 h5('Choose between looking at differentially expressed genes (DEGs (top100_markers_avg_log2FC)), z-scores, or number of cells in each cluster (clusterProportions.experiment).'),
+	 h5('Choose between looking at differentially expressed genes (DEGs (top100_markers_avg_log2FC)), z-scores, number of cells in each cluster (clusterProportions.experiment), or the frequency of each phase.'),
 	 div(style = "text-align: center;", h5('Explanations'),),
 #	 fluidRow(
 #    column(4, tags$h6("_top100_markers_avg_log2FC_", style = "text-align: center;"),  
@@ -104,11 +106,12 @@ shinyApp(
 	 h6('_top100_markers_avg_log2FC_: Top 100 most DEGs identified by comparing cells within a specific cluster to all other cells across the remaining clusters. Columns: gene — Gene name; cluster — Cluster where the gene is upregulated; adjpval — Adjusted p-value for multiple testing; log2FC — Average log₂ fold change in expression'),
 	 h6('_z_scores.: Z-scores: Genes are ranked based on z-score–transformed expression values, where higher positive z-scores indicate greater relative mRNA abundance. Columns: gene — Gene name; cluster — Cluster where the gene shows elevated expression; z.score — Standardized (z-score) expression value of the gene'),
 	 h6('_clusterProportions.experiment_: Number of cells per cluster, split by experimental condition. Columns: expCond — Experimental condition; cluster — Cluster ID; numCell — Number of cells in the cluster (value in parentheses represents percentage of cells in that cluster relative to the total number of cells in the corresponding experimental group).'),
+	 h6('_phase_experiment_: Number of cells in each phase per cluster, split by experimental condition. Columns: Experiment — Experimental condition; cluster — Cluster ID; Phase — G1, G2M, S; numCells - Number of cells in that phase'),
  
     fluidRow(
-		column(3,  selectInput("tab1", label = "dge, z-scores, or cluster counts for Plot 1:", choices=table_choices), numericInput('cluster1', 'Cluster number from plot 1', value = -1, min = 0, max = 50)),
-		column(3, offset = 1, selectInput("tab2", label = "dge, z-scores, or cluster counts for Plot 2:", choices=table_choices), numericInput('cluster2', 'Cluster number from plot 2', value = -1, min = 0, max = 50)),
-		column(3, offset = 1, selectInput("tab3", label = "dge, z-scores, or cluster counts for Plot 3:", choices=table_choices), numericInput('cluster3', 'Cluster number from plot 3', value = -1, min = 0, max = 50))
+		column(3,  selectInput("tab1", label = "dge, z-scores, cluster counts, or phase counts for Plot 1:", choices=table_choices), numericInput('cluster1', 'Cluster number from plot 1', value = -1, min = 0, max = 50)),
+		column(3, offset = 1, selectInput("tab2", label = "dge, z-scores, cluster counts, or phase counts for Plot 2:", choices=table_choices), numericInput('cluster2', 'Cluster number from plot 2', value = -1, min = 0, max = 50)),
+		column(3, offset = 1, selectInput("tab3", label = "dge, z-scores, cluster counts, or phase counts for Plot 3:", choices=table_choices), numericInput('cluster3', 'Cluster number from plot 3', value = -1, min = 0, max = 50))
     ),
     
     fluidRow(
@@ -151,20 +154,26 @@ fluidRow(
       list(src = paste0('compare_images/', project, '_', input$norm3, '.', input$int3, '_snn_res.', input$res3, '_image.png'), alt = paste(input$norm3, input$integration, input$res3), width = "90%", height = "100%")
       }, deleteFile = TRUE)
     
-    col_names <- c('avg_log2FC', 'p_val_adj', 'cluster', 'gene')
+   col_names <- c('avg_log2FC', 'p_val_adj', 'cluster', 'gene')
 	 new_col_names <- c('log2FC', 'adjpval', 'cluster', 'gene')
+   phase_col_name_o <- c('Experiment', 'Cluster', 'Phase', 'Frequency')
+   phase_col_name <- c('experiment', 'cluster', 'phase', 'numCells')
     
     output$top100_bycluster_tbl1 <- renderDataTable({
       top100tbl_1 <- read.table(paste0('tables/', project, input$tab1, input$norm1, '.', input$int1, '_snn_res.', input$res1, '.txt'), header=TRUE, sep='\t')
+      disp_top100tbl_1 <- top100tbl_1
       if (input$tab1 == '_top100_markers_avg_log2FC_')
       {
         top100tbl_1$avg_log2FC <- signif(top100tbl_1$avg_log2FC,3)
         top100tbl_1$p_val_adj <- formatC(signif(top100tbl_1$p_val_adj, 3), format = "e", digits = 1)
         disp_top100tbl_1 <- top100tbl_1[,col_names]
         colnames(disp_top100tbl_1) <- new_col_names
-		  disp_top100tbl_1 <- disp_top100tbl_1[, c('gene', 'cluster', 'adjpval', 'log2FC')]
-      }
-      else (disp_top100tbl_1 <- top100tbl_1)
+  		  disp_top100tbl_1 <- disp_top100tbl_1[, c('gene', 'cluster', 'adjpval', 'log2FC')]
+      } else if (input$tab1 == '_phase_experiment_') {
+        disp_top100tbl_1 <- top100tbl_1[,phase_col_name_o]
+        disp_top100tbl_1 <- disp_top100tbl_1[order(disp_top100tbl_1$Cluster, disp_top100tbl_1$Phase), ]
+        colnames(disp_top100tbl_1) <- phase_col_name
+      } else (disp_top100tbl_1 <- top100tbl_1)
       
       vec <- c(input$cluster1)
       
@@ -186,8 +195,11 @@ fluidRow(
         disp_top100tbl_2 <- top100tbl_2[,col_names]
         colnames(disp_top100tbl_2) <- new_col_names
 		  disp_top100tbl_2 <- disp_top100tbl_2[, c('gene', 'cluster', 'adjpval', 'log2FC')]
-      }
-      else (disp_top100tbl_2 <- top100tbl_2)
+      } else if (input$tab2 == '_phase_experiment_') {
+        disp_top100tbl_2 <- top100tbl_2[,phase_col_name_o]
+        disp_top100tbl_2 <- disp_top100tbl_2[order(disp_top100tbl_2$Cluster, disp_top100tbl_2$Phase), ]
+        colnames(disp_top100tbl_2) <- phase_col_name
+      } else (disp_top100tbl_2 <- top100tbl_2)
       
       vec <- c(input$cluster2)
      
@@ -208,8 +220,11 @@ fluidRow(
         disp_top100tbl_3 <- top100tbl_3[,col_names]
         colnames(disp_top100tbl_3) <- new_col_names
 		  disp_top100tbl_3 <- disp_top100tbl_3[, c('gene', 'cluster', 'adjpval', 'log2FC')]
-      }
-      else (disp_top100tbl_3 <- top100tbl_3)
+      } else if (input$tab3 == '_phase_experiment_') {
+        disp_top100tbl_3 <- top100tbl_3[,phase_col_name_o]
+        disp_top100tbl_3 <- disp_top100tbl_3[order(disp_top100tbl_3$Cluster, disp_top100tbl_3$Phase), ]
+        colnames(disp_top100tbl_3) <- phase_col_name
+      } else (disp_top100tbl_3 <- top100tbl_3)
       
       vec <- c(input$cluster3)
     

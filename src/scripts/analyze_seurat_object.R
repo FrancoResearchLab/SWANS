@@ -115,7 +115,31 @@ memory_file <- if (is.null(opt$options$memory_file)) stop("Valid --memory_file i
 regression_file <- if (is.null(opt$options$regression_file) || !file.exists(opt$options$regression_file)) "does_not_exist" else opt$options$regression_file
 # LOAD PACKAGES
 # --------------------------------------------------------------------
-suppressMessages(library(future, lib.loc = lib_path))
+suppressMessages(library(tools, lib.loc = lib_path))
+suppressMessages(library(qs, lib.loc = lib_path))
+suppressMessages(library(Seurat, lib.loc = lib_path))
+suppressMessages(library(clustree, lib.loc = lib_path))
+if (run_azimuth == 'y')
+{
+  suppressMessages(library(SeuratData, lib.loc = lib_path))
+  suppressMessages(library(Azimuth, lib.loc = lib_path))
+
+  # Extend timeout
+  options(timeout = 3000)
+
+  # Set user library path for SeuratData::InstallData(), create if it does not exist
+  # Do this in the working directory, NOT in a path that is in the container
+  user_lib = file.path(getwd(), 'R/library')
+  if (!dir.exists(user_lib)) {
+    message(paste('Creating directory', user_lib, 'for SeuratData datasets.'))
+    dir.create(user_lib, recursive = TRUE)
+  } else {
+      message(paste('Directory', user_lib, 'for SeuratData datasets already exists.'))
+  }
+
+  # Arrange .libPaths() so user library is first
+  .libPaths(c(user_lib, .libPaths()))
+}
 suppressMessages(library(tools, lib.loc = lib_path))
 suppressMessages(library(qs, lib.loc = lib_path))
 suppressMessages(library(Seurat, lib.loc = lib_path))

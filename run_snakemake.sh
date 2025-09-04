@@ -66,10 +66,15 @@ echo "R_LIBS_USER=$rpath" > .Renviron
 # Get paths for Singularity bind mounts
 #-----------------------------------------------------------------------------
 ## Retrieves cellranger reference genome dir from config file
-cellranger_reference=`python3 $SCRIPT_DIR/helper_scripts/cache.py CELLRANGER_REFERENCE:`
-echo -e "\nReference genome directory bind mount for Singularity: $cellranger_reference\n"
+if [ "$run_cellranger" = "y" ]; then
+	cellranger_reference=`python3 $SCRIPT_DIR/helper_scripts/cache.py CELLRANGER_REFERENCE:`
+	echo -e "\nReference genome directory bind mount for Singularity: $cellranger_reference\n"
+else
+	cellranger_reference=''
+fi
 
 ## Gets paths from sample file to use as bind mounts to access sample data
+echo -e "\nChecking if sample directories exist."
 echo -e "Checking if sample directories exist."
 sample_bind_mnts=$(python3 $SCRIPT_DIR/helper_scripts/get_sample_paths.py)
 echo -e "\nSample directory bind mounts for Singularity: $sample_bind_mnts\n"

@@ -104,6 +104,7 @@ run_final=`python3 $SCRIPT_DIR/helper_scripts/cache_final.py RUN_FINAL_ANALYSIS:
 if [ -e "$final_config_file" ] && [[ $run_final == "y" ]]; then
 	echo "You have the final config file, let the magic begin"
 	# snakemake --snakefile FinalSnakefile --printshellcmds --dryrun
-	snakemake --cores $threads --snakefile FinalSnakefile --printshellcmds #--forceall 
+	snakemake --cores $threads --snakefile FinalSnakefile --printshellcmds \
+		--use-singularity
 fi
 #-----------------------------------------------------------------------------

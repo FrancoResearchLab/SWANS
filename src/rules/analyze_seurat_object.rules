@@ -54,7 +54,7 @@ rule analyze_sc_object:
     threads: THREADS
     log:
          log_output = seurat_analysis_log + PROJECT + '_seurat_analysis.log'
-    benchmark: benchmark_log + PROJECT + '_seurat_analysis.benchmark' #added 12.4.2024 ERR
+    benchmark: benchmark_log + PROJECT + '_seurat_analysis.benchmark'
     shell:
         "Rscript \
         {input.script} \

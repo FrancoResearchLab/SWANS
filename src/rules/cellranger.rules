@@ -18,7 +18,6 @@ onerror:
 #--------------------RULES---------------------------------------
 rule cellranger_counts:
 	input: 
-		tool = CELLRANGER,
 		fastqs = expand('data/endpoints/' + PROJECT + '/{{s}}/fastq/', s=SAMPLE_LIST)
 	output: 
 		stamp = cellranger_log + PROJECT + '_{s}.stamp',
@@ -29,9 +28,10 @@ rule cellranger_counts:
 	log:
 		log_output = cellranger_log + PROJECT + '_{s}_counts.log'
 	threads: THREADS
-	benchmark: benchmark_log + PROJECT + '_{s}_cellranger_counts.benchmark' #added 12.4.2024 ERR
+	benchmark: benchmark_log + PROJECT + '_{s}_cellranger_counts.benchmark'
+	container: 'docker://beigelk/cellranger:9.0.1'
 	shell:
-		"{input.tool} count --id={wildcards.s} \
+		"cellranger count --id={wildcards.s} \
 		--fastqs={input.fastqs} --output-dir={params.counts} \
 		--sample={wildcards.s} \
 		--transcriptome={params.reference} {params.bam} \

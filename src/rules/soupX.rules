@@ -29,7 +29,7 @@ rule soupX:
 		matrix_path = 'data/endpoints/' + PROJECT + '/' + '{s}/soupX/matrix.mtx.gz',
 	log:
 		log_output = soupX_log  + PROJECT + '_{s}_soupX.log'
-	benchmark: benchmark_log + PROJECT.lower() + '_{s}_soupX.benchmark' #added 12.4.2024 ERR
+	benchmark: benchmark_log + PROJECT.lower() + '_{s}_soupX.benchmark'
 	shell:
 		"Rscript {input.script} \
 		--sample {params.sample} \

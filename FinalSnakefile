@@ -14,7 +14,9 @@ import subprocess
 import re
 from helper_scripts.sample_list import get_samples
 import shutil
+import time
 
+container: "docker://migbro/pond:1.1"
 configfile: 'configs/prelim_configs.yaml'
 configfile: 'configs/post_annotation_configs.yaml'
 
@@ -417,23 +419,30 @@ if 'qs' not in options and 'rds' in options:
 	final_analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_final_analyzed_seurat_object.rds'
 
 if 'cloupe' in options:
-	r_comm = "R -q -e 'suppressWarnings(loupeR:::eula_data_dir())'"
-	eula_loc = (subprocess.run(r_comm, shell=True, capture_output=True, text=True)).stdout
-	eula_loc = re.search(r'"\s*([^"]+)\s*"', eula_loc)
-	if not os.path.exists(eula_loc.group(1) + '/eula_agreement'):
-		# print error message with instructions if EULA agreement for loupeR is not present
-		print("You have selected the 'cloupe' option for FINAL_STORAGE in post_annotation_configs.yaml.\n" + 
-			  "The .cloupe file format is part of the loupeR R package from 10x Genomics and\n" +
-			  "requires acceptance of the 10x Genomics loupeR End User License Agreement (EULA).\n")
-		print("Follow the instructions below to accept the loupeR EULA:\n" +
-			  "1. Open an R terminal.\n" +
-			  "2. In R, run the following command:\n" +
-			  "   > suppressWarnings(loupeR::setup())", "\n" +
-			  "3. Accept the agreement.\n" +
-			  "4. Run SWANS again.\n")
-		sys.exit()
-		
+	# print error message with instructions if EULA agreement for loupeR is not present
+	# Trying to make this as obvious as possible! 
+	print(
+		"==============================================================\n" +
+	   	"=========================== ALERT! ===========================\n" +
+		"==============================================================\n" +
+		"==============================================================\n\n" +
+	   	"You have selected the 'cloupe' option for FINAL_STORAGE in post_annotation_configs.yaml.\n" + 
+		"The .cloupe file format is part of the loupeR R package from 10x Genomics and\n" +
+		"requires acceptance of the 10x Genomics loupeR End User License Agreement (EULA).\n"
+	)
+	print(
+		"SWANS implements the LoupeR method for auto-accepting the 10x Genomics loupeR EULA.\n" +
+		"(See https://github.com/10XGenomics/loupeR/blob/d7994c5c5bd1fc7a6202e23f84ecf9df43831e6e/R/eula.R#L85)\n\n" +
+		"If you do not agree to the 10x Genomics LoupeR EULA (https://10xgen.com/EULA),\n" +
+		"EXIT THE PIPELINE NOW and remove 'cloupe' from the DATA_STORAGE options.\n\n" +
+		"==============================================================\n" +
+		"==============================================================\n" +
+		"==============================================================\n" +
+		"==============================================================\n\n"
+	)
 
+	# Add a little time to prevent LoupeR EULA report from passing too quickly.
+	time.sleep(2)
 
 storage_items.append(final_analyzed_seurat_object)
 final_files.append(final_analyzed_seurat_object)

@@ -79,7 +79,7 @@ suppressPackageStartupMessages(library(qs, lib.loc=lib_path))
 suppressPackageStartupMessages(library(future, lib.loc=lib_path))
 suppressPackageStartupMessages(library(progressr, lib.loc=lib_path))
 suppressPackageStartupMessages(library(presto, lib.loc=lib_path))
-suppressPackageStartupMessages(library(tidyverse, lib.loc=lib_path)) #added 12.3.24 ERR
+suppressPackageStartupMessages(library(tidyverse, lib.loc=lib_path))
 
 # PARALLEL w/ FUTURE + SET SEED
 #--------------------------------------------------------------------
@@ -220,14 +220,13 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
         z_ae <- reshape2::melt(z_ae)
         z_ae$variable <- gsub('g', '', z_ae$variable)
         colnames(z_ae) <- c('gene', 'cluster', 'z.score') # changed to z.score 2.25.25
-        z_ae$z.score <- round(z_ae$z.score, 3) # added 2.25.25
+        z_ae$z.score <- round(z_ae$z.score, 3)
 
         z_scores_report = paste(report_table_path, '/', project, '_z_scores.', name, '.txt', sep='')
         write.table(z_ae, file=z_scores_report, sep='\t', quote=F, col.names=TRUE, row.names=FALSE)
         # ---------------------------------------------------------
 
 				# phase information ---------------------------------------
-				# added 9.2.2025
 				# Experiment
 				print('making table of phases across all clusters (by experiment)...')
 				cc_phase_cluster <- as.data.frame(table(seurat_object@meta.data$Experiment, seurat_object@meta.data[[name]], seurat_object@meta.data$Phase))
@@ -265,16 +264,13 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 				print(DimPlot(seurat_object, group.by = name, reduction = redux_umap, split.by = 'Experiment', repel=TRUE, label=TRUE)) + NoLegend()
 				print(DimPlot(seurat_object, group.by = name, reduction = redux_umap, split.by = 'Sample', repel=TRUE, label=TRUE)) + NoLegend()
 				print(DimPlot(seurat_object, reduction = redux_umap, group.by = 'Phase'))
-				# added september 25
 				print(DimPlot(seurat_object, reduction = redux_umap, group.by = 'Phase', split.by='Experiment'))
 				print(DimPlot(seurat_object, reduction = redux_umap, group.by = 'Phase', split.by='Sample'))
 
-				# added geompoint plots 9.2.2025
 				print(ggplot(cc_phase_cluster_sample, aes(x=Cluster, y=Frequency, shape=Phase, color=Sample)) + 
 				  geom_point(size=3) + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
 				  labs(x='Cluster', y='Frequency', shape='Cell Cycle Phase', color='Sample'))
 
-				# added geompoint plots 9.2.2025
 				print(ggplot(cc_phase_cluster, aes(x=Cluster, y=Frequency, shape=Phase, color=Experiment)) + 
 				  geom_point(size=3) + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
 				  labs(x='Cluster', y='Frequency', shape='Cell Cycle Phase', color='Experiment'))
@@ -488,7 +484,6 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
             count <- as.numeric(count)
             print(count)
 
-            # added 1.17.25 ERR
             # Need to check that at least 3 cells exist in one experimental group to prevent failure
             cluster_subset <- subset(seurat_object, idents = count)
             cells_per_condition <- table(cluster_subset@meta.data$Experiment)

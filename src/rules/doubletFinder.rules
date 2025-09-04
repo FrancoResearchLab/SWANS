@@ -32,7 +32,7 @@ rule doubletFinder:
   threads: 2
   log:
     log_output = doubletFinder_log + PROJECT + '_{s}_doubletFinder.log'
-  benchmark: benchmark_log + PROJECT.lower() + '_{s}_doubletFinder.benchmark'  #added 12.4.2024 ERR
+  benchmark: benchmark_log + PROJECT.lower() + '_{s}_doubletFinder.benchmark'
   shell:
     "Rscript \
     {input.script} \

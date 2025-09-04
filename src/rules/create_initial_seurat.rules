@@ -35,7 +35,7 @@ rule create_initial_seurat:
         f2 = f2
     log:
         log_output = create_initial_seurat_log + PROJECT + '_create_initial_seurat.log'
-    benchmark: benchmark_log + PROJECT.lower() + '_create_initial_seurat.benchmark'  #added 12.4.2024 ERR
+    benchmark: benchmark_log + PROJECT.lower() + '_create_initial_seurat.benchmark'
     shell:
         "Rscript {input.script} \
         --sample_file {params.sample_file} --project {params.project} --organism {params.organism} \

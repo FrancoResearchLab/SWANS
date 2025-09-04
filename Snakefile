@@ -14,12 +14,12 @@ from helper_scripts.sample_list import get_samples
 from pathlib import Path 
 import shutil
 
+container: "docker://migbro/pond:1.1"
 configfile: 'configs/prelim_configs.yaml'
 
 # set config parameters
 # -------------------------------------------------------------------------
 contact = config['contact']
-print(contact)
 PROJECT = config['PROJECT']
 ORGANISM = config['ORGANISM']
 STARTING_DATA = config['STARTING_DATA']
@@ -91,13 +91,12 @@ if os.path.exists(sample_file) == True:
 # DEFINITIONS/FUNCTIONS ----------------------------------------------------
 # for params with potential for > 1 selection ---------------
 def replace_spaces_commas(config_param_name, config_param):
-	print(config_param_name)
 	normalization_options = ['standard', 'sct']
 	integration_options = ['cca', 'harmony', 'rpca']
 	storage_options = ['qs', 'rds']
 	visualization_options = ['feature', 'violin', 'ridge', 'dot']
 	flag = 1
-
+	
 	if type(config_param) == float:
 		config_param = str(config_param)
 
@@ -113,13 +112,10 @@ def replace_spaces_commas(config_param_name, config_param):
 		options = config_param.split(',')
 	if ',' not in config_param:
 		options = [config_param]
-		print(type(options))
 
-	# added 8.26-----
 	if config_param_name == 'RESOLUTION' and ',' not in config_param:
 		return(config_param)
 	#	flag = 0
-	# added 8.26-----
 
 	for o in options:
 		if config_param_name == 'SEURAT_NORMALIZATION_METHOD':
@@ -162,7 +158,6 @@ def replace_spaces_commas(config_param_name, config_param):
 # -----------------------------------------------------------------------------------------
 if VISUALIZATION is not None and type(VISUALIZATION) != 'NoneType' and VISUALIZATION != ' ':
 	VISUALIZATION = replace_spaces_commas('VISUALIZATION', VISUALIZATION)
-	print(VISUALIZATION)
 # -----------------------------------------------------------------------------------------
 
 # check if null ----------------
@@ -172,15 +167,12 @@ def not_null_check_no_yes(config_param, config_param_name):
 	multi_options = ['RESOLUTION', 'SEURAT_NORMALIZATION_METHOD', 'SEURAT_INTEGRATION_METHOD', 'STORAGE']
 	yes_no = ['RUN_SOUPX', 'RUN_DOUBLETFINDER', 'MITO_REGRESSION', 'CELL_CYCLE_REGRESSION', 'REFERENCE_BASED_INTEGRATION', 'RUN_AZIMUTH', 'RUN_TRANSFERDATA', 'TSNE', 'CONSERVED_GENES']
 
-	#print(config_param, config_param_name)
-
 	if config_param is None or type(config_param) == 'NoneType' or config_param == ' ':
 		print(config_param_name + ' cannot be empty.')
 		print('Please write a value for ' + config_param_name + ' in the configs/prelim_configs.yaml file, then run this script again')
 		sys.exit()
 
 	if config_param is not None and config_param != ' ':
-		#print(config_param, config_param_name)
 
 		if config_param_name not in numeric_values:
 			config_param = ''.join(config_param.split()) # remove all spaces
@@ -204,7 +196,6 @@ def not_null_check_no_yes(config_param, config_param_name):
 				config_param = str(config_param)
 
 				if config_param.isdigit() == False:
-					print(config_param_name)
 					print('You must provide a numeric value for ', config_param_name)
 					print('Please write a numeric value (e.g., 12) for this parameter in the configs/prelim_configs.yaml file, then run this script again')
 					sys.exit()
@@ -212,7 +203,6 @@ def not_null_check_no_yes(config_param, config_param_name):
 			if config_param_name == 'RESOLUTION':
 				if str(config_param).isdecimal() == True:
 					config_param = config_param
-					print('single', config_param)
 				if ',' in str(config_param):
 					temp_res = str(config_param).replace(',', '').strip()
 					temp_res = temp_res.replace('.', '')
@@ -223,7 +213,6 @@ def not_null_check_no_yes(config_param, config_param_name):
 						sys.exit()
 
 		if config_param_name in multi_options:
-			print(config_param, config_param_name)
 			config_param = replace_spaces_commas(config_param_name, config_param)
 			
 		return(config_param)
@@ -415,12 +404,10 @@ def user_files(user_file, user_file_name):
 	if user_file is None:
 		user_file = 'does_not_exist'
 
-	print(user_file)
 	return(user_file)
 
 REGRESSION_FILE =  user_files(REGRESSION_FILE, 'REGRESSION_FILE')
 USER_GENE_FILE =  user_files(USER_GENE_FILE, 'USER_GENE_FILE')
-print(USER_GENE_FILE)
 
 if (ORGANISM != 'mouse' and ORGANISM != 'human') or ORGANISM is None:
 	print('This pipeline only works with mouse or human data')
@@ -525,7 +512,6 @@ if RUN_SOUPX == 'y':
 		for item in s:
 			qc_files.append(item)
 			soupX_output.append(item)
-			#print(item)
 # -----------------------------------------------------------------
 
 # -----------------------------------------------------------------

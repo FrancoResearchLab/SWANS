@@ -1,6 +1,7 @@
 set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 # show citations
 #-----------------------------------------------------------------------------
 sh $SCRIPT_DIR/helper_scripts/citations.sh
@@ -62,11 +63,32 @@ rpath=`python3 $SCRIPT_DIR/helper_scripts/cache.py RPATH:` #retrieves rpath name
 echo "R_LIBS_USER=$rpath" > .Renviron
 #-----------------------------------------------------------------------------
 
-# call Snakemake 
+# Get paths for Singularity bind mounts
+#-----------------------------------------------------------------------------
+## Retrieves cellranger reference genome dir from config file
+cellranger_reference=`python3 $SCRIPT_DIR/helper_scripts/cache.py CELLRANGER_REFERENCE:`
+echo -e "\nReference genome directory bind mount for Singularity: $cellranger_reference\n"
+
+## Gets paths from sample file to use as bind mounts to access sample data
+echo -e "Checking if sample directories exist."
+sample_bind_mnts=$(python3 $SCRIPT_DIR/helper_scripts/get_sample_paths.py)
+echo -e "\nSample directory bind mounts for Singularity: $sample_bind_mnts\n"
+#-----------------------------------------------------------------------------
+
+# call Snakemake (sans Singularity)
 #-----------------------------------------------------------------------------
 # snakemake --snakefile Snakefile --printshellcmds --dryrun 
 # snakemake --snakefile Snakefile --printshellcmds --dryrun --rerun-triggers mtime
-snakemake --cores $threads --snakefile $SCRIPT_DIR/Snakefile --printshellcmds 
+# snakemake --cores $threads --snakefile $SCRIPT_DIR/Snakefile
+#-----------------------------------------------------------------------------
+
+# call Snakemake with Singualarity
+#-----------------------------------------------------------------------------
+snakemake --snakefile $SCRIPT_DIR/Snakefile \
+	--cores $threads \
+	--printshellcmds \
+	--use-singularity \
+	--singularity-args "-B $sample_bind_mnts,$cellranger_reference"
 #-----------------------------------------------------------------------------
 
 # show citations again
@@ -82,6 +104,9 @@ run_final=`python3 $SCRIPT_DIR/helper_scripts/cache_final.py RUN_FINAL_ANALYSIS:
 if [ -e "$final_config_file" ] && [[ $run_final == "y" ]]; then
 	echo "You have the final config file, let the magic begin"
 	# snakemake --snakefile FinalSnakefile --printshellcmds --dryrun
-	snakemake --cores $threads --snakefile FinalSnakefile --printshellcmds #--forceall 
+	snakemake --snakefile FinalSnakefile \
+		--cores $threads \
+		--printshellcmds \
+		--use-singularity
 fi
 #-----------------------------------------------------------------------------

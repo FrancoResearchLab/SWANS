@@ -21,7 +21,7 @@ rule memory:
 		m_file = memory_file
 	log:
 		log_output = memory_log + PROJECT + '_memory.log'
-	benchmark: benchmark_log + PROJECT.lower() + '_memory.benchmark'  #added 12.4.2024 ERR
+	benchmark: benchmark_log + PROJECT.lower() + '_memory.benchmark'
 	shell:
 		"cells=$( zcat {params.barcodes_files} | wc -l) && \
 			genes=$( zcat {params.features_files} | wc -l) && \

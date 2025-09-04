@@ -46,3 +46,6 @@ setup/
 
 # Ignore user R library (created if Azimuth is run)
 R/library/*
+
+# Ignore any in-progess knit.md files
+*.knit.md

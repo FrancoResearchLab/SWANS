@@ -86,7 +86,9 @@ echo "R_LIBS_USER=$rpath" > .Renviron
 
 # call Snakemake with Singualarity
 #-----------------------------------------------------------------------------
-snakemake --cores $threads --snakefile $SCRIPT_DIR/Snakefile --printshellcmds --use-singularity --singularity-args "-B $sampledir,$cellranger_reference"
+snakemake --cores $threads --snakefile $SCRIPT_DIR/Snakefile --printshellcmds \
+	--use-singularity \
+	--singularity-args "-B $sampledir,$cellranger_reference"
 #-----------------------------------------------------------------------------
 
 # show citations again

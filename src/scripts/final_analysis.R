@@ -129,6 +129,13 @@ if (is.null(final_storage) == FALSE)
 # AUTOACCEPT THE LOUPER EULA
 # --------------------------------------------------------------------
 if ('cloupe' %in% unlist(final_storage_method)) {
+
+	options(
+		repos = c(CRAN = "internalrepo"),
+		download.file.method = "curl",
+		download.file.extra = "-k -L")
+
+	# Load library	
 	library(loupeR)
 
 	# Set the EULA auto accept env var to "y"

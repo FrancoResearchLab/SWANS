@@ -44,6 +44,10 @@ setup/
 # Ignore SIF container files
 *.sif
 
+# Ignore containers if they are in the dir
+pond:*
+cellranger:*
+
 # Ignore user R library (created if Azimuth is run)
 R/library/*
 

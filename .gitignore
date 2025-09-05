@@ -55,3 +55,6 @@ R/library/*
 
 # Ignore any in-progess knit.md files
 *.knit.md
+
+# Ignore screenlog
+screenlog*

@@ -34,11 +34,13 @@ configs/post_annotation_configs.yaml
 pond:1.0
 swans
 run/
+sys/
 
 # User files to ignore
 setup/
 
-# Ignore cellranger pipestance files
+# Ignore cellranger pipestance files and config dir
+.config/
 *.mro
 
 # Ignore SIF container files

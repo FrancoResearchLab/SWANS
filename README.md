@@ -31,13 +31,12 @@ Dockerfile locations:
 - pond: `docker_files/POND/1.1/Dockerfile`
 - cellranger: `docker_files/cellranger/9.0.1/Dockerfile`
 
+## Run SWANS using the main bash script, `run_snakemake.sh`
 Once the sample file (`samples.sample_list`) and the configuration files have been set up, the pipeline can be run from the SWANS repo directory with:
 
 ```bash
 bash run_snakemake.sh
 ```
-
-
 * *******************************************************************************
 
 ## Viewing the SWANS interactive report in RStudio:

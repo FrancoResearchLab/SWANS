@@ -22,114 +22,23 @@ Once a final schema/approach is selected, clusters are renamed according to user
 
 * *******************************************************************************
 
-## Running SWANS (non-containerized)
-### Software requirements for running SWANS
-The pipelines requires <a href="https://www.python.org/" target="_blank">Python</a>, <a href="https://cran.r-project.org/" target="_blank">R</a> (plus several R packages like <a href="https://satijalab.org/seurat/" target="_blank">Seurat</a> & <a href="https://cole-trapnell-lab.github.io/monocle3/" target="_blank">Monocle 3</a>), <a href="https://posit.co/download/rstudio-desktop/" target="_blank">Rstudio</a> (for interactivereport.rmd), <a href="https://snakemake.readthedocs.io/en/stable/#" target="_blank">Snakemake</a>, <a href="https://www.gnu.org/software/bash/" target="_blank">bash</a>, <a href="https://www.10xgenomics.com/support/software/cell-ranger/latest" target="_blank">Cell Ranger</a> (if starting with FASTQ files) and <a href="https://multiqc.info/" target="_blank">MultiQC</a> (if running Cell Ranger).
+# Running the pipeline
+* *******************************************************************************
+## Requirements
+SWANS uses Snakemake with Singularity to execure each rule within a Singularity container. SWANS was built and tested using Snakemake version 7.32.4 and Singularity (singularity-ce) version 4.3.2-1.el8. The images for each phase of the analysis are specified in the `Snakefile` and `FinalSnakefile`. All rules with the exeception of `rule cellranger_counts` use the 'POND' Docker image, while the `cellranger_counts` rule uses the 'cellranger' image. 
 
+Dockerfile locations:
+- pond: `docker_files/POND/1.1/Dockerfile`
+- cellranger: `docker_files/cellranger/9.0.1/Dockerfile`
 
-## Running SWANS within a container  
-
-The pipeline can be run within a Docker container that includes all necesary software and packages. The Docker image is available at: https://hub.docker.com/r/francothyroidlab/swans
-
-### Docker: Instructions for using the pipeline with the Docker image
-Pull the swans Docker image via Docker:
-
-```bash
-docker pull francothyroidlab/swans
-```
-
-**Run in Docker with bind mounts**
-For running within a container using Docker, the location for the user's input data and reference genome (if running Cell Ranger) need to be provided as bind mounts so that these locations can be accessed from the container. In Docker, these locations can be specified with `--mount` and should be formatted as `--mount type=bind,source=<source-path>,target=<target-path>` where `<source-path>` is the absolute path to the directory and `<target-path>` is the absolute path that will be made inside the container for the bind mount.
-
-The `--mount` flag can be used to mount multiple bind mounts. If Cell Ranger will be run in SWANS, a bind mount for the reference genome must be included. 
-
-```bash
-docker exec -it \
-  --mount type=bind,source=/home/user/inputdata/,target=/input_data \
-  --mount type=bind,source=/home/user/refgenome/,target=/reference_genome \
-  swans \
-  /bin/bash
-```
-
-In the `samples.sample_list`, the paths for the input samples should be set to their respective locations within the target path in the container. For example:
-
-```text
-samples	condition	path_to_starting_data
-S1	control	/input_data/path_to_S1_starting_data
-S2	control	/input_data/path_to_S2_starting_data
-M1	mut1	/input_data/path_to_M1_starting_data
-M2	mut1	/input_data/path_to_M2_starting_data
-M3	mut3	/input_data/path_to_M3_starting_data
-M4	mut3	/input_data/path_to_M4_starting_data
-T5	mut4	/input_data/path_to_T5_starting_data
-T6	mut4	/input_data/path_to_T6_starting_data
-```
-
-In `prelim_configs.yaml`, the path for the Cell Ranger reference genome should be set to the location of the genome in the target path:
-```yaml
-CELLRANGER_REFERENCE: /reference_genome
-```
-
-To properly receive emails on pipeline success/failures, the following may need to be run within the container to configure `sendmail` (follow the prompts through the configuration process):
-
-```bash
-sendmailconfig
-```
-
-##### Once the Docker container is running (and all config files have been set up), from within the container, the pipeline can be executed by running:
+Once the sample file (`samples.sample_list`) and the configuration files have been set up, the pipeline can be run from the SWANS repo directory with:
 
 ```bash
 bash run_snakemake.sh
 ```
 
-### Singularity: Instructions for using the Docker image with Singularity
 
-Pull the swans Docker image via Singularity:
-
-```bash
-singularity pull swans docker://francothyroidlab/swans:latest
-```
-
-**Run in Singularity with bind mounts**
-For running within a container using Singularity, the location for the user's input data and reference genome (if running Cell Ranger) need to be provided as bind mounts so that these locations can be accessed from the container. In Singularity, these locations can be specified with `--bind`  and should be comma-separated absolute paths, formatted as `--bind <path-to-test-data-location>,<path-to-cellranger-reference>` where `<path-to-test-data-location>` is the absolute path to the directory containing all the input data and `<path-to-cellranger-reference>` is the absolute path to the directory for the reference genome. If the input data is in multiple different locations (i.e., without a common base directory), these paths should all be added as bind mounts.
-
-```bash
-singularity shell --bind <path-to-test-data-location>,<path-to-cellranger-reference> swans
-```
-
-For the Singularity container, these paths can then be accessed from the container. 
-
-In the `samples.sample_list`, the file paths can be entered exactly as they exist. For example:
-
-```
-samples	condition	path_to_starting_data
-S1	control	<path-to-test-data-location>/path_to_S1_starting_data
-S2	control	<path-to-test-data-location>/path_to_S2_starting_data
-M1	mut1	<path-to-test-data-location>/path_to_M1_starting_data
-M2	mut1	<path-to-test-data-location>/path_to_M2_starting_data
-M3	mut3	<path-to-test-data-location>/path_to_M3_starting_data
-M4	mut3	<path-to-test-data-location>/path_to_M4_starting_data
-T5	mut4	<path-to-test-data-location>/path_to_T5_starting_data
-T6	mut4	<path-to-test-data-location>/path_to_T6_starting_data
-```
-
-In `prelim_configs.yaml`, the path for the Cell Ranger reference genome should be set to the location of the genome in the target path:
-
-```yaml
-CELLRANGER_REFERENCE: <path-to-cellranger-reference>
-```
-
-To properly receive emails on pipeline success/failures, the following may need to be run within the container to configure `sendmail` (follow the prompts through the configuration process):
-
-```bash
-sendmailconfig
-```
-
-##### Once the Singularity container is running (and all config files have been set up), from within the container, the pipeline can be executed by running:
-
-```bash
-bash run_snakemake.sh
-```
+* *******************************************************************************
 
 ## Viewing the SWANS interactive report in RStudio:
 ### R packages (for running the interactive Shiny app)

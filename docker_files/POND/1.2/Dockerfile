@@ -89,7 +89,9 @@ RUN pip3 install \
 
 #### R packages
 ###############
+# CRAN installations
 RUN R -e "install.packages('optparse', dependencies=TRUE)"
+
 # Set the Bioconductor repository as the primary repository
 RUN R -e "options(repos = BiocManager::repositories())"
 

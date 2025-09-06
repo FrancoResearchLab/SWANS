@@ -193,10 +193,6 @@ RUN R -e "remotes::install_github('jokergoo/ComplexHeatmap')"
 RUN R -e "remotes::install_github('jinworks/CellChat')"
 
 # Install LoupeR from 10x genomics 
-# Will require interactively running "loupeR::setup()" in the container 
-# to accept the license to install finalize installing executables.
-# Otherwise, loading the library, "library(loupeR)" will prompt use to 
-# run "loupeR::setup()".
 RUN R -e "remotes::install_github('10XGenomics/loupeR')"
 
 # Reset the frontend variable for interactive

@@ -16,7 +16,7 @@ from helper_scripts.sample_list import get_samples
 import shutil
 import time
 
-container: "docker://migbro/pond:1.1"
+container: "docker://beigelk/pond:1.2"
 configfile: 'configs/prelim_configs.yaml'
 configfile: 'configs/post_annotation_configs.yaml'
 

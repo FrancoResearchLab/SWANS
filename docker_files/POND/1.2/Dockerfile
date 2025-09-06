@@ -1,5 +1,7 @@
 FROM rocker/tidyverse:4.4.0
-LABEL maintainer="wafulae@chop.edu"
+LABEL original_author="wafulae@chop.edu"
+LABEL current_maintainer="beigelk@chop.edu"
+LABEL version="1.2"
 WORKDIR /rocker-build/
 
 # Avoid warnings by switching to noninteractive

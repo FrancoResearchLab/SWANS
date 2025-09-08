@@ -73,20 +73,23 @@ sample_bind_mnts=$(python3 $SCRIPT_DIR/helper_scripts/get_sample_paths.py)
 prelim_bind_mnts+="$sample_bind_mnts"
 echo -e "===================================================================================\n\n"
 
-echo -e "========== CELLRANGER_REFERENCE directory for Singularity bind mounting ==========="
 # Gets cellranger reference genome dir from config file, checks existtence, adds as bind mount
 if [ "$run_cellranger" = "y" ]; then
+echo -e "========== CELLRANGER_REFERENCE directory for Singularity bind mounting ==========="
 	cellranger_reference=`python3 $SCRIPT_DIR/helper_scripts/cache.py CELLRANGER_REFERENCE:`
-	if [[ -n "$cellranger_reference" && -d "$cellranger_reference" ]]; then
-		echo -e "[PASS] CELLRANGER_REFERENCE path exists, directory will be bound -> $cellranger_reference"
-		prelim_bind_mnts+=",$cellranger_reference"
-	else
-		echo -e "[WARN] CELLRANGER_REFERENCE path DOES NOT EXIST -> $cellranger_reference"
-	fi
-	else
+
+	if [[ -z "$cellranger_reference" ]]; then
 		echo -e "[WARN] No directory path entered for CELLRANGER_REFERENCE"
-fi
+	else
+		if [[ -n "$cellranger_reference" && -d "$cellranger_reference" ]]; then
+			echo -e "[PASS] CELLRANGER_REFERENCE directory exists, directory will be bound -> $cellranger_reference"
+			prelim_bind_mnts+=",$cellranger_reference"
+		else
+			echo -e "[WARN] CELLRANGER_REFERENCE directory DOES NOT EXIST -> $cellranger_reference"
+		fi
+	fi
 echo -e "===================================================================================\n\n"
+fi
 
 echo -e "============= Preliminary analysis files for Singularity bind mounts =============="
 # Check that any files in the prelim_configs.yaml exists, gets their directory for bind mounting
@@ -98,19 +101,19 @@ for config in "${prelim_file_configs[@]}"; do
 	if [[ -z "$file_path" ]]; then
   		echo -e "[WARN] No file path entered for $config"
   		continue
-	fi
-
-	# Get the absolute directory path of that file
-	dir=$(realpath "$(dirname "$file_path")")
-
-	# Check dir exsists
-	if [[ -n "$dir" && -d "$dir" ]]; then
-		[[ -n "$prelim_bind_mnts" ]] && prelim_bind_mnts+=","
-		prelim_bind_mnts+="$dir"
-		echo -e "[PASS] File exists for $config: $file_path, directory will be bound -> $dir"
 	else
-    	echo -e "Warning: Directory for $config does not exist: $config -> $dir"
-  	fi
+		# Get the absolute directory path of that file
+		dir=$(realpath "$(dirname "$file_path")")
+
+		# Check dir exsists
+		if [[ -n "$dir" && -d "$dir" ]]; then
+			[[ -n "$prelim_bind_mnts" ]] && prelim_bind_mnts+=","
+			prelim_bind_mnts+="$dir"
+			echo -e "[PASS] File exists for $config: $file_path, directory will be bound -> $dir"
+		else
+    		echo -e "Warning: Directory for $config does not exist: $config -> $dir"
+  		fi
+	fi
 done
 echo -e "===================================================================================\n\n"
 
@@ -165,18 +168,18 @@ if [ -e "$final_config_file" ] && [[ $run_final == "y" ]]; then
 		if [[ -z "$file_path" ]]; then
 			echo "[WARN] No file path entered for $config"
 			continue
-		fi
-
-		# Get the absolute directory path of that file
-		dir=$(realpath "$(dirname "$file_path")")
-
-		# Check dir exsists
-		if [[ -n "$dir" && -d "$dir" ]]; then
-			[[ -n "$postanno_bind_mnts" ]] && postanno_bind_mnts+=","
-			postanno_bind_mnts+="$dir"
-			echo "[PASS] File exists for $config: $file_path, directory will be bound -> $dir"
 		else
-			echo "Warning: Directory for $config does not exist: $config -> $dir"
+			# Get the absolute directory path of that file
+			dir=$(realpath "$(dirname "$file_path")")
+
+			# Check dir exsists
+			if [[ -n "$dir" && -d "$dir" ]]; then
+				[[ -n "$postanno_bind_mnts" ]] && postanno_bind_mnts+=","
+				postanno_bind_mnts+="$dir"
+				echo "[PASS] File exists for $config: $file_path, directory will be bound -> $dir"
+			else
+				echo "Warning: Directory for $config does not exist: $config -> $dir"
+			fi
 		fi
 	done
 	echo -e "=======================================================================================\n\n"

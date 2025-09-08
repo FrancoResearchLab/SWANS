@@ -48,8 +48,7 @@ echo "Creating project directory (if it does not exist)"
 path=$path$project
 
 starting_data=`python3 $SCRIPT_DIR/helper_scripts/cache.py STARTING_DATA:` #retrieves starting data from config file
-run_cellranger=`python3 $SCRIPT_DIR/helper_scripts/cache.py RUN_CELLRANGER:` #retrieves starting data from config file
-run_transferdata=`python3 $SCRIPT_DIR/helper_scripts/cache.py RUN_TRANSFERDATA:`
+run_cellranger=`python3 $SCRIPT_DIR/helper_scripts/cache.py RUN_CELLRANGER:` #retrieves cellranger y/n from config file
 
 mkdir -p $path
 python3 $SCRIPT_DIR/helper_scripts/setup.py $project $starting_data $run_cellranger #makes project_name/sample_name/[matrix]or[cellranger] for each sample
@@ -64,29 +63,62 @@ rpath=`python3 $SCRIPT_DIR/helper_scripts/cache.py RPATH:` #retrieves rpath name
 echo "R_LIBS_USER=$rpath" > .Renviron
 #-----------------------------------------------------------------------------
 
-# Get paths for Singularity bind mounts
+# Get paths for Singularity bind mounts (preliminary analysis)
 #-----------------------------------------------------------------------------
-## Retrieves cellranger reference genome dir from config file
+prelim_bind_mnts=""
+
+# Gets paths from sample file to use as bind mounts to access sample data
+echo -e "\n\n============= Sample file directories for Singularity bind mounts ============="
+sample_bind_mnts=$(python3 $SCRIPT_DIR/helper_scripts/get_sample_paths.py)
+prelim_bind_mnts+="$sample_bind_mnts"
+echo -e "===================================================================================\n\n"
+
+echo -e "========== CELLRANGER_REFERENCE directory for Singularity bind mounting ==========="
+# Gets cellranger reference genome dir from config file, checks existtence, adds as bind mount
 if [ "$run_cellranger" = "y" ]; then
 	cellranger_reference=`python3 $SCRIPT_DIR/helper_scripts/cache.py CELLRANGER_REFERENCE:`
-	echo -e "\nReference genome directory bind mount for Singularity: $cellranger_reference\n"
-else
-	cellranger_reference=''
+	if [[ -n "$cellranger_reference" && -d "$cellranger_reference" ]]; then
+		echo -e "[PASS] CELLRANGER_REFERENCE path exists, directory will be bound -> $cellranger_reference"
+		prelim_bind_mnts+=",$cellranger_reference"
+	else
+		echo -e "[WARN] CELLRANGER_REFERENCE path DOES NOT EXIST -> $cellranger_reference"
+	fi
+	else
+		echo -e "[WARN] No directory path entered for CELLRANGER_REFERENCE"
 fi
+echo -e "===================================================================================\n\n"
 
-## Gets paths from sample file to use as bind mounts to access sample data
-echo -e "\nChecking if sample directories exist."
-sample_bind_mnts=$(python3 $SCRIPT_DIR/helper_scripts/get_sample_paths.py)
-echo -e "\nSample directory bind mounts for Singularity: $sample_bind_mnts\n"
+echo -e "============= Preliminary analysis files for Singularity bind mounts =============="
+# Check that any files in the prelim_configs.yaml exists, gets their directory for bind mounting
+prelim_file_configs=("TRANSFERDATA_REF_FILE" "REGRESSION_FILE" "USER_GENE_FILE")
+for config in "${prelim_file_configs[@]}"; do
+	# Get the file path by calling cache.py with the config name
+	file_path=$(python3 "$SCRIPT_DIR/helper_scripts/cache.py" "${config}:")
 
-## Gets path to TransferData reference file directory (if TransferData is run)
-if [ "$run_transferdata" = "y" ]; then
-	transferdata_file=`python3 $SCRIPT_DIR/helper_scripts/cache.py TRANSFERDATA_REF_FILE:`
- 	transferdata_dir=$(dirname "$transferdata_file")
-	echo -e "\nTransferData reference file directory bind mount for Singularity: $transferdata_dir\n"
-else
-	transferdata_dir=''
-fi
+	if [[ -z "$file_path" ]]; then
+  		echo -e "[WARN] No file path entered for $config"
+  		continue
+	fi
+
+	# Get the absolute directory path of that file
+	dir=$(realpath "$(dirname "$file_path")")
+
+	# Check dir exsists
+	if [[ -n "$dir" && -d "$dir" ]]; then
+		[[ -n "$prelim_bind_mnts" ]] && prelim_bind_mnts+=","
+		prelim_bind_mnts+="$dir"
+		echo -e "[PASS] File exists for $config: $file_path, directory will be bound -> $dir"
+	else
+    	echo -e "Warning: Directory for $config does not exist: $config -> $dir"
+  	fi
+done
+echo -e "===================================================================================\n\n"
+
+# Remove duplicates
+echo -e "================= Singularity bind mounts for preliminary analysis ================="
+prelim_bind_mnts=$(echo "$prelim_bind_mnts" | tr ',' '\n' | awk '!seen[$0]++' | paste -sd ',' -)
+echo -e "$prelim_bind_mnts"
+echo -e "====================================================================================\n\n\n"
 #-----------------------------------------------------------------------------
 
 # call Snakemake (sans Singularity)
@@ -102,7 +134,7 @@ snakemake --snakefile $SCRIPT_DIR/Snakefile \
 	--cores $threads \
 	--printshellcmds \
 	--use-singularity \
-	--singularity-args "-B $sample_bind_mnts,$cellranger_reference,$transferdata_dir"
+	--singularity-args "-B $prelim_bind_mnts"
 #-----------------------------------------------------------------------------
 
 # show citations again

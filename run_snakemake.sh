@@ -150,10 +150,49 @@ run_final=`python3 $SCRIPT_DIR/helper_scripts/cache_final.py RUN_FINAL_ANALYSIS:
 if [ -e "$final_config_file" ] && [[ $run_final == "y" ]]; then
 	echo "You have the final config file, let the magic begin."
 
+	# Get paths for Singularity bind mounts (post-annotation analysis)
+	#-----------------------------------------------------------------------------
+	postanno_bind_mnts=""
+
+	echo -e "============= Post-annotation analysis files for Singularity bind mounts =============="
+	# Gets cellranger reference genome dir from config file
+	postanno_file_configs=("CLUSTER_ANNOTATION_FILE" "USER_ANALYZED_SEURAT_OBJECT" "FINAL_USER_GENE_FILE")
+
+	for config in "${postanno_file_configs[@]}"; do
+		# Get the file path by calling cache.py with the config name
+		file_path=$(python3 "$SCRIPT_DIR/helper_scripts/cache_final.py" "${config}:")
+
+		if [[ -z "$file_path" ]]; then
+			echo "[WARN] No file path entered for $config"
+			continue
+		fi
+
+		# Get the absolute directory path of that file
+		dir=$(realpath "$(dirname "$file_path")")
+
+		# Check dir exsists
+		if [[ -n "$dir" && -d "$dir" ]]; then
+			[[ -n "$postanno_bind_mnts" ]] && postanno_bind_mnts+=","
+			postanno_bind_mnts+="$dir"
+			echo "[PASS] File exists for $config: $file_path, directory will be bound -> $dir"
+		else
+			echo "Warning: Directory for $config does not exist: $config -> $dir"
+		fi
+	done
+	echo -e "=======================================================================================\n\n"
+
+	# Remove duplicates
+	echo -e "============== Singularity bind mount list for post-annotation analysis ==============="
+	postanno_bind_mnts=$(echo "$postanno_bind_mnts" | tr ',' '\n' | awk '!seen[$0]++' | paste -sd ',' -)
+	echo -e "$postanno_bind_mnts"
+	echo -e "=======================================================================================\n\n\n"
+	#-----------------------------------------------------------------------------
+
 	# snakemake --snakefile FinalSnakefile --printshellcmds --dryrun
 	snakemake --snakefile FinalSnakefile \
 		--cores $threads \
 		--printshellcmds \
-		--use-singularity
+		--use-singularity \
+		--singularity-args "-B $postanno_bind_mnts"
 fi
 #-----------------------------------------------------------------------------

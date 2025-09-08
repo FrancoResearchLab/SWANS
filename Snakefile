@@ -14,7 +14,7 @@ from helper_scripts.sample_list import get_samples
 from pathlib import Path 
 import shutil
 
-container: "docker://migbro/pond:1.1"
+container: "docker://beigelk/pond:1.2"
 configfile: 'configs/prelim_configs.yaml'
 
 # set config parameters

@@ -49,6 +49,7 @@ path=$path$project
 
 starting_data=`python3 $SCRIPT_DIR/helper_scripts/cache.py STARTING_DATA:` #retrieves starting data from config file
 run_cellranger=`python3 $SCRIPT_DIR/helper_scripts/cache.py RUN_CELLRANGER:` #retrieves starting data from config file
+run_transferdata=`python3 $SCRIPT_DIR/helper_scripts/cache.py RUN_TRANSFERDATA:`
 
 mkdir -p $path
 python3 $SCRIPT_DIR/helper_scripts/setup.py $project $starting_data $run_cellranger #makes project_name/sample_name/[matrix]or[cellranger] for each sample
@@ -77,6 +78,15 @@ fi
 echo -e "\nChecking if sample directories exist."
 sample_bind_mnts=$(python3 $SCRIPT_DIR/helper_scripts/get_sample_paths.py)
 echo -e "\nSample directory bind mounts for Singularity: $sample_bind_mnts\n"
+
+## Gets path to TransferData reference file directory (if TransferData is run)
+if [ "$run_transferdata" = "y" ]; then
+	transferdata_file=`python3 $SCRIPT_DIR/helper_scripts/cache.py TRANSFERDATA_REF_FILE:`
+ 	transferdata_dir=$(dirname "$transferdata_file")
+	echo -e "\nTransferData reference file directory bind mount for Singularity: $transferdata_dir\n"
+else
+	transferdata_dir=''
+fi
 #-----------------------------------------------------------------------------
 
 # call Snakemake (sans Singularity)
@@ -86,13 +96,13 @@ echo -e "\nSample directory bind mounts for Singularity: $sample_bind_mnts\n"
 # snakemake --cores $threads --snakefile $SCRIPT_DIR/Snakefile
 #-----------------------------------------------------------------------------
 
-# call Snakemake with Singualarity
+# call Snakemake with Singularity
 #-----------------------------------------------------------------------------
 snakemake --snakefile $SCRIPT_DIR/Snakefile \
 	--cores $threads \
 	--printshellcmds \
 	--use-singularity \
-	--singularity-args "-B $sample_bind_mnts,$cellranger_reference"
+	--singularity-args "-B $sample_bind_mnts,$cellranger_reference,$transferdata_dir"
 #-----------------------------------------------------------------------------
 
 # show citations again
@@ -106,7 +116,8 @@ final_config_file="configs/post_annotation_configs.yaml"
 run_final=`python3 $SCRIPT_DIR/helper_scripts/cache_final.py RUN_FINAL_ANALYSIS:` #retrieves starting data from config file
 
 if [ -e "$final_config_file" ] && [[ $run_final == "y" ]]; then
-	echo "You have the final config file, let the magic begin"
+	echo "You have the final config file, let the magic begin."
+
 	# snakemake --snakefile FinalSnakefile --printshellcmds --dryrun
 	snakemake --snakefile FinalSnakefile \
 		--cores $threads \

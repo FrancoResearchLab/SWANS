@@ -114,8 +114,8 @@ for config in "${prelim_file_configs[@]}"; do
 done
 echo -e "===================================================================================\n\n"
 
-# Remove duplicates
 echo -e "================= Singularity bind mounts for preliminary analysis ================="
+# Remove duplicates
 prelim_bind_mnts=$(echo "$prelim_bind_mnts" | tr ',' '\n' | awk '!seen[$0]++' | paste -sd ',' -)
 echo -e "$prelim_bind_mnts"
 echo -e "====================================================================================\n\n\n"
@@ -181,8 +181,8 @@ if [ -e "$final_config_file" ] && [[ $run_final == "y" ]]; then
 	done
 	echo -e "=======================================================================================\n\n"
 
-	# Remove duplicates
 	echo -e "============== Singularity bind mount list for post-annotation analysis ==============="
+	# Remove duplicates
 	postanno_bind_mnts=$(echo "$postanno_bind_mnts" | tr ',' '\n' | awk '!seen[$0]++' | paste -sd ',' -)
 	echo -e "$postanno_bind_mnts"
 	echo -e "=======================================================================================\n\n\n"

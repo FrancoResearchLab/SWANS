@@ -126,31 +126,6 @@ if (is.null(final_storage) == FALSE)
 }
 # --------------------------------------------------------------------
 
-# AUTOACCEPT THE LOUPER EULA
-# --------------------------------------------------------------------
-if ('cloupe' %in% unlist(final_storage_method)) {
-
-	options(
-		repos = c(CRAN = "internalrepo"),
-		download.file.method = "curl",
-		download.file.extra = "-k -L")
-
-	# Load library	
-	library(loupeR)
-
-	# Set the EULA auto accept env var to "y"
-	Sys.setenv(AUTO_ACCEPT_EULA = "y")
-
-	# Assign env var to another env var to comply with:
-	# https://github.com/10XGenomics/loupeR/blob/d7994c5c5bd1fc7a6202e23f84ecf9df43831e6e/R/eula.R
-	AUTO_ACCEPT_ENV_VAR = "AUTO_ACCEPT_EULA"
-
-	# Run the loupeR:::eula() function which will check AUTO_ACCEPT_ENV_VAR with auto_accepted_eula()
-	loupeR:::eula()
-	loupeR::setup()
-}
-# --------------------------------------------------------------------
-
 # IMPORT LIBS
 #--------------------------------------------------------------------
 suppressPackageStartupMessages(library(Seurat, lib.loc=lib_path))
@@ -324,7 +299,7 @@ rename_and_visualize <- function(seurat_object, celltype_file, ident, genes, mar
 	print('...by experiment...')
 	#-----------------------------------------------------------
 
-	# add in totals (w/ + without %)
+	# add in totals (w/ + without %)  #added 12.4.2024 ERR
 	number_perCluster_experiment <- table(seurat_object@meta.data$Experiment, seurat_object@meta.data[['celltypes']])
 	number_perCluster_experiment_prop <- round(proportions(as.matrix(number_perCluster_experiment), 1), 3)
 
@@ -431,6 +406,40 @@ rename_and_visualize <- function(seurat_object, celltype_file, ident, genes, mar
 	dev.off()
 	#-----------------------------------------------------------
 
+	# phase information (added sept 2025) ----------------------
+
+	# Experiment
+	print('making table of phases across all clusters (by experiment)...')
+	cc_phase_cluster <- as.data.frame(table(seurat_object@meta.data$Experiment, seurat_object@meta.data[['celltypes']], seurat_object@meta.data$Phase))
+	colnames(cc_phase_cluster) <- c('Experiment', 'Cluster', 'Phase', 'Frequency')
+
+	cc_phase_cluster_prop <- as.data.frame(prop.table(table(seurat_object@meta.data$Experiment, seurat_object@meta.data[['celltypes']], seurat_object@meta.data$Phase), margin = 1) * 100)
+	colnames(cc_phase_cluster_prop) <- c('Experiment', 'Cluster', 'Phase', 'Frequency')
+
+	cc_phase_cluster$Combined_Frequency <- paste0(cc_phase_cluster$Frequency, ' (', round(cc_phase_cluster_prop$Frequency, 1), '%)')
+
+	# write table
+	cc_phase_cluster <- cc_phase_cluster %>% arrange(Cluster, Phase)
+	phase_table = paste(t_dir, project, '_', ident, '_phase_experiment.txt', sep='')
+	write.table(cc_phase_cluster, file=phase_table, sep='\t', quote=F, col.names=TRUE, row.names=FALSE)
+
+	# Sample
+	print('making table of phases across all clusters (by sample)...')
+	cc_phase_cluster_sample <- as.data.frame(table(seurat_object@meta.data$Sample, seurat_object@meta.data[['celltypes']], seurat_object@meta.data$Phase))
+	colnames(cc_phase_cluster_sample) <- c('Sample', 'Cluster', 'Phase', 'Frequency')
+
+	cc_phase_cluster_sample_prop <- as.data.frame(prop.table(table(seurat_object@meta.data$Sample, seurat_object@meta.data[['celltypes']], seurat_object@meta.data$Phase), margin=1) * 100)
+	colnames(cc_phase_cluster_sample_prop) <- c('Sample', 'Cluster', 'Phase', 'Frequency')
+
+	cc_phase_cluster_sample$Combined_Frequency <- paste0(cc_phase_cluster_sample$Frequency, ' (', round(cc_phase_cluster_sample_prop$Frequency, 1), '%)')
+
+	# write
+	phase_table_sample = paste(t_dir, project, '_', ident, '_phase_sample.txt', sep='')
+	write.table(cc_phase_cluster_sample, file=phase_table_sample, sep='\t', quote=F, col.names=TRUE, row.names=FALSE)
+	# ---------------------------------------------------------
+
+
+	# dimplots -------------------------------------------------
 	print('creating dimplot images...')
 	#-----------------------------------------------------------
 	fname1 <- paste0(f_dir, project, '_', ident, '_umap.png')
@@ -441,12 +450,7 @@ rename_and_visualize <- function(seurat_object, celltype_file, ident, genes, mar
 	fname2 <- paste0(f_dir, project, '_', ident, '_umap_experiment.png')
 	png(filename=fname2, width=2400, height=2000, res=300)
 	print(
-		DimPlot(
-			seurat_object,
-			reduction = umap,
-			label=TRUE,
-			split.by='Experiment'
-		) + 
+		DimPlot(seurat_object, reduction = umap, label=TRUE, split.by='Experiment') + 
 		NoLegend() + 
 		theme(
 			panel.spacing=unit(2, "lines"), # increase space between samples
@@ -474,6 +478,31 @@ rename_and_visualize <- function(seurat_object, celltype_file, ident, genes, mar
 	fname4 <- paste0(f_dir, project, '_', ident, '_umap_phase.png')
 	png(filename=fname4, width=2700,height=2000,res=300)
 	print(DimPlot(seurat_object, reduction = umap, label=FALSE, group.by="Phase") + labs(title = 'Cell Cycle Phase')) #showing clusters with new names
+	dev.off()
+
+	# added additional phase plots sept 2025
+	fname4e <- paste0(f_dir, project, '_', ident, '_umap_phase_experiment.png')
+	png(filename=fname4e, width=2700,height=2000,res=300)
+	print(DimPlot(seurat_object, reduction = umap, label=FALSE, group.by="Phase", split.by='Experiment') + labs(title = 'Cell Cycle Phase (split by experiment)')) #showing clusters with new names
+	dev.off()
+
+	fname4s <- paste0(f_dir, project, '_', ident, '_umap_phase_sample.png')
+	png(filename=fname4s, width=2700,height=2000,res=300)
+	print(DimPlot(seurat_object, reduction = umap, label=FALSE, group.by="Phase", split.by='Sample') + labs(title = 'Cell Cycle Phase (split by sample)')) #showing clusters with new names
+	dev.off()
+
+	fname4s_b <- paste0(f_dir, project, '_', ident, '_geom_point_phase_sample.png')
+	png(filename=fname4s_b, width=2700,height=2000,res=300)
+	print(ggplot(cc_phase_cluster_sample, aes(x=Cluster, y=Frequency, shape=Phase, color=Sample)) + 
+		geom_point(size=3) + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+		labs(x='Cluster', y='Frequency', shape='Cell Cycle Phase', color='Sample'))
+	dev.off()
+
+	fname4e_b <- paste0(f_dir, project, '_', ident, '_geom_point_phase_experiment.png')
+	png(filename=fname4e_b, width=2700,height=2000,res=300)
+	print(ggplot(cc_phase_cluster, aes(x=Cluster, y=Frequency, shape=Phase, color=Experiment)) + 
+		geom_point(size=3) + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+		labs(x='Cluster', y='Frequency', shape='Cell Cycle Phase', color='Experiment'))
 	dev.off()
 
 	f1 = paste(f_dir, project, '_', ident, '_final_cluster_plots.pdf', sep='')

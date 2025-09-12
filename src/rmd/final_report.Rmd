@@ -196,6 +196,15 @@ counts_experiment_file <- paste0('../../data/endpoints/', project, '/analysis/fi
 counts_experiment <- read.table(counts_experiment_file, header=TRUE, sep='\t')
 #-------------------------------------------------------------------------------
 
+# Cell Cycling Phase + Frequency
+#-------------------------------------------------------------------------------
+phase_table_experiment_file <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_phase_experiment.txt')
+phase_table_experiment <- read.table(phase_table_experiment_file, header=TRUE, sep='\t')
+
+phase_table_sample_file <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_phase_sample.txt')
+phase_table_sample <- read.table(phase_table_sample_file, header=TRUE, sep='\t')
+#-------------------------------------------------------------------------------
+
 # Z-scores
 #-------------------------------------------------------------------------------
 z_scores_file_celltypes <- paste('../../data/endpoints/', project, '/analysis/final_analysis/tables/', project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, '_celltypes.txt', sep='')
@@ -210,7 +219,7 @@ z_scores_file_celltypes_experiment_samples <- paste('../../data/endpoints/', pro
 z_scores_celltypes_experiment_sample <- read.table(z_scores_file_celltypes_experiment_samples, header=TRUE, sep='\t')
 z_scores_celltypes_experiment_sample[, 2:length(names(z_scores_celltypes_experiment_sample))]  <- round(z_scores_celltypes_experiment_sample[, 2:length(names(z_scores_celltypes_experiment_sample))], 3)
 
-# dynami z-scores
+# dynamic z-scores
 z_folder <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/tables/z_score_files/')
 dir.create(z_folder, showWarnings = FALSE)
 
@@ -258,6 +267,10 @@ colnames(variable_genes) <- 'genes'
 #-------------------------------------------------------------------------------
 umap <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap.png')
 umap_phase <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_phase.png')
+umap_phase_experiment <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_phase_experiment.png')
+umap_phase_sample <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_phase_sample.png')
+phase_experiment <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_geom_point_phase_sample.png')
+phase_sample <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_geom_point_phase_experiment.png')
 umap_experiment <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_experiment.png')
 umap_sample <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_sample.png')
 proportions_sample <- paste0('../../data/endpoints/', project, '/analysis/final_analysis/figures/', project, '_barplot_proportions_sample_', normalization, '.', integration, '_snn_res.', resolution, '.png')
@@ -571,7 +584,7 @@ if (is.data.frame(final_pathways_adjP)) {
     options = list(
       autoWidth = TRUE,
       dom = 'Blfrtip',
-      buttons = c('colvis', 'copy', 'excel', 'pdf', 'print'),
+      buttons = c('colvis', 'copy', 'excel', 'pdf', 'print'), #added comma at end
       initComplete = JS("
   function() {
     var api = this.api();
@@ -871,6 +884,56 @@ datatable(data = counts_sample, caption = 'Table 7: Number of cells (Proportion 
 knitr::include_graphics(umap_phase)
 ```
 
+### Cell Cycling Phase UMAP (split by sample + experiment)
+
+<div class = "row">
+<div class = "column" style="flex: 6; padding-right: 10px;">
+```{r  umapp_se, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='UMAP (sample)'}
+	knitr::include_graphics(umap_phase_sample)
+```
+</div>
+
+<div class = "column" style="flex: 6; padding-right: 1px;">
+```{r umapp_s, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='UMAP (Cell Cycle Phase)'}
+	knitr::include_graphics(umap_phase_experiment)
+```
+</div>
+</div>
+<br>
+
+#### Cell Cycle Phase + Frequency by Sample
+<div class = "row">
+<br>
+<div class = "column" style="flex: 6; padding-right: 10px;">
+```{r psg, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='Cell Cycle Phase + Frequency by Sample)'}
+	knitr::include_graphics(phase_sample)
+```
+</div>
+
+<div class = "column" style="flex: 4;">
+```{r pst, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='Cell Cycle Phase + Frequency by Sample'}
+	datatable(data = phase_table_sample, caption = 'Table 8: Number of cells by phase, cluster, and sample.', filter='none', options=list(pageLength=10, autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'print')))
+```
+</div>
+</div>
+<br>
+
+#### Cell Cycle Phase + Frequency by Experiment
+<div class = "row">
+<br>
+<div class = "column" style="flex: 6; padding-right: 10px;">
+```{r peg, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='Cell Cycle Phase + Frequency by Experiment'}
+	knitr::include_graphics(phase_experiment)
+```
+</div>
+
+<div class = "column" style="flex: 6; padding-right: 1px;">
+```{r pet, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='Cell Cycle Phase + Frequency by Experiment'}
+	datatable(data = phase_table_experiment, caption = 'Table 9: Number of cells by phase, cluster, and experiment', filter='none', options=list(pageLength=10, autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'print')))
+```
+</div>
+</div>
+
 ***
 
 ## Variable Genes
@@ -885,7 +948,7 @@ knitr::include_graphics(heatmap_plot)
 <div class="column" style="flex: 1; padding: 5px;">
 <br>
 ```{r echo=FALSE, include=TRUE}
-datatable(data = variable_genes, rownames = FALSE, caption = 'Table 8: Variable Genes.', filter='none', options=list(pageLength=10, autoWidth = TRUE, dom = 'Blfrtip', buttons = c('copy', 'excel', 'print')))
+datatable(data = variable_genes, rownames = FALSE, caption = 'Table 10: Variable Genes.', filter='none', options=list(pageLength=10, autoWidth = TRUE, dom = 'Blfrtip', buttons = c('copy', 'excel', 'print')))
 ```
 </div>
 </div>
@@ -900,7 +963,7 @@ NOTE: If there is single body split into multiple clusters, conserved markers fo
 ```{r conserved, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='Conserved_Genes'}
 if (conserved_genes == 'y' || conserved_genes == TRUE)
 {
-  datatable(data=conserved_genes_df, class = 'cell-border stripe', caption = 'Table 9: Conserved Genes by Across Exerimental Conditions by Cluster.', rownames = FALSE, filter = 'bottom', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
+  datatable(data=conserved_genes_df, class = 'cell-border stripe', caption = 'Table 11: Conserved Genes by Across Exerimental Conditions by Cluster.', rownames = FALSE, filter = 'bottom', extensions = 'Buttons', width = '100%', options = list(autoWidth = TRUE, dom = 'Blfrtip', buttons = c('colvis', 'copy', 'excel', 'pdf', 'print')))
 } else {
   print('Conserved gene analysis was not run.')
 }

@@ -11,10 +11,10 @@ ORGANISM: human
 STARTING_DATA: cellranger
 
 # run Cell Ranger count pipeline (y/n)
-RUN_CELLRANGER: y
+RUN_CELLRANGER: n
 
 # path to the genome to use in cellranger
-CELLRANGER_REFERENCE: /reference_genome/
+CELLRANGER_REFERENCE:
 
 # run multiQC on Cell Ranger output (y/n) -- must have outs/summary.html 
 RUN_MULTIQC: n

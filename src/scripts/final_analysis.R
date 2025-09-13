@@ -136,7 +136,7 @@ if ('cloupe' %in% unlist(final_storage_method)) {
 		download.file.extra = "-k -L")
 
 	# Load library	
-	library(loupeR)
+	library(loupeR, lib.loc=lib_path)
 
 	# Set the EULA auto accept env var to "y"
 	Sys.setenv(AUTO_ACCEPT_EULA = "y")

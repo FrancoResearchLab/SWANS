@@ -103,7 +103,7 @@ single_or_list <- function(variable, comma = ',')
    else
    {
       return(variable)
-   }
+   }/loup
 }
 # --------------------------------------------------------------------
 
@@ -469,7 +469,7 @@ rename_and_visualize <- function(seurat_object, celltype_file, ident, genes, mar
 			split.by='Sample'
 		) + 
 		theme(
-			strip.text.x.top=element_text(size=20, angle=45), # increase the labels for the split.by var
+			strip.text.x.top=element_text(size=16, angle=90), # increase the labels for the split.by var
 			axis.text.x = element_text(size=8)
 		)
 	)
@@ -488,7 +488,12 @@ rename_and_visualize <- function(seurat_object, celltype_file, ident, genes, mar
 
 	fname4s <- paste0(f_dir, project, '_', ident, '_umap_phase_sample.png')
 	png(filename=fname4s, width=2700,height=2000,res=300)
-	print(DimPlot(seurat_object, reduction = umap, label=FALSE, group.by="Phase", split.by='Sample') + labs(title = 'Cell Cycle Phase (split by sample)')) #showing clusters with new names
+	print(DimPlot(seurat_object, reduction = umap, label=FALSE, group.by="Phase", split.by='Sample') + 
+		labs(title = 'Cell Cycle Phase (split by sample)') +  #showing clusters with new names
+		theme(
+			strip.text.x.top=element_text(size=16, angle=90), # increase the labels for the split.by var
+			axis.text.x = element_text(size=8)
+		))
 	dev.off()
 
 	fname4s_b <- paste0(f_dir, project, '_', ident, '_geom_point_phase_sample.png')

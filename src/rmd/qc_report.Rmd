@@ -6,7 +6,7 @@ params:
   root_dir: ../..
   data_dir: ../../data/endpoints
   qc_config: ../../configs/prelim_configs.yaml
-  project: PROJECT_NAME
+  project: "`r params$project`"
 showWarnings: FALSE
 output: html_document
 

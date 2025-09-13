@@ -126,6 +126,32 @@ if (is.null(final_storage) == FALSE)
 }
 # --------------------------------------------------------------------
 
+# AUTOACCEPT THE LOUPER EULA
+# --------------------------------------------------------------------
+if ('cloupe' %in% unlist(final_storage_method)) 
+{
+	options(
+		repos = c(CRAN = "internalrepo"),
+		download.file.method = "curl",
+		download.file.extra = "-k -L")
+
+	# Load library	
+	library(loupeR)
+
+	# Set the EULA auto accept env var to "y"
+	Sys.setenv(AUTO_ACCEPT_EULA = "y")
+	# AUTO_ACCEPT_ENV_VAR = 'y'
+
+	# Assign env var to another env var to comply with:
+	# https://github.com/10XGenomics/loupeR/blob/d7994c5c5bd1fc7a6202e23f84ecf9df43831e6e/R/eula.R
+	AUTO_ACCEPT_ENV_VAR = "AUTO_ACCEPT_EULA"
+
+	# Run the loupeR:::eula() function which will check AUTO_ACCEPT_ENV_VAR with auto_accepted_eula()
+	loupeR:::eula()
+	loupeR::setup()
+}
+# --------------------------------------------------------------------
+
 # IMPORT LIBS
 #--------------------------------------------------------------------
 suppressPackageStartupMessages(library(Seurat, lib.loc=lib_path))

@@ -28,7 +28,7 @@ Once a final schema/approach is selected, clusters are renamed according to user
 SWANS uses Snakemake with Singularity to execure each rule within a Singularity container. SWANS was built and tested using Snakemake version 7.32.4 and Singularity (singularity-ce) version 4.3.2-1.el8. The images for each phase of the analysis are specified in the `Snakefile` and `FinalSnakefile`. All rules with the exeception of `rule cellranger_counts` use the 'POND' Docker image, while the `cellranger_counts` rule uses the 'cellranger' image. 
 
 Dockerfile locations:
-- pond: `docker_files/POND/1.1/Dockerfile`
+- pond: `docker_files/POND/1.2/Dockerfile`
 - cellranger: `docker_files/cellranger/9.0.1/Dockerfile`
 
 ## Run SWANS using the main bash script, `run_snakemake.sh`

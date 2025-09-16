@@ -1,15 +1,13 @@
 ---
-title: "`r params$project`"
+title: "SWANS"
 subtitle: "Quality Control Report"
 date: "`r format(Sys.time())`"
 params:
   root_dir: ../..
   data_dir: ../../data/endpoints
   qc_config: ../../configs/prelim_configs.yaml
-  project: "`r params$project`"
 showWarnings: FALSE
 output: html_document
-
 ---
 
 <style>
@@ -163,6 +161,7 @@ minfeat_thresh <- proj_info$`MIN_FEATURE_THRESHOLD`
 maxfeat_thresh <- proj_info$`MAX_FEATURE_THRESHOLD`
 ```
 
+
 ```{r get doubletfinder images and stats, include=FALSE}
 
 doublet_stats = vector(mode = 'list')
@@ -239,6 +238,8 @@ postfilt_scat2 = file.path(analysis_dir, paste0(project, '_', 'qc_2_scatter2.png
 ```
 
 <div class="main-container">
+
+# Project: `r project`
 
 # Pipeline Information
 SWANS, version 2.0

@@ -29,7 +29,7 @@ rule cellranger_counts:
 		log_output = cellranger_log + PROJECT + '_{s}_counts.log'
 	threads: THREADS
 	benchmark: benchmark_log + PROJECT + '_{s}_cellranger_counts.benchmark'
-	container: 'docker://beigelk/cellranger:9.0.1'
+	container: 'docker://francothyroidlab/cellranger:9.0.1'
 	shell:
 		"cellranger count --id={wildcards.s} \
 		--fastqs={input.fastqs} --output-dir={params.counts} \

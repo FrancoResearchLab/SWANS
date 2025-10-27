@@ -1,20 +1,20 @@
 # SWANS 2.0: Single-entity Workflow ANalysiS Pipeline
 * *******************************************************************************
 ## Motivation
-Beyond analyzing data, the motiviation behind developing SWANS was related to a) how a bioinformatician can share massive amounts of complex data in a concise manner with investigators, b) have a devoted pipeline that can run a completely different analysis by changing configuration files, and c) how can an analysis be tweeked and the analyses compared to arrive at a one schema for additional downstream analysis. 
+Beyond analyzing data, the motiviation behind developing SWANS was related to a) how a bioinformatician can share massive amounts of complex data in a concise manner with investigators, b) have a devoted pipeline that can run a completely different analysis by changing configuration files, and c) how can an analysis be tweaked and the analyses compared to arrive at a one schema for additional downstream analysis. 
 
 ## Overview
 SWANS analyzes single cell or single nuclei data and relies heavily on <a href="https://satijalab.org/seurat/" target="_blank">Seurat 5.1.0</a>, using Snakemake as a workflow manager, and YAML files to allow customization of the myriad of analysis parameters. The SWANS pipeline works with human or mouse organisms, one or multiple samples, and can run in parallel where Snakemake manages the resources behind the scenes. 
 
 A unique aspect of SWANS is that, in a single pass, data can be analyzed using multiple normalization and integration methods as well as at multiple resolutions. This approach will create multiple clustering schemas (w/ accompanying DGEs/cluster) --- one of which presumably, is the best fit for the tissue and biological question(s).   
 
-SWANS is designed to run a preliminary anlysis and a post-annoation (final) analysis.   
+SWANS is designed to run a preliminary analysis and a post-annotation (final) analysis.   
 
 ### Preliminary Analysis
 The preliminary analysis includes Cell Ranger, MultiQC (optional), QC (incl. optional SoupX/DoubletFinder), sample merging, clustering, and DGE analysis, z-score transformations, clustering characterization (cell counts/proportions), and visualization of all options among other items. An dynamic interactive report ([HTML + Shiny Report](#HTML)) is created to simultaneously display multiple UMAP clustering schemas, and related DGEs, z-scores, cell counts/proportions, and Clustree images to assist in choosing a final clustering schema.
 
 ### Final (Post-Annotation) Analysis
-Once a final schema/approach is selected, clusters are renamed according to user specifications (see cluster_annotation_file), within-cluster dges are found by comparing transcriptional differences across experimental conditionals, and gene set enrichment analysis (gsea) is performed on each set of dges. additionally, transcriptional z-scores transformations and cell ceounts/proporitions are calculated to characterize each cluster, each experimental conditional within each cluster, and each sample within each cluster. the is also the option to perform trajectory analysis -- the results of which are including the final analysis in an interactive html report that allows the investigator to review the results, answer their initial queries, and ask new questions. 
+Once a final schema/approach is selected, clusters are renamed according to user specifications (see cluster_annotation_file), within-cluster dges are found by comparing transcriptional differences across experimental conditionals, and gene set enrichment analysis (gsea) is performed on each set of dges. additionally, transcriptional z-scores transformations and cell counts/proportions are calculated to characterize each cluster, each experimental conditional within each cluster, and each sample within each cluster. the is also the option to perform trajectory analysis -- the results of which are including the final analysis in an interactive html report that allows the investigator to review the results, answer their initial queries, and ask new questions. 
 
 <p align="center">
 <img src="markdown_images/swans.drawio.png" alt="MultiQC output" width="600"/>
@@ -25,9 +25,14 @@ Once a final schema/approach is selected, clusters are renamed according to user
 # Running the pipeline
 * *******************************************************************************
 ## Requirements
-SWANS uses Snakemake with Singularity to execure each rule within a Singularity container. SWANS was built and tested using Snakemake version 7.32.4 and Singularity (singularity-ce) version 4.3.2-1.el8. The images for each phase of the analysis are specified in the `Snakefile` and `FinalSnakefile`. All rules with the exeception of `rule cellranger_counts` use the 'POND' Docker image, while the `cellranger_counts` rule uses the 'cellranger' image. 
+SWANS uses Snakemake with Singularity to execute each rule within a Singularity container. SWANS was built and tested using Snakemake version 7.32.4 and Singularity (singularity-ce) version 4.3.2-1.el8. The images for each phase of the analysis are specified in the `Snakefile` and `FinalSnakefile`. All rules with the exception of `rule cellranger_counts` use the 'POND' Docker image, while the `cellranger_counts` rule uses the 'cellranger' image. 
 
-Dockerfile locations:
+### Docker files
+Docker images are loaded automatically with Singularity (no user action required). For those curious souls...Dockerfile locations:
+- pond: `hub.docker.com/r/francothyroidlab/pond`
+- cellranger: `hub.docker.com/r/francothyroidlab/cellranger`
+
+For those who would like to make their own images, see docker_files in this repo.
 - pond: `docker_files/POND/1.2/Dockerfile`
 - cellranger: `docker_files/cellranger/9.0.1/Dockerfile`
 
@@ -106,7 +111,7 @@ PROJECT: project_name
 ORGANISM: human
 ```
 
-If you have FASTQ files, use `fastq`, if you have cellranger output (including outs dir), use `cellranger`. If you only have the feature-barcode matrix files (barcodes, features, matrix files), use `matrix`. If you are running Cell Ranger, you have the option of creating BAM files, which is a timely process and produces large files, but may be needed for specific purposes. You have the option to create coallated report of the summary HTML Cell Ranger reports; this option will not work if `matrix` is the `starting_data`.
+If you have FASTQ files, use `fastq`, if you have cellranger output (including outs dir), use `cellranger`. If you only have the feature-barcode matrix files (barcodes, features, matrix files), use `matrix`. If you are running Cell Ranger, you have the option of creating BAM files, which is a timely process and produces large files, but may be needed for specific purposes. You have the option to create collated report of the summary HTML Cell Ranger reports; this option will not work if `matrix` is the `starting_data`.
 
 ```yaml
 # starting point data (e.g., fastq, cellranger, matrix)
@@ -122,7 +127,7 @@ RUN_MULTIQC: n
 OUTPUT_BAM: n
 ```
 
-<a href="https://github.com/constantamateur/soupx" target="_blank">Soupx</a> and <a href="https://github.com/chris-mcginnis-ucsf/doubletfinder" target="_blank">doubletfinder</a> are optional but recommended. soupx removes background rna from the data set and doubletfinder detects multiple cells (attaching to one bead) presenting as one cell. for soupx, the user can have the cellranger output (recommended), the feature-barcode matrix files (features, barcodes, matrix), or an h5 file. 
+<a href="https://github.com/constantamateur/soupx" target="_blank">Soupx</a> and <a href="https://github.com/chris-mcginnis-ucsf/doubletfinder" target="_blank">doubletfinder</a> are optional but recommended. Soupx removes background rna from the data set and doubletfinder detects multiple cells (attaching to one bead) presenting as one cell. for soupx, the user can have the cellranger output (recommended), the feature-barcode matrix files (features, barcodes, matrix), or an h5 file. 
 
 ```yaml
 # run soupx (recommended) (y/n) 
@@ -236,7 +241,7 @@ RUN_AZIMUTH: n
 AZIMUTH_REFERENCE: 
 ```
 
-Want to supply an annotated seuart object to marry cell types to clusters? be specific with nomenclature.
+Want to supply an annotated seurat object to marry cell types to clusters? be specific with nomenclature.
 
 ```yaml
 # run transferdata in seurat to annotate with a provided reference seurat object? (y/n)  (advanced)
@@ -419,7 +424,7 @@ FINAL_THREADS: 30
 
 The `CLUSTER_ANNOTATION_FILE` can have just about any name (the first character of the file name must be a letter (e.g., no numbers)). Include the _**relative path**_ to `CLUSTER_ANNOTATION_FILE` in `configs/post_annotation_configs.yaml`! The header must be tab-separated as below (e.g., `cluster^Icelltype^Ipartition` where `^I` represents a tab). On each line, the cluster number, cell type, and partition (for trajectory analysis) must also also separated by a tab.
 
-If the user is running trajectory analysis with Monocle3 and wants to partition the cell clusters for trajectory analysis, an additional column named `partition` needs to be supplied in the `CLUSTER_ANNOTATION_FILE`. The partitions should be numbers (integrers). All clusters must be assigned to a partition (i.e., none can be left blank). If this column is not supplied in the `CLUSTER_ANNOTATION_FILE`, `PARTITION_TRAJECTORY` should be set to `n`, and the Monocle3 trajectory analysis will run without partitions.
+If the user is running trajectory analysis with Monocle3 and wants to partition the cell clusters for trajectory analysis, an additional column named `partition` needs to be supplied in the `CLUSTER_ANNOTATION_FILE`. The partitions should be numbers (integers). All clusters must be assigned to a partition (i.e., none can be left blank). If this column is not supplied in the `CLUSTER_ANNOTATION_FILE`, `PARTITION_TRAJECTORY` should be set to `n`, and the Monocle3 trajectory analysis will run without partitions.
 
 ```
 cluster  celltypes  partition
@@ -507,7 +512,7 @@ After typing `swans` from the commandline, ...
 
 ## Reports
 
-Four (five, if optional report is run) seperate reports are included in the output: MultiQC (optional), QC Report, Interactive Report, Benchmarking Report, & Final Report.
+Four (five, if optional report is run) separate reports are included in the output: MultiQC (optional), QC Report, Interactive Report, Benchmarking Report, & Final Report.
 
 #### MultiQC Report (optional)
 <details>
@@ -648,6 +653,8 @@ b) will contain the upregulated genes for each cluster
  ![two_clusters_one_body](markdown_images/two_clusters_one_body.png)
 
  In such cases, a) if there are annotation candidates, those could be provided in a file and listed under `USER_GENE_FILE` in the `prelim_configs.yaml` file or b) the two clusters could be combined manually. Authors suggest `a)` as there are expected names/formats in the Seurat object that would not be present if manually altered, but we have attempted to address this by providing z-scores transformation on transcript expression.
+
+- If you are running approximately 12 or more samples (each having ~15,000 cells) and `sct` is included as a normalizing method and `RPCA` is included as an integration method, the analysis may stall without throwing an error. This is not an issue with the pipeline, it is an issue with the future R package that impacts certain Seurat functions when running things in parallel. This is a known issue (https://github.com/satijalab/seurat/issues/9706), that can be solved by setting the THREADS equal to 1. It will take longer to run, but that gives you more time to enjoy some coffee/tea/RO water.
 </details>
 
 * *******************************************************************************
@@ -712,6 +719,6 @@ bioRxiv doi: https://doi.org/10.1101/2025.05.14.654073
 * *******************************************************************************
 
 ## License
-Licensed under the GNU License. See the [license.txt](licenses/license.txt) file.
+Licensed under the GNU License and MIT License. See the [license.txt](licenses/license.txt) file.
 
 

@@ -16,7 +16,7 @@ from helper_scripts.sample_list import get_samples
 import shutil
 import time
 
-container: "docker://beigelk/pond:1.2"
+container: "docker://francothyroidlab/pond:1.2"
 configfile: 'configs/prelim_configs.yaml'
 configfile: 'configs/post_annotation_configs.yaml'
 
@@ -55,6 +55,8 @@ if FINAL_STORAGE is not None:
 
 if FINAL_STORAGE is None: 
 	FINAL_STORAGE = 'qs' #making this a list has unintended consequences
+
+EULA = config['EULA']
 
 FINAL_USER_GENE_FILE = config['FINAL_USER_GENE_FILE']
 if FINAL_USER_GENE_FILE is None or FINAL_USER_GENE_FILE == ' ':
@@ -419,27 +421,39 @@ if 'qs' not in options and 'rds' in options:
 	final_analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_final_analyzed_seurat_object.rds'
 
 if 'cloupe' in options:
-	# print error message with instructions if EULA agreement for loupeR is not present
+	if EULA != 'y' or EULA is None:
+		print(
+			"==============================================================\n" +
+			"You did not agree to the 10x Genomics LoupeR EULA (https://10xgen.com/EULA),\n" +
+			"in the post_annotation_configs.yaml (EULA). Either remove 'cloupe' as an option,\n" +
+			"or update the EULA to \'y\'.\n" +
+			"==============================================================\n")
+		sys.exit()
+	else:
+		EULA = EULA.strip()
 	# Trying to make this as obvious as possible! 
 	print(
 		"==============================================================\n" +
-	   	"=========================== ALERT! ===========================\n" +
+		"=========================== ALERT! ===========================\n" +
 		"==============================================================\n" +
 		"==============================================================\n\n" +
-	   	"You have selected the 'cloupe' option for FINAL_STORAGE in post_annotation_configs.yaml.\n" + 
+		"You have selected the 'cloupe' option for FINAL_STORAGE in post_annotation_configs.yaml.\n" + 
 		"The .cloupe file format is part of the loupeR R package from 10x Genomics and\n" +
-		"requires acceptance of the 10x Genomics loupeR End User License Agreement (EULA).\n"
-	)
-	print(
-		"SWANS implements the LoupeR method for auto-accepting the 10x Genomics loupeR EULA.\n" +
-		"(See https://github.com/10XGenomics/loupeR/blob/d7994c5c5bd1fc7a6202e23f84ecf9df43831e6e/R/eula.R#L85)\n\n" +
-		"If you do not agree to the 10x Genomics LoupeR EULA (https://10xgen.com/EULA),\n" +
-		"EXIT THE PIPELINE NOW and remove 'cloupe' from the DATA_STORAGE options.\n\n" +
-		"==============================================================\n" +
-		"==============================================================\n" +
-		"==============================================================\n" +
-		"==============================================================\n\n"
-	)
+		"requires acceptance of the 10x Genomics loupeR End User License Agreement (EULA).\n")
+
+	if EULA != 'y':
+		print(
+			"SWANS implements the LoupeR method for auto-accepting the 10x Genomics loupeR EULA.\n" +
+			"(See https://github.com/10XGenomics/loupeR/blob/d7994c5c5bd1fc7a6202e23f84ecf9df43831e6e/R/eula.R#L85)\n\n" +
+			"You did not agree to the 10x Genomics LoupeR EULA (https://10xgen.com/EULA),\n" +
+			"in the post_annotation_configs.yaml (EULA). Either remove 'cloupe' as an option,\n" +
+			"or update the EULA to \'y\'.\n\n" +
+			"==============================================================\n" +
+			"==============================================================\n" +
+			"==============================================================\n" +
+			"==============================================================\n\n"
+		)
+		sys.exit()
 
 	# Add a little time to prevent LoupeR EULA report from passing too quickly.
 	time.sleep(2)

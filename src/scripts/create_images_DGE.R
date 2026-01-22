@@ -234,11 +234,13 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 
 				cc_phase_cluster_prop <- as.data.frame(prop.table(table(seurat_object@meta.data$Experiment, seurat_object@meta.data[[name]], seurat_object@meta.data$Phase), margin = 1) * 100)
 				colnames(cc_phase_cluster_prop) <- c('Experiment', 'Cluster', 'Phase', 'Frequency')
+				cc_phase_cluster$Cluster <- factor(cc_phase_cluster$Cluster, levels = sort(unique(cc_phase_cluster$Cluster))) #make factor for human-readable ordering 1.22.26
 
-				cc_phase_cluster$Combined_Frequency <- paste0(cc_phase_cluster$Frequency, ' (', round(cc_phase_cluster_prop$Frequency, 1), '%)')
-
-				cc_phase_cluster <- cc_phase_cluster[, c('Experiment', 'Cluster', 'Phase', 'Combined_Frequency')]
-				colnames(cc_phase_cluster) <- c('Experiment', 'Cluster', 'Phase', 'Frequency')
+				# consider adding combined frequency output if added to html output
+				#cc_phase_cluster$Combined_Frequency <- paste0(cc_phase_cluster$Frequency, ' (', round(cc_phase_cluster_prop$Frequency, 1), '%)')
+				#cc_phase_cluster <- cc_phase_cluster[, c('Experiment', 'Cluster', 'Phase', 'Combined_Frequency')]
+				#colnames(cc_phase_cluster) <- c('Experiment', 'Cluster', 'Phase', 'Frequency')
+				#cc_phase_cluster_sample$Combined_Frequency <- paste0(cc_phase_cluster_sample$Frequency, ' (', round(cc_phase_cluster_sample_prop$Frequency, 1), '%)')
 
 				# write table
 				cc_phase_cluster <- cc_phase_cluster %>% arrange(Cluster, Phase)
@@ -249,6 +251,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 				print('making table of phases across all clusters (by sample)...')
 				cc_phase_cluster_sample <- as.data.frame(table(seurat_object@meta.data$Sample, seurat_object@meta.data[[name]], seurat_object@meta.data$Phase))
 				colnames(cc_phase_cluster_sample) <- c('Sample', 'Cluster', 'Phase', 'Frequency')
+				cc_phase_cluster_sample$Cluster <- factor(cc_phase_cluster_sample$Cluster, levels = sort(unique(cc_phase_cluster_sample$Cluster))) # make factor for human-readable ordering 1.22.26
 
 				# write table
 				phase_table_sample = paste(report_table_path, '/', project, '_phase_sample_', name, '.txt', sep='')
@@ -269,11 +272,11 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 
 				print(ggplot(cc_phase_cluster_sample, aes(x=Cluster, y=Frequency, shape=Phase, color=Sample)) + 
 				  geom_point(size=3) + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-				  labs(x='Cluster', y='Frequency', shape='Cell Cycle Phase', color='Sample'))
+				  labs(x='Cluster', y='Absolute Frequency', shape='Cell Cycle Phase', color='Sample'))
 
 				print(ggplot(cc_phase_cluster, aes(x=Cluster, y=Frequency, shape=Phase, color=Experiment)) + 
 				  geom_point(size=3) + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-				  labs(x='Cluster', y='Frequency', shape='Cell Cycle Phase', color='Experiment'))
+				  labs(x='Cluster', y='Absolute Frequency', shape='Cell Cycle Phase', color='Experiment'))
 
         if (tsne == 'y')
         {

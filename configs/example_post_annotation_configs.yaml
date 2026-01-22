@@ -66,6 +66,10 @@ ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT:
 # final storage format (rds,sceo,cloupe,cellchat,cellphone)
 FINAL_STORAGE: 
 
+# 10X end user license agreement 
+# required if cloupe listed for FINAL_STORAGE (y/n)
+EULA: y
+
 # relative path with filename to file containing genes of interest
 FINAL_USER_GENE_FILE: 
 

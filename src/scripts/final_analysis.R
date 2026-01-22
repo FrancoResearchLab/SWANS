@@ -526,14 +526,14 @@ rename_and_visualize <- function(seurat_object, celltype_file, ident, genes, mar
 	png(filename=fname4s_b, width=2700,height=2000,res=300)
 	print(ggplot(cc_phase_cluster_sample, aes(x=Cluster, y=Frequency, shape=Phase, color=Sample)) + 
 		geom_point(size=3) + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-		labs(x='Cluster', y='Frequency', shape='Cell Cycle Phase', color='Sample'))
+		labs(x='Cluster', y='Absolute Frequency', shape='Cell Cycle Phase', color='Sample'))
 	dev.off()
 
 	fname4e_b <- paste0(f_dir, project, '_', ident, '_geom_point_phase_experiment.png')
 	png(filename=fname4e_b, width=2700,height=2000,res=300)
 	print(ggplot(cc_phase_cluster, aes(x=Cluster, y=Frequency, shape=Phase, color=Experiment)) + 
 		geom_point(size=3) + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-		labs(x='Cluster', y='Frequency', shape='Cell Cycle Phase', color='Experiment'))
+		labs(x='Cluster', y='Absolute Frequency', shape='Cell Cycle Phase', color='Experiment'))
 	dev.off()
 
 	f1 = paste(f_dir, project, '_', ident, '_final_cluster_plots.pdf', sep='')

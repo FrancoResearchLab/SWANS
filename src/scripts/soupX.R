@@ -150,8 +150,8 @@ soupify_noclusters <- function(sample, in_path, out_path)
 
   if (starter_data == 'cellranger' || starter_data == 'fastq')
   {
-    r=file.path(in_path, 'outs/raw_feature_bc_matrix/')
-    f=file.path(in_path, 'outs/filtered_feature_bc_matrix/')
+    r=file.path(in_path, 'cellranger/outs/raw_feature_bc_matrix/')
+    f=file.path(in_path, 'cellranger/outs/filtered_feature_bc_matrix/')
   }
 
   raw <- Read10X(data.dir=r)
@@ -192,12 +192,15 @@ if (data_type == 'no_clusters')
 
 # CLEAN DATA: H5
 #--------------------------------------------------------------------
-soupify_h5 <- function(in_path, out_path)
+soupify_h5 <- function(sample, in_path, out_path)
 {
   library('Seurat', lib.loc=lib_path)
 
-  r=paste(in_path, 'raw_feature_bc_matrix.h5', sep='')
-  f=paste(in_path, 'filtered_feature_bc_matrix.h5', sep='')
+  if (starter_data == 'cellranger' || starter_data == 'fastq')
+  {
+    r=file.path(in_path, 'cellranger/outs/raw_feature_bc_matrix.h5')
+    f=file.path(in_path, 'cellranger/outs/filtered_feature_bc_matrix.h5')
+  }
 
   raw <-Read10X_h5(r, use.names=TRUE)
   filt <-Read10X_h5(f, use.names=TRUE)
@@ -228,9 +231,5 @@ soupify_h5 <- function(in_path, out_path)
 if (data_type == 'h5') 
 {
   print('h5')
-
-  #cellranger_data = paste(soupX_input_path, 'outs/', sep='')
-  #soupify_outs(cellranger_data, soupX_output_path)
-
-  soupify_noclusters(sample, soupX_input_path, soupX_output_path)
+  soupify_h5(sample, soupX_input_path, soupX_output_path)
 }

@@ -33,6 +33,7 @@ rule analyze_sc_object:
         split_layers_by = SPLIT_LAYERS_BY,
         normalization_config = SEURAT_NORMALIZATION_METHOD,
         integration_config = SEURAT_INTEGRATION_METHOD,
+        algorithm = FIND_CLUSTERS_ALGORITHM,
         ref_based_integration = REFERENCE_BASED_INTEGRATION,
         ref_samples = REFERENCE_SAMPLES,
         run_azimuth = RUN_AZIMUTH,
@@ -71,6 +72,7 @@ rule analyze_sc_object:
         --split_layers_by {params.split_layers_by} \
         --normalization_config {params.normalization_config} \
         --integration_config {params.integration_config} \
+        --algorithm {params.algorithm} \
         --ref_based_integration {params.ref_based_integration} \
         --ref_samples {params.ref_samples} \
         --run_azimuth {params.run_azimuth} \

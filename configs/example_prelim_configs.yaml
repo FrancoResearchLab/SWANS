@@ -78,6 +78,9 @@ SEURAT_INTEGRATION_METHOD: cca,rpca,harmony
 # resolution value(s) examples: single value: 0.5; multiple values: 0.1,0.3.0.5 
 RESOLUTION: 0.1,0.2,0.3
 
+# which FindClusters algorithm (1,2,3,4 --> 1 = original Louvain algorithm (default); 2 = Louvain algorithm with multilevel refinement; 3 = SLM algorithm; 4 = Leiden algorithm)
+FIND_CLUSTERS_ALGORITHM: 
+
 # run integration in reference-based fashion? (y/n)
 REFERENCE_BASED_INTEGRATION: n
 

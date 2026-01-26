@@ -6,6 +6,8 @@
 # Purpose: Processing of Seurat object. This script will handle either an individual sample Seurat object or merged Seurat.
 # Details: Runs normalization, integration (if more than once sample), PCA, UMAP.
 
+# updated Jan 2026 to include user-specified clustering algorithm E. Reichenberger
+
 # set a default library path for optparse to give help
 lib_path <- '/usr/local/lib/R/site-library'
 
@@ -48,6 +50,8 @@ option_list <- list(
               help = "Normalization methods to use: standard, sct, or both (comma-separated)."),
   make_option(c("--integration_config"), type = "character",
               help = "Integration methods to use: cca, rpca, harmony, pca, or all (comma-separated)."),
+  make_option(c("--algorithm"), type = "character",
+              help = "Algorithm methods to use: 1, 2, 3, or 4. 1 = original Louvain algorithm (default); 2 = Louvain algorithm with multilevel refinement; 3 = SLM algorithm; 4 = Leiden algorithm)."),
   make_option(c("--ref_based_integration"), type = "character",
               help = "Whether to use reference-based integration (y/n)."),
   make_option(c("--ref_samples"), type = "character",
@@ -97,6 +101,7 @@ scale_data_features <- if (is.null(opt$options$scale_data_features)) stop("Valid
 split_layers_by <- if (is.null(opt$options$split_layers_by)) stop("Valid --split_layers_by is required. See --help for all opts") else opt$options$split_layers_by
 normalization_config <- if (is.null(opt$options$normalization_config)) stop("Valid --normalization_config is required. See --help for all opts") else opt$options$normalization_config
 integration_config <- if (is.null(opt$options$integration_config)) stop("Valid --integration_config is required. See --help for all opts") else opt$options$integration_config
+algorithm <- if (is.null(opt$options$algorithm)) stop("Valid --algorithm is required. See --help for all opts") else opt$options$algorithm
 ref_based_integration <- if (is.null(opt$options$ref_based_integration)) stop("Valid --ref_based_integration is required. See --help for all opts") else opt$options$ref_based_integration
 ref_samples <- if (is.null(opt$options$ref_samples) && ref_based_integration=="y") stop("You specified y for ref_based_integration but did not give a csv list of samples") else if (is.null(opt$options$ref_samples) && ref_based_integration=="n") "" else opt$options$ref_samples
 run_azimuth <- if (is.null(opt$options$run_azimuth)) stop("Valid --run_azimuth is required. See --help for all opts") else opt$options$run_azimuth
@@ -655,9 +660,11 @@ find_neighbors_clusters_reductions = function(seurat.object, sig.pcs, reduction.
   for (res in resolution.config.list)
   {
     print(paste('---- Clustering', graph.name, 'at resolution', res, '. ----'))
+    print(paste('---- Clustering Algorithm: ', algorithm, '. ----'))
+	 algorithm = as.integer(algorithm)
 
     # FIND CLUSTERS BASED ON THE GRAPH AND RES (graph.name_snn_resN.N)
-    seurat.object = FindClusters(seurat.object, resolution = res, graph.name = graph.name, verbose = FALSE)
+    seurat.object = FindClusters(seurat.object, resolution = res, graph.name = graph.name, algorithm = algorithm, verbose = FALSE)
 
     clust.res = paste0(graph.name, '_res.', res) # if periods need to be removed: gsub('\\.', '_', graph.name)
 

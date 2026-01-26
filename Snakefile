@@ -41,6 +41,7 @@ CELL_CYCLE_REGRESSION = config['CELL_CYCLE_REGRESSION']
 CELL_CYCLE_METHOD = config['CELL_CYCLE_METHOD']
 SEURAT_NORMALIZATION_METHOD = config['SEURAT_NORMALIZATION_METHOD']
 SEURAT_INTEGRATION_METHOD = config['SEURAT_INTEGRATION_METHOD']
+FIND_CLUSTERS_ALGORITHM = config['FIND_CLUSTERS_ALGORITHM']
 REFERENCE_BASED_INTEGRATION = config['REFERENCE_BASED_INTEGRATION']
 RUN_AZIMUTH = config['RUN_AZIMUTH']
 RUN_TRANSFERDATA = config['RUN_TRANSFERDATA']
@@ -217,6 +218,23 @@ def not_null_check_no_yes(config_param, config_param_name):
 			
 		return(config_param)
 # -------------------------------------------------------------------------
+
+# check FIND_CLUSTERS_ALGORITHM
+# Set FindClusters to 1 (louvain) if none provided
+#-------------------------------------------------------------------------------------
+if FIND_CLUSTERS_ALGORITHM is None:
+	FIND_CLUSTERS_ALGORITHM = 1
+
+FIND_CLUSTERS_ALGORITHM = int(FIND_CLUSTERS_ALGORITHM)
+find_cluster_algorithm_options = [1,2,3,4]
+
+if FIND_CLUSTERS_ALGORITHM not in find_cluster_algorithm_options:
+	print('You must provide 1, 2, 3, or 4 for a clustering algorithm (FIND_CLUSTERS_ALGORITHM).')
+	print('(exception: if FIND_CLUSTERS_ALGORITHM is blank, it will default to 1)')
+	print('1 = original Louvain algorithm (default); 2 = Louvain algorithm with multilevel refinement; 3 = SLM algorithm; 4 = Leiden algorithm')
+	sys.exit()
+#-------------------------------------------------------------------------------------
+
 
 '''
 # -- double check resolution
@@ -651,5 +669,5 @@ rule biggie:
 		# memory_file
 		# analyzed_seurat_object
 		# final_files
-		touch_file_create_images_DGE
+		 touch_file_create_images_DGE
 #--------------------OUTPUT--------------------------------------

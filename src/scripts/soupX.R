@@ -142,17 +142,10 @@ soupify_noclusters <- function(sample, in_path, out_path)
 {
   library('Seurat', lib.loc=lib_path)
 
-  print(in_path)
-  print(out_path)
+  #print(c(in_path, out_path))
 
-  r = in_path
-  f = out_path
-
-  if (starter_data == 'cellranger' || starter_data == 'fastq')
-  {
-    r=file.path(in_path, 'cellranger/outs/raw_feature_bc_matrix/')
-    f=file.path(in_path, 'cellranger/outs/filtered_feature_bc_matrix/')
-  }
+  r=file.path(in_path, 'raw_feature_bc_matrix/')
+  f=file.path(in_path, 'filtered_feature_bc_matrix/')
 
   raw <- Read10X(data.dir=r)
   filt <- Read10X(data.dir=f)
@@ -186,7 +179,8 @@ soupify_noclusters <- function(sample, in_path, out_path)
 # users need sub-directories (57,58), and no outs dir
 if (data_type == 'no_clusters')
 {
-  soupify_noclusters(sample, soupX_input_path, soupX_output_path)
+  cellranger_data_path = paste(soupX_input_path, 'outs/', sep='')
+  soupify_noclusters(sample, cellranger_data_path, soupX_output_path)
 }
 #--------------------------------------------------------------------
 
@@ -196,11 +190,8 @@ soupify_h5 <- function(sample, in_path, out_path)
 {
   library('Seurat', lib.loc=lib_path)
 
-  if (starter_data == 'cellranger' || starter_data == 'fastq')
-  {
-    r=file.path(in_path, 'cellranger/outs/raw_feature_bc_matrix.h5')
-    f=file.path(in_path, 'cellranger/outs/filtered_feature_bc_matrix.h5')
-  }
+  r=file.path(in_path, 'raw_feature_bc_matrix.h5')
+  f=file.path(in_path, 'filtered_feature_bc_matrix.h5')
 
   raw <-Read10X_h5(r, use.names=TRUE)
   filt <-Read10X_h5(f, use.names=TRUE)
@@ -231,5 +222,6 @@ soupify_h5 <- function(sample, in_path, out_path)
 if (data_type == 'h5') 
 {
   print('h5')
-  soupify_h5(sample, soupX_input_path, soupX_output_path)
+  cellranger_data_path = paste(soupX_input_path, 'outs/', sep='')
+  soupify_h5(sample, cellranger_data_path, soupX_output_path)
 }

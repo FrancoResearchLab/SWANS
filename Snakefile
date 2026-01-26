@@ -622,7 +622,7 @@ analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJE
 
 # dge, proportions, dimplots
 # -------------------------------------------------------------------------------------
-touch_file_create_images_DGE = create_images_DGE_log + PROJECT + '_create_images_DGE_dummy.txt',
+touch_file_create_images_DGE = 'data/endpoints/' + PROJECT + '/analysis/' + PROJECT + '_create_images_DGE_dummy.txt',
 #-------------------------------------------------------------------------------------
 
 # List of final files (for testing and troubleshooting purposes)

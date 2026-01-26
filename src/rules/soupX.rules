@@ -22,7 +22,8 @@ rule soupX:
 		input_type = SOUPX_START,
 		soupX_input = 'data/endpoints/' + PROJECT + '/{s}/' + STARTING_DATA + '/',
 		soupx_output = 'data/endpoints/' + PROJECT + '/' + '{s}/soupX/',
-		starting_data = STARTING_DATA
+		starting_data = STARTING_DATA,
+		sequencing_type = SEQUENCING_TYPE
 	output:
 		barcodes_path = 'data/endpoints/' + PROJECT + '/' + '{s}/soupX/barcodes.tsv.gz',
 		features_path = 'data/endpoints/' + PROJECT + '/' + '{s}/soupX/features.tsv.gz',
@@ -37,5 +38,6 @@ rule soupX:
 		--project {params.project} \
 		--soupX_input_path {params.soupX_input} \
 		--soupX_output_path  {params.soupx_output} \
+		--sequencing_type {params.sequencing_type} \
 		--starter_data {params.starting_data} \
 		{params.r_lib_path} 2> {log.log_output}"

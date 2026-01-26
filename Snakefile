@@ -22,6 +22,7 @@ configfile: 'configs/prelim_configs.yaml'
 contact = config['contact']
 PROJECT = config['PROJECT']
 ORGANISM = config['ORGANISM']
+SEQUENCING_TYPE = config['SEQUENCING_TYPE']
 STARTING_DATA = config['STARTING_DATA']
 RUN_CELLRANGER = config['RUN_CELLRANGER']
 RPATH = config['RPATH']
@@ -260,6 +261,18 @@ for index,n in enumerate(no_nulls):
 	n = not_null_check_no_yes(n, value)
 
 # -- special cases
+
+sequencing_options = ['standard', 'flex']
+if SEQUENCING_TYPE is None or type(SEQUENCING_TYPE) == 'NoneType' or SEQUENCING_TYPE == ' ':
+	print(SEQUENCING_TYPE + ' cannot be empty.')
+	print('Please write \'standard\' or \'flex\' for SEQUENCING_TYPE in the configs/prelim_configs.yaml file, then run this script again')
+	sys.exit()
+else:
+	SEQUENCING_TYPE = SEQUENCING_TYPE.strip()
+
+	if SEQUENCING_TYPE not in sequencing_options:
+		print('Please write \'standard\' or \'flex\' for SEQUENCING_TYPE in the configs/prelim_configs.yaml file, then run this script again')
+		sys.exit()
 
 if RUN_CELLRANGER == 'y':
 

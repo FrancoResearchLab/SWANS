@@ -26,6 +26,7 @@ rule doubletFinder:
     components = COMPONENTS,
     organism = ORGANISM,
     lib_path = RPATH,
+    sequencing_type = SEQUENCING_TYPE,
     processes = THREADS
   output:
     doublet_list = 'data/endpoints/' + PROJECT + '/' + '{s}/doubletFinder/tables/' + PROJECT + '_{s}_doublet_ids.txt'
@@ -42,6 +43,7 @@ rule doubletFinder:
     --mito_cutoff {params.mito} --min_feature_threshold {params.min_feature_threshold} \
     --components {params.components} \
     --organism {params.organism} \
+    --sequencing_type {params.sequencing_type} \
     --processes {threads} \
     {params.lib_path} \
     2> {log.log_output}"

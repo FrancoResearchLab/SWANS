@@ -43,6 +43,8 @@ option_list <- list(
               help="Minimum number of features per cell for filtering as an integer"),
   make_option(c("--components"), type="integer",
               help="Number of components to use for PCA and UMAP as an integer"),
+  make_option(c("--sequencing_type"), type="character",
+              help="10X standard or flex sequencing"),
   make_option(c("--processes"), type="integer", default=4,
               help="Number of processes to use for parallelization as an integer")
 )
@@ -59,6 +61,7 @@ organism <- if (is.null(opt$options$organism)) stop("--organism is required. See
 mito_cutoff <- if (is.null(opt$options$mito_cutoff)) stop("--mito_cutoff is required. See --help for all opts") else opt$options$mito_cutoff
 components <- if (is.null(opt$options$components)) stop("--components is required. See --help for all opts") else opt$options$components
 processes <- if (is.null(opt$options$processes)) stop("--processes is required. See --help for all opts") else opt$options$processes
+sequencing_type <- if (is.null(opt$options$sequencing_type)) stop("--sequencing_type is required. See --help for all opts") else opt$options$sequencing_type
 min_feature_threshold <- if (is.null(opt$options$min_feature_threshold)) stop("--min_feature_threshold is required. See --help for all opts") else opt$options$min_feature_threshold
 
 # LOAD LIBRARIES
@@ -107,7 +110,7 @@ min_feature_threshold = as.numeric(min_feature_threshold)
 # FUNCTIONS #########################################################
 # READ IN FILES & CREATE SEURAT OBJECT
 #--------------------------------------------------------------------
-make_seuratobj <- function(inpath, starting.data, project, sample)
+make_seuratobj <- function(inpath, starting.data, project, sample, sequencing_type)
 {
   outs.dir <- ''
 
@@ -116,9 +119,19 @@ make_seuratobj <- function(inpath, starting.data, project, sample)
     outs.dir <- paste0(inpath)
   }
 
-  if (starting.data == 'cellranger') {
-    outs.dir <- file.path(inpath, 'outs/filtered_feature_bc_matrix')
+  if (starting.data == 'cellranger') 
+  {
+	 if (sequencing_type == 'standard')
+	 {
+      outs.dir <- file.path(inpath, 'outs/filtered_feature_bc_matrix')
+	 }
+
+	 if (sequencing_type == 'flex')
+	 {
+      outs.dir <- file.path(inpath, 'count/sample_filtered_feature_bc_matrix')
+	 }
   }
+
   print(paste0('Reading in data from: ', outs.dir))
   sample.data <- Read10X(data.dir = outs.dir)
   so <- CreateSeuratObject(counts = sample.data,
@@ -324,7 +337,7 @@ write_doublet_ids <- function(seurat.object, sample, project)
 # FUNCTION CALLS
 #--------------------------------------------------------------------
 # MAKE SEURAT OBJECT, GET MULTIPLET RATE, FILTER SEU OBJ, GET PK VAL
-S <- make_seuratobj(input_path, starting_data, project, sample)
+S <- make_seuratobj(input_path, starting_data, project, sample, sequencing_type)
 doublet_predictor <- determine_multiplet_rate(S)
 S <- filter_seuratobj(S, organism, components)
 pk <- get_pk(S, sample, project)

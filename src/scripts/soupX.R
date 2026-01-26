@@ -15,45 +15,41 @@ lib_path <- '/usr/local/lib/R/site-library'
 args <- commandArgs(trailingOnly = TRUE)
 tryCatch(
   expr = {
-    suppressMessages(library("optparse", lib.loc = lib_path))
+    suppressMessages(library('optparse', lib.loc = lib_path))
   },
   error = function(e) {
-    if (dir.exists(tail(args, n=1))) lib_path <- tail(args, n=1) else stop("Valid library path specified at the end as a positional arg required.")
+    if (dir.exists(tail(args, n=1))) lib_path <- tail(args, n=1) else stop('Valid library path specified at the end as a positional arg required.')
     # if lib path provided, override default
-    suppressMessages(library("optparse", lib.loc = lib_path))
+    suppressMessages(library('optparse', lib.loc = lib_path))
   }
 )
 
-
 # Set and define opts
 option_list <- list(
-  make_option(c("--sample"), type="character",
-              help="Sample name as str"),
-  make_option(c("--project"), type="character",
-              help="Name of the project"),
-  make_option(c("--data_type"), type="character",
-              help="outs, no_clusters, or h5"),
-  make_option(c("--soupX_input_path"), type="character",
-              help="Path to input data as str"),
-  make_option(c("--soupX_output_path"), type="character",
-              help="Path to output data as str"),
-  make_option(c("--starter_data"), type="character", 
-              help="Type of starting data: cellranger, fastq")
+  make_option(c('--sample'), type='character', help='Sample name as str'),
+  make_option(c('--project'), type='character', help='Name of the project'),
+  make_option(c('--data_type'), type='character', help='outs, no_clusters, or h5'),
+  make_option(c('--soupX_input_path'), type='character', help='Path to input data as str'),
+  make_option(c('--soupX_output_path'), type='character', help='Path to output data as str'),
+  make_option(c('--sequencing_type'), type='character', help='Type of sequncing data: standard, flex'),
+  make_option(c('--starter_data'), type='character', help='Type of starting data: cellranger, fastq')
 )
 
 # Since the last args is positional, object sticks the options in a separate key
 opt <- parse_args(OptionParser(option_list=option_list), positional_arguments=TRUE, args=args)
-sample <- if (is.null(opt$options$sample)) stop("--sample is required. See --help for all opts") else opt$options$sample
-project <- if (is.null(opt$options$project)) stop("--project is required. See --help for all opts") else opt$options$project
-data_type <- if (is.null(opt$options$data_type)) stop("--data_type is required. See --help for all opts") else opt$options$data_type
-starter_data <- if (is.null(opt$options$starter_data)) stop("--starter_data is required. See --help for all opts") else opt$options$starter_data
+sample <- if (is.null(opt$options$sample)) stop('--sample is required. See --help for all opts') else opt$options$sample
+project <- if (is.null(opt$options$project)) stop('--project is required. See --help for all opts') else opt$options$project
+data_type <- if (is.null(opt$options$data_type)) stop('--data_type is required. See --help for all opts') else opt$options$data_type
+sequencing_type <- if (is.null(opt$options$sequencing_type)) stop('--sequencing_type is required. See --help for all opts') else opt$options$sequencing_type
+starter_data <- if (is.null(opt$options$starter_data)) stop('--starter_data is required. See --help for all opts') else opt$options$starter_data
 # also check to make sure input path exists
-soupX_input_path <- if (is.null(opt$options$soupX_input_path) | !dir.exists(opt$options$soupX_input_path)) stop("Valid --soupX_input_path is required. See --help for all opts") else opt$options$soupX_input_path
-soupX_output_path <- if (is.null(opt$options$soupX_output_path)) stop("--soupX_output_path is required. See --help for all opts") else opt$options$soupX_output_path
+soupX_input_path <- if (is.null(opt$options$soupX_input_path) | !dir.exists(opt$options$soupX_input_path)) stop('Valid --soupX_input_path is required. See --help for all opts') else opt$options$soupX_input_path
+soupX_output_path <- if (is.null(opt$options$soupX_output_path)) stop('--soupX_output_path is required. See --help for all opts') else opt$options$soupX_output_path
 
 library('SoupX', lib.loc=lib_path)
 library('DropletUtils', lib.loc=lib_path)
 library('ggplot2', lib.loc=lib_path)
+library('Seurat', lib.loc=lib_path)
 
 set.seed(42)
 
@@ -103,18 +99,72 @@ contam_plot = function(sc)
 }
 #--------------------------------------------------------------------
 
+# setting path for input data
+#--------------------------------------------------------------------
+cellranger_data = ''
+raw_folder = ''
+filtered_folder = ''
+raw_h5 <- ''
+filtered_h5 <- ''
+
+if (sequencing_type == 'standard')
+{
+	cellranger_data = paste(soupX_input_path, 'outs/', sep='')
+	raw_folder <- 'raw_feature_bc_matrix'
+	filtered_folder <- 'filtered_feature_bc_matrix'
+	raw_h5 <- 'raw_feature_bc_matrix.h5'
+	filtered_h5 <- 'filtered_feature_bc_matrix.h5'
+}
+
+if (sequencing_type == 'flex')
+{
+	cellranger_data = paste(soupX_input_path, 'count/', sep='')
+	raw_folder <- 'sample_raw_feature_bc_matrix'
+	filtered_folder <- 'sample_filtered_feature_bc_matrix'
+	raw_h5 <- 'sample_raw_feature_bc_matrix.h5'
+	filtered_h5 <- 'sample_filtered_feature_bc_matrix.h5'
+}
+#--------------------------------------------------------------------
 
 # CLEAN DATA: outs #
 #--------------------------------------------------------------------
-soupify_outs <- function(in_path, out_path)
+soupify_outs <- function(in_path, out_path, cluster_folder_name) #, raw_folder=raw_folder, filtered_folder=filtered_folder, sequencing_type=sequencing_type, sample=sample)
 {
   print('loading')
   print(in_path)
   print(out_path)
-  sc <- load10X(in_path)
+
+  # switching to Read10X, no load10X. Want raw+filtered, hardcoding clustering file
+  clustering <- file.path(in_path, 'analysis/clustering', cluster_folder_name, 'clusters.csv')
+  print(clustering)
+  clusters <- read.csv(clustering, stringsAsFactors=FALSE)
+  rownames(clusters) <- clusters$Barcode
+
+  r=file.path(in_path, raw_folder)
+  f=file.path(in_path, filtered_folder)
+
+  raw <- Read10X(data.dir=r)
+  filt <- Read10X(data.dir=f)
+
+  # flex: guarentees tod (raw) + toc (filt) have same genes, same order, data unchanged for standard
+  common_genes <- intersect(rownames(filt), rownames(raw))
+  raw <- raw[common_genes, , drop=FALSE]
+  filt <- filt[common_genes, , drop=FALSE]
+
+  #sc <- load10X(in_path)
+  sc <- SoupChannel(raw, filt)
+  sc=setClusters(sc, clusters$Cluster)
 
   print('estimating')
-  sc=autoEstCont(sc)
+  if (sequencing_type == 'standard')
+  {
+    sc=autoEstCont(sc)
+  }
+  
+  if (sequencing_type == 'flex')
+  {
+    sc=autoEstCont(sc, doPlot=FALSE, tfidfMin=0.3, soupQuantile=0.3)
+  }
 
   print('adjusting')
   out=adjustCounts(sc, roundToInt=TRUE)
@@ -130,9 +180,13 @@ if (data_type == 'outs')
 {
   print('outs')
 
-  cellranger_data = paste(soupX_input_path, 'outs/', sep='')
-  print(cellranger_data)
-  soupify_outs(cellranger_data, soupX_output_path)
+  folder_name = 'graphclust'
+  if (sequencing_type == 'flex')
+  {
+     folder_name = 'gene_expression_graphclust'
+  }
+
+  soupify_outs(cellranger_data, soupX_output_path, folder_name)
 }
 #--------------------------------------------------------------------
 
@@ -140,15 +194,18 @@ if (data_type == 'outs')
 #--------------------------------------------------------------------
 soupify_noclusters <- function(sample, in_path, out_path)
 {
-  library('Seurat', lib.loc=lib_path)
+  print(c(in_path, out_path))
 
-  #print(c(in_path, out_path))
-
-  r=file.path(in_path, 'raw_feature_bc_matrix/')
-  f=file.path(in_path, 'filtered_feature_bc_matrix/')
+  r=file.path(in_path, raw_folder)
+  f=file.path(in_path, filtered_folder)
 
   raw <- Read10X(data.dir=r)
   filt <- Read10X(data.dir=f)
+
+  # flex: guarentees tod (raw) + toc (filt) have same genes, same order, data unchanged for standard
+  common_genes <- intersect(rownames(filt), rownames(raw))
+  raw <- raw[common_genes, , drop=FALSE]
+  filt <- filt[common_genes, , drop=FALSE]
 
   filt2 <- CreateSeuratObject(counts=filt , project=project, min.cells=0, min.features=0)
   filt.object <- NormalizeData(object=filt2)
@@ -161,12 +218,18 @@ soupify_noclusters <- function(sample, in_path, out_path)
   clusters <- filt.object@meta.data$seurat_clusters
   names(clusters)<-names(filt.object@active.ident)
 
-  raw <-Read10X(data.dir=r)
-  filt <-Read10X(data.dir=f)
   sc=SoupChannel(raw,filt)
   sc=setClusters(sc,clusters)
 
-  sc=autoEstCont(sc, doPlot=TRUE)
+  if (sequencing_type == 'standard')
+  {
+    sc=autoEstCont(sc)
+  }
+  
+  if (sequencing_type == 'flex')
+  {
+    sc=autoEstCont(sc, doPlot=FALSE, tfidfMin=0.3, soupQuantile=0.3)
+  }
 
   out=adjustCounts(sc, roundToInt=TRUE)
   write10xCounts(out_path, out, version='3', overwrite = TRUE)
@@ -176,25 +239,27 @@ soupify_noclusters <- function(sample, in_path, out_path)
   dev.off()
 }
 
-# users need sub-directories (57,58), and no outs dir
 if (data_type == 'no_clusters')
 {
-  cellranger_data_path = paste(soupX_input_path, 'outs/', sep='')
-  soupify_noclusters(sample, cellranger_data_path, soupX_output_path)
+  print('no clusters')
+  soupify_noclusters(sample, cellranger_data, soupX_output_path)
 }
 #--------------------------------------------------------------------
 
 # CLEAN DATA: H5
 #--------------------------------------------------------------------
-soupify_h5 <- function(sample, in_path, out_path)
+soupify_h5 <- function(sample, in_path, out_path) 
 {
-  library('Seurat', lib.loc=lib_path)
+  r=file.path(in_path, raw_h5)
+  f=file.path(in_path, filtered_h5)
 
-  r=file.path(in_path, 'raw_feature_bc_matrix.h5')
-  f=file.path(in_path, 'filtered_feature_bc_matrix.h5')
-
-  raw <-Read10X_h5(r, use.names=TRUE)
   filt <-Read10X_h5(f, use.names=TRUE)
+  raw <-Read10X_h5(r, use.names=TRUE)
+
+  # flex: guarentees tod (raw) + toc (filt) have same genes, same order, data unchanged for standard
+  common_genes <- intersect(rownames(filt), rownames(raw))
+  raw <- raw[common_genes, , drop=FALSE]
+  filt <- filt[common_genes, , drop=FALSE]
 
   filt2 <- CreateSeuratObject(counts=filt , project=project, min.cells=0, min.features=0)
   filt.object <- NormalizeData(object=filt2)
@@ -209,7 +274,17 @@ soupify_h5 <- function(sample, in_path, out_path)
 
   sc = SoupChannel(raw,filt)
   sc = setClusters(sc,clusters)
-  sc=autoEstCont(sc)
+
+  if (sequencing_type == 'standard')
+  {
+    sc=autoEstCont(sc)
+  }
+  
+  if (sequencing_type == 'flex')
+  {
+    sc=autoEstCont(sc, doPlot=FALSE, tfidfMin=0.3, soupQuantile=0.3)
+  }
+
   out = adjustCounts(sc, roundToInt=TRUE)
   write10xCounts(out_path, out, version='3', overwrite = TRUE)
 
@@ -218,10 +293,8 @@ soupify_h5 <- function(sample, in_path, out_path)
   dev.off()
 }
 
-# users need files (98,99), and no outs dir
 if (data_type == 'h5') 
 {
   print('h5')
-  cellranger_data_path = paste(soupX_input_path, 'outs/', sep='')
-  soupify_h5(sample, cellranger_data_path, soupX_output_path)
+  soupify_h5(sample, cellranger_data, soupX_output_path)
 }

@@ -7,6 +7,9 @@ PROJECT: project_name
 # organism (e.g., mouse, human)
 ORGANISM: human
 
+# sequencing type 10X Genomics Standard/GEM or Flex (standard, flex)
+SEQUENCING_TYPE: standard
+
 # starting point data (e.g., fastq, cellranger, matrix)
 STARTING_DATA: cellranger
 

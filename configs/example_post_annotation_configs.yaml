@@ -68,7 +68,7 @@ FINAL_STORAGE:
 
 # 10X end user license agreement 
 # required if cloupe listed for FINAL_STORAGE (y/n)
-EULA: y
+EULA: 
 
 # relative path with filename to file containing genes of interest
 FINAL_USER_GENE_FILE: 

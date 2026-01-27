@@ -28,6 +28,7 @@ rule cluster_plots_DGE:
 		resolution = RESOLUTION,
 		conserved_genes = CONSERVED_GENES,
 		threads = THREADS,
+		memory = MEMORY,
 		tsne = TSNE,
 		user_gene_file = USER_GENE_FILE,
 		report_path = directory(report_path_tables),
@@ -46,8 +47,11 @@ rule cluster_plots_DGE:
 			--conserved_genes {params.conserved_genes} \
 			--analyzed_seurat_object {input.analyzed_object} \
 			--processes {params.threads} \
+			--memory {params.memory} \
 			--tsne_plot {params.tsne} \
 			--report_table_path {params.report_path} \
 			--user_gene_file {params.user_gene_file} \
 			--visualization {params.visualization} \
 			{params.rpath} 2> {log.log_output} && touch {output}"
+		
+

@@ -6,6 +6,7 @@ date: "`r format(Sys.time())`"
 params:
   root_dir: ../..
   data_dir: ../../data/endpoints
+  sample_list: ../../samples.sample_list
   prelim_qc_config: ../../configs/prelim_configs.yaml
   post_annotation_config: ../../configs/post_annotation_configs.yaml
 showWarnings: FALSE
@@ -50,7 +51,7 @@ attach(params)
 htmltools::htmlDependency("jquery", "3.6.0", src = "https://code.jquery.com/", script = "jquery-3.6.0.min.js")
 
 # Sample Metadata
-meta <- read.csv(file.path(root_dir, 'samples.sample_list'), sep = '\t', header = TRUE)
+meta <- read.csv(file.path(sample_list), sep = '\t', header = TRUE)
 meta <- meta[, 1:2]
 samples <- meta$samples
 

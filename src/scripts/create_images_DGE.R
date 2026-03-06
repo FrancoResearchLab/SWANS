@@ -507,7 +507,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
       print('saving object as RDS')
       rds_path = file.path('data/endpoints', project, 'analysis/RDS')
       dir.create(rds_path, showWarnings=FALSE, recursive=TRUE)
-      filename <- file.path(rds_path, paste0(project, '_analyzed_seurat_object.RDS') )
+      filename <- file.path(rds_path, paste0(project, '_analyzed_seurat_object.rds') )
       saveRDS(seurat_object, file=filename)
     }
   }

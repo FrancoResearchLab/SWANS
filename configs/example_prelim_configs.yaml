@@ -1,6 +1,9 @@
 # contact (email will be sent when jobs complete) 
 contact: USER@chop.edu
 
+# local execution or cluster execution via slurm?
+EXECUTOR: slurm
+
 # project name (IN LOWER CASE) base_name: (name of output directory under data/endpoints/)
 PROJECT: project_name
 

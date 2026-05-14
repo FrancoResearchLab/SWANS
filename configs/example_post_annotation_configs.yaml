@@ -1,6 +1,9 @@
 # run finale (y/n)
 RUN_FINAL_ANALYSIS: n
 
+# local execution or cluster execution via slurm?
+EXECUTOR: slurm
+
 # minimimum % of cells in one of compared groups for dge
 MIN_PCT: 0.1
 

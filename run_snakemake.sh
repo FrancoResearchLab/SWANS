@@ -53,8 +53,26 @@ case "$runtype" in
 esac
 #-----------------------------------------------------------------------------
 
+# Functions
 #-----------------------------------------------------------------------------
+# Function to get profile dir based on the executor specified
+get_profile_dir() {
+    local executor="$1"
+    case "$executor" in
+        local)
+            echo "profiles/local"
+            ;;
+        slurm)
+            echo "profiles/slurm"
+            ;;
+        *)
+            log "ERROR" "Unknown executor: $executor (allowed: local, slurm)"
+            exit 1
+            ;;
+    esac
+}
 #-----------------------------------------------------------------------------
+
 
 # confirm sample list file exists
 #-----------------------------------------------------------------------------
@@ -89,6 +107,9 @@ fi
 # get project name, create dirs, create symbolic links
 #-----------------------------------------------------------------------------
 echo "Setting up project directory"
+
+# Get executor (local or cluster)
+executor=`python3 $SCRIPT_DIR/helper_scripts/cache.py EXECUTOR:`
 
 path="data/endpoints/"
 project=`python3 $SCRIPT_DIR/helper_scripts/cache.py PROJECT:` #retrieves project name from config file
@@ -180,9 +201,25 @@ echo -e "=======================================================================
 # snakemake --cores $threads --snakefile $SCRIPT_DIR/Snakefile
 #-----------------------------------------------------------------------------
 
+# Get the profile to use for prelim analysis
+#-----------------------------------------------------------------------------
+profile_dir=$(get_profile_dir "$executor")
+#-----------------------------------------------------------------------------
+
+
 # call Snakemake with Singularity
+# #-----------------------------------------------------------------------------
+# snakemake --snakefile $SCRIPT_DIR/Snakefile \
+# 	--cores $threads \
+# 	--printshellcmds \
+# 	--use-singularity \
+# 	--singularity-args "-B $prelim_bind_mnts"
+# #-----------------------------------------------------------------------------
+
+# call Snakemake on with profile
 #-----------------------------------------------------------------------------
 snakemake --snakefile $SCRIPT_DIR/Snakefile \
+	--profile $profile_dir \
 	--cores $threads \
 	$dryrun_flag \
 	--use-singularity \
@@ -198,9 +235,15 @@ sh $SCRIPT_DIR/helper_scripts/citations.sh
 #-----------------------------------------------------------------------------
 final_config_file="configs/post_annotation_configs.yaml"
 run_final=`python3 $SCRIPT_DIR/helper_scripts/cache_final.py RUN_FINAL_ANALYSIS:` #retrieves starting data from config file
+executor_final=`python3 $SCRIPT_DIR/helper_scripts/cache_final.py EXECUTOR:`
 
 if [ -e "$final_config_file" ] && [[ $run_final == "y" ]]; then
 	echo "You have the final config file, let the magic begin."
+
+	# Get the profile to use for final analysis
+	#-----------------------------------------------------------------------------
+	profile_dir_final=$(get_profile_dir "$executor_final")
+	#-----------------------------------------------------------------------------
 
 	# Get paths for Singularity bind mounts (post-annotation analysis)
 	#-----------------------------------------------------------------------------
@@ -242,6 +285,7 @@ if [ -e "$final_config_file" ] && [[ $run_final == "y" ]]; then
 
 	# snakemake --snakefile FinalSnakefile --printshellcmds --dryrun
 	snakemake --snakefile FinalSnakefile \
+		--profile $profile_dir_final \
 		--cores $threads \
 		$dryrun_flag \
 		--use-singularity \

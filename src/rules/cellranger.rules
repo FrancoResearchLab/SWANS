@@ -31,8 +31,14 @@ rule cellranger_counts:
 	benchmark: benchmark_log + PROJECT + '_{s}_cellranger_counts.benchmark'
 	container: 'docker://francothyroidlab/cellranger:9.0.1'
 	shell:
-		"cellranger count --id={wildcards.s} \
-		--fastqs={input.fastqs} --output-dir={params.counts} \
-		--sample={wildcards.s} \
-		--transcriptome={params.reference} {params.bam} \
-		--localcores={threads} --localmem=128 2> {log.log_output} && touch {output.stamp}"
+		"cellranger count \
+			--id={wildcards.s} \
+			--fastqs={input.fastqs} \
+			--output-dir={params.counts} \
+			--sample={wildcards.s} \
+			--transcriptome={params.reference} \
+			--localcores={threads} \
+			--localmem=128 \
+			--disable-ui \
+			{params.bam} \
+			2> {log.log_output} && touch {output.stamp}"

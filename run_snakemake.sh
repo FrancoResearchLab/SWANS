@@ -7,6 +7,55 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 sh $SCRIPT_DIR/helper_scripts/citations.sh
 #-----------------------------------------------------------------------------
 
+# Parse command-line options
+#-----------------------------------------------------------------------------
+while getopts ":r:" opt; do
+    case "$opt" in
+        r)
+        case "$OPTARG" in
+            run|dry-run)
+            runtype="$OPTARG"
+            ;;
+            *)
+            log "ERROR" "Invalid runtype: $OPTARG (allowed: run, dry-run)"
+            exit 1
+            ;;
+        esac
+        ;;
+        \?)
+            log "ERROR" "Invalid option: -$OPTARG"
+            echo "Usage: $0 [-r <dry-run|run>]"
+            exit 1
+            ;;
+        :)
+            log "ERROR" "Option -$OPTARG requires an argument"
+            exit 1
+            ;;
+    esac
+done
+
+# Default runtype if not provided
+runtype="${runtype:-run}"
+
+# Get flag for dry-run to pass to snakemake
+dryrun_flag=""
+case "$runtype" in
+    run)
+        dryrun_flag=""
+        ;;
+    dry-run)
+        dryrun_flag="--dry-run"
+        ;;
+    *)
+        log "ERROR" "Unknown runtype: $runtype (allowed: run, dry-run)"
+        exit 1
+        ;;
+esac
+#-----------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
+
 # confirm sample list file exists
 #-----------------------------------------------------------------------------
 sample_list_file="samples.sample_list"
@@ -135,7 +184,7 @@ echo -e "=======================================================================
 #-----------------------------------------------------------------------------
 snakemake --snakefile $SCRIPT_DIR/Snakefile \
 	--cores $threads \
-	--printshellcmds \
+	$dryrun_flag \
 	--use-singularity \
 	--singularity-args "-B $prelim_bind_mnts"
 #-----------------------------------------------------------------------------
@@ -194,8 +243,8 @@ if [ -e "$final_config_file" ] && [[ $run_final == "y" ]]; then
 	# snakemake --snakefile FinalSnakefile --printshellcmds --dryrun
 	snakemake --snakefile FinalSnakefile \
 		--cores $threads \
-		--printshellcmds \
+		$dryrun_flag \
 		--use-singularity \
-		--singularity-args "-B $postanno_bind_mnts"
+		--singularity-args "-B $prelim_bind_mnts"
 fi
 #-----------------------------------------------------------------------------

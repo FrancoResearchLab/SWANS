@@ -60,7 +60,7 @@ rule final_analysis:
 			{params.annotate} {params.visualization} {params.meta_sample} \
 			{params.meta_experiment} {params.meta_annotation} \
 			{params.umap_reduction} {params.tnse_reduction} {params.memory} \
-			2> {log.log_output}" 
+			> {log.log_output} 2>&1" 
 
 rule trajectory_analysis:
 	input:
@@ -90,7 +90,7 @@ rule trajectory_analysis:
 			{params.final_storage} \
 			{params.lib_path} \
 			{params.provide} {params.annotate} \
-			2> {log.log_output} && touch {output}"
+			> {log.log_output} 2>&1 && touch {output}"
 			
 rule final_report:
 	input:
@@ -121,7 +121,7 @@ rule benchmarks:
 		log_output = benchmarking_table_log + PROJECT + '_benchmarking_table.log'
 	benchmark: benchmark_log + PROJECT + '_benchmark_table.benchmark'
 	shell:
-		"Rscript {input.script} {params.lib_path} {params.project} 2> {log.log_output}"
+		"Rscript {input.script} {params.lib_path} {params.project} > {log.log_output} 2>&1"
 
 rule bench_report:
 	input:

@@ -52,6 +52,7 @@ rule cluster_plots_DGE:
 			--report_table_path {params.report_path} \
 			--user_gene_file {params.user_gene_file} \
 			--visualization {params.visualization} \
-			{params.rpath} 2> {log.log_output} && touch {output}"
+			{params.rpath} \
+			> {log.log_output} 2>&1 && touch {output}"
 		
 

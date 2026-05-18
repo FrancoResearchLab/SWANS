@@ -41,4 +41,4 @@ rule cellranger_counts:
 			--localmem=128 \
 			--disable-ui \
 			{params.bam} \
-			2> {log.log_output} && touch {output.stamp}"
+			> {log.log_output} 2>&1 && touch {output.stamp}"

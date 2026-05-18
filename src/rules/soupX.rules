@@ -40,4 +40,5 @@ rule soupX:
 		--soupX_output_path  {params.soupx_output} \
 		--sequencing_type {params.sequencing_type} \
 		--starter_data {params.starting_data} \
-		{params.r_lib_path} 2> {log.log_output}"
+		{params.r_lib_path} \
+		> {log.log_output} 2>&1"

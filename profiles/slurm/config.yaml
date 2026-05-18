@@ -11,13 +11,16 @@ default-resources:
   slurm_account: "hpcusers"
   slurm_partition: "defq"
   mem_mb: 8000
-  runtime: 24:00:00
-  time: 24:00:00
+  runtime: 4:00:00
+  time: 4:00:00
   ntasks: 1
   cpus_per_task: 4
 
 set-threads:
   cellranger_counts: 16
+  doubletFinder: 8
+  analyze_sc_object: 16
+  cluster_plots_DGE: 16
 
 set-resources:
   cellranger_counts:
@@ -26,4 +29,23 @@ set-resources:
     time: 24:00:00
     cpus_per_task: 16
     cellranger_jobs: 1
-    
+  soupX:
+    mem_mb: 64000
+    runtime: 4:00:00
+    time: 4:00:00
+    cpus_per_task: 8
+  doubletFinder:
+    mem_mb: 64000
+    runtime: 4:00:00
+    time: 4:00:00
+    cpus_per_task: 8
+  analyze_sc_object:
+    mem_mb: 128000
+    runtime: 8:00:00
+    time: 8:00:00
+    cpus_per_task: 16
+  cluster_plots_DGE:
+    mem_mb: 128000
+    runtime: 6:00:00
+    time: 6:00:00
+    cpus_per_task: 16

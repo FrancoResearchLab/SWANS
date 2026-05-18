@@ -75,13 +75,13 @@ contam_plot = function(sc)
   print(summary(post))
 
   p_contam <- ggplot(post, aes(x = x, y = y)) +
-    geom_line(color = '#440154FF', size = 1.2) +  # blue solid line
+    geom_line(color = '#440154FF', linewidth = 1.2) +
     geom_vline(xintercept = fit$rhoEst, color = '#26828EFF', size = 1, linetype = 'solid') +  # red estimate line
     stat_function(fun = function(x) 
     {
       dgamma(x, shape = (fit$priorRho / fit$priorRhoStdDev)^2, rate  = fit$priorRho / (fit$priorRhoStdDev^2))
     },
-    color = '#C0C0C0', linetype = 'dashed', size = 1) +  # gray dashed prior
+    color = '#C0C0C0', linetype = 'dashed', linewidth = 1) +
     labs(
       x = expression('Contamination Fraction ('*rho*')'),
       y = 'Posterior Density',

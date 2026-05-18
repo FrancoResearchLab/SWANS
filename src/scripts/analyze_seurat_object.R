@@ -207,8 +207,12 @@ normalization_assay_dict = list('standard' = 'RNA', 'sct' = 'SCT')
 normalization_method_list = normalization_assay_dict[normalization_config_list]
 
 # INTEGRATION METHODS: list of what each config term for integration will be
-integration_dict = list('cca' = 'CCAIntegration', 'rpca' = 'RPCAIntegration', 'harmony' = 'HarmonyIntegration',
-                        'pca' = 'PCA') # need this here so this passes properly to fns that use the integration_method_list
+integration_dict = list(
+  'cca' = 'CCAIntegration',
+  'rpca' = 'RPCAIntegration',
+  'harmony' = 'HarmonyIntegration',
+  'pca' = 'PCA'
+)
 
 # Subset to a list of the input methods from config with Seurat int names
 integration_method_list = integration_dict[integration_config_list]
@@ -495,19 +499,29 @@ seurat_integration = function(seurat.object, integration.method.list, normalizat
 
         print('Reference-based integration')
         # Run integration (reference-based)
-        seurat.object = IntegrateLayers(object = seurat.object, method = integration.method.name,
-                                        assay = norm.assay, normalization.method = norm.method,
-                                        orig.reduction = pca.name, new.reduction = int.reduction.name,
-                                        reference = ref.sample.index)
+        seurat.object = IntegrateLayers(
+          object = seurat.object,
+          method = integration.method.name,
+          assay = norm.assay,
+          normalization.method = norm.method,
+          orig.reduction = pca.name,
+          new.reduction = int.reduction.name,
+          reference = ref.sample.index
+        )
       }
 
       if (ref_based_integration == 'n')
       {
         print('Integration')
         # Run integration (normal)
-        seurat.object = IntegrateLayers(object = seurat.object, method = integration.method.name,
-                                        assay = norm.assay, normalization.method = norm.method,
-                                        orig.reduction = pca.name, new.reduction = int.reduction.name)
+        seurat.object = IntegrateLayers(
+          object = seurat.object,
+          method = integration.method.name,
+          assay = norm.assay,
+          normalization.method = norm.method,
+          orig.reduction = pca.name,
+          new.reduction = int.reduction.name
+        )
       }
     }
   }
@@ -636,24 +650,37 @@ find_neighbors_clusters_reductions = function(seurat.object, sig.pcs, reduction.
 {
   # FIND NEIGHBORS
   set.seed(42)
-  seurat.object = FindNeighbors(seurat.object, reduction = reduction.name, dims = 1:sig.pcs,
-                                graph.name = paste0(reduction.name, c('_nn', '_snn')))
+  seurat.object = FindNeighbors(
+    seurat.object,
+    reduction = reduction.name,
+    dims = 1:sig.pcs,
+    graph.name = paste0(reduction.name, c('_nn', '_snn'))
+  )
 
   umap.name = paste0(reduction.name, '.umap')
   umap.key = paste0(gsub('\\.', '', reduction.name), 'UMAP_') # RunUMAP doesn't like '.'
 
   # RUN UMAP
   print(paste('Running UMAP for', reduction.name))
-  seurat.object = RunUMAP(seurat.object, reduction = reduction.name, dims = 1:sig.pcs,
-                            reduction.key = umap.key, reduction.name = umap.name)
+  seurat.object = RunUMAP(
+    seurat.object,
+    reduction = reduction.name,
+    dims = 1:sig.pcs,
+    reduction.key = umap.key,
+    reduction.name = umap.name
+  )
 
   if (include.tsne == 'y')
   {
     # RUN TSNE
     print(paste('Running tSNE for', reduction.name))
-    seurat.object = RunTSNE(seurat.object, reduction = reduction.name, dims = 1:sig.pcs,
-                            reduction.key = paste0(gsub('\\.', '', reduction.name), 'tSNE_'),
-                            reduction.name = paste0(reduction.name, '.tsne'))
+    seurat.object = RunTSNE(
+      seurat.object,
+      reduction = reduction.name,
+      dims = 1:sig.pcs,
+      reduction.key = paste0(gsub('\\.', '', reduction.name), 'tSNE_'),
+      reduction.name = paste0(reduction.name, '.tsne')
+    )
   }
 
   # Define the graph.name that is needed for FindClusters
@@ -667,14 +694,29 @@ find_neighbors_clusters_reductions = function(seurat.object, sig.pcs, reduction.
 	 algorithm = as.integer(algorithm)
 
     # FIND CLUSTERS BASED ON THE GRAPH AND RES (graph.name_snn_resN.N)
-    seurat.object = FindClusters(seurat.object, resolution = res, graph.name = graph.name, algorithm = algorithm, verbose = FALSE)
+    seurat.object = FindClusters(
+      seurat.object,
+      resolution = res,
+      graph.name = graph.name,
+      algorithm = algorithm,
+      verbose = FALSE
+    )
 
     clust.res = paste0(graph.name, '_res.', res) # if periods need to be removed: gsub('\\.', '_', graph.name)
 
     print(paste('Plotting', clust.res, 'ON', umap.name))
 
     pdf(file = paste0(report_path_figures, '/', project, '_', clust.res, '_clusters_umap.pdf'), width = 10, height = 10)
-    print(DimPlot(seurat.object, reduction = umap.name, group.by = clust.res, label = TRUE, label.size = 6, repel = TRUE) + NoLegend())
+    print(
+      DimPlot(
+        seurat.object,
+        reduction = umap.name,
+        group.by = clust.res,
+        label = TRUE,
+        label.size = 6,
+        repel = TRUE
+      ) + NoLegend()
+    )
     dev.off()
   }
 

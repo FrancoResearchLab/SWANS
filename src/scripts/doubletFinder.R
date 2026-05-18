@@ -297,9 +297,10 @@ write_doublet_ids <- function(seurat.object, sample, project)
   # define it as a Doublet in the final Doublet_Classification
   doublet.class = seurat.object@meta.data[, doublet.col.list] %>%
     mutate(DF_Classification = case_when(
-		if_any(all_of(doublet.col.list), ~ .x == 'Doublet') ~ 'Doublet',  TRUE ~ 'Singlet')  # Check across columns
-      #if_any(c(doublet.col.list), ~ .x == 'Doublet') ~ 'Doublet', .default = 'Singlet')
+		  if_any(all_of(doublet.col.list), ~ .x == 'Doublet') ~ 'Doublet', 
+      TRUE ~ 'Singlet'
     )
+  )
   
   # Add final Doublet classification to the Seurat object
   seurat.object = AddMetaData(seurat.object, metadata = doublet.class$DF_Classification, col.name = 'DF_Classification')

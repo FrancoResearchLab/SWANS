@@ -298,7 +298,10 @@ filter_save_seuobj = function(seu.obj)
   # filter
   filter_info = paste0('nFeature_RNA > ', min_feature_threshold, ', nFeature_RNA < ', max_feature_threshold, ', percent.mito < ', mito_cutoff, ', percent.ribo < ', ribo_cutoff)
   print(paste0('Filtering Seurat object: ', filter_info))
-  seu.obj.filt <- subset(seu.obj, subset = nFeature_RNA > min_feature_threshold & nFeature_RNA < max_feature_threshold & percent.mito < mito_cutoff & percent.ribo < ribo_cutoff)
+  seu.obj.filt <- subset(
+    seu.obj,
+    subset = nFeature_RNA > min_feature_threshold & nFeature_RNA < max_feature_threshold & percent.mito < mito_cutoff & percent.ribo < ribo_cutoff
+  )
 
   # post-filtered plots
   print('Plotting QC figures for data (filtered).')

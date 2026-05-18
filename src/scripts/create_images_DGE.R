@@ -428,7 +428,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
         # DGEA -------------------------
         if (n == 'sct')
         {
-          print('Preping seurat object (sct assay)...')
+          print('Prepping seurat object (sct assay)...')
           set.seed(42)
           seurat_object <- PrepSCTFindMarkers(object = seurat_object)
         }

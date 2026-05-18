@@ -7,6 +7,17 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 sh $SCRIPT_DIR/helper_scripts/citations.sh
 #-----------------------------------------------------------------------------
 
+# ───────────────────────────────────────────────
+# Logging helper
+# ───────────────────────────────────────────────
+log() {
+  local level=$1
+  local message=$2
+  local timestamp
+  timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  echo "[${timestamp}] [${level}] ${message}" 
+}
+
 # Parse command-line options
 #-----------------------------------------------------------------------------
 while getopts ":r:" opt; do

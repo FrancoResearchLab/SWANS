@@ -164,12 +164,15 @@ memory <- as.numeric(memory_f$V1)
 # PARALLEL w/ FUTURE + SET SEED
 # --------------------------------------------------------------------
 print(paste0('Assigning ', memory, ' bytes of memory...'))
+options(future.seed = TRUE)
 options(future.globals.maxSize = memory)
-#options(future.globals.onReference = 'error')
-plan(multisession(workers = as.integer(processes)))
-#plan(multisession(workers = 1)) # if higher number of samples and sct.rpca, runs out of memory (future issue)
+plan(multicore, workers = as.integer(processes))
 
 set.seed(42)
+
+#options(future.globals.onReference = 'error')
+# plan(multisession(workers = as.integer(processes)))
+#plan(multisession(workers = 1)) # if higher number of samples and sct.rpca, runs out of memory (future issue)
 # --------------------------------------------------------------------
 
 # FUNCTION: PARSE COMMA-SEP STRINGS TO LISTS

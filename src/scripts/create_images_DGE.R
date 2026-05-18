@@ -75,10 +75,13 @@ suppressPackageStartupMessages(library(tidyverse, lib.loc=lib_path))
 # PARALLEL w/ FUTURE + SET SEED
 #--------------------------------------------------------------------
 #print(c(memory, class(memory), type(memory)))
-options(future.globals.maxSize = memory) # 210000 * 1024^2) #may make variable so user can increase if failure based on dataset size???
-plan(multisession(workers = as.integer(processes)))
+options(future.seed = TRUE)
+options(future.globals.maxSize = as.numeric(memory))
+plan(multicore, workers = as.integer(processes))
 
 set.seed(42)
+
+# plan(multisession(workers = as.integer(processes)))
 #--------------------------------------------------------------------
 
 # FUNCTION: determine if argument is single value or list

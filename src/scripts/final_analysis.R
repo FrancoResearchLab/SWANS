@@ -179,10 +179,14 @@ suppressPackageStartupMessages(library(tools, lib.loc=lib_path))
 # PARALLEL w/ FUTURE + SET SEED
 #--------------------------------------------------------------------
 print(paste0('Assigning ', memory, ' bytes of memory...'))
-options(future.globals.maxSize = memory)
-#options(future.globals.maxSize = 10001 * 1024^2) 
-plan(multisession(workers = as.integer(processes)))
+options(future.seed = TRUE)
+options(future.globals.maxSize = as.numeric(memory))
+plan(multicore, workers = as.integer(processes))
+
 set.seed(42)
+
+# plan(multisession(workers = as.integer(processes)))
+#options(future.globals.maxSize = 10001 * 1024^2) 
 #--------------------------------------------------------------------
 
 # COLOR SCHEME

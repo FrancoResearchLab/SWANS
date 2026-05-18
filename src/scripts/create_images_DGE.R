@@ -34,7 +34,7 @@ option_list <- list(
   make_option(c('--conserved_genes'), type='character', default='n', help='Whether to find conserved genes across experiments. Options are \'y\' or \'n\'. Default is \'n\'.'),
   make_option(c('--analyzed_seurat_object'), type='character', help='Path to the analyzed Seurat object file (RDS or qs2 format).'),
   make_option(c('--processes'), type='integer', default=1, help='Number of processes to use for parallel computation. Default is 1.'),
-  make_option(c('--memory'), type='integer', help='Max amount of memory.'),
+  make_option(c('--memory'), type='numeric', help='Max amount of memory.'),
   make_option(c('--tsne_plot'), type='character', default='n', help='Whether to create tSNE plots. Options are \'y\' or \'n\'. Default is \'n\'.'),
   make_option(c('--report_table_path'), type='character', help='Path to save report tables. Default is \'data/endpoints/{project}reports/\'.'),
   make_option(c('--user_gene_file'), type='character', help='Path to a user-defined gene file for visualization. Default is \'does_not_exist\'.'),
@@ -52,7 +52,7 @@ resolution <- if (is.null(opt$options$resolution)) stop('--resolution is require
 conserved_genes <- if (is.null(opt$options$conserved_genes)) stop('--conserved_genes is required. See --help for all opts') else opt$options$conserved_genes
 analyzed_seurat_object <- if (is.null(opt$options$analyzed_seurat_object) || !file.exists(opt$options$analyzed_seurat_object)) stop('--analyzed_seurat_object is required and must be a valid file path. See --help for all opts')  else opt$options$analyzed_seurat_object
 processes <- opt$options$processes
-memory <- as.integer(opt$options$memory)
+memory <- as.numeric(opt$options$memory)
 tsne_plot <- if (is.null(opt$options$tsne_plot)) stop('--tsne_plot is required. See --help for all opts') else opt$options$tsne_plot
 report_table_path <- if (is.null(opt$options$report_table_path)) stop('--report_table_path is required. See --help for all opts') else opt$options$report_table_path
 user_gene_file <- if (is.null(opt$options$user_gene_file) || !file.exists(opt$options$user_gene_file)) 'does_not_exist' else opt$options$user_gene_file

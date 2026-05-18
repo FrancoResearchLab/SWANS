@@ -231,7 +231,6 @@ profile_dir=$(get_profile_dir "$executor")
 #-----------------------------------------------------------------------------
 snakemake --snakefile $SCRIPT_DIR/Snakefile \
 	--profile $profile_dir \
-	--cores $threads \
 	$dryrun_flag \
 	--use-singularity \
 	--singularity-args "-B $prelim_bind_mnts"
@@ -297,7 +296,6 @@ if [ -e "$final_config_file" ] && [[ $run_final == "y" ]]; then
 	# snakemake --snakefile FinalSnakefile --printshellcmds --dryrun
 	snakemake --snakefile FinalSnakefile \
 		--profile $profile_dir_final \
-		--cores $threads \
 		$dryrun_flag \
 		--use-singularity \
 		--singularity-args "-B $prelim_bind_mnts"

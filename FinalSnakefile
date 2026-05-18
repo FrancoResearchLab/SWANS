@@ -54,7 +54,7 @@ if FINAL_STORAGE is not None:
 	FINAL_STORAGE = FINAL_STORAGE.strip() #remove any spaces
 
 if FINAL_STORAGE is None: 
-	FINAL_STORAGE = 'qs' #making this a list has unintended consequences
+	FINAL_STORAGE = 'qs2' #making this a list has unintended consequences
 
 EULA = config['EULA']
 
@@ -74,7 +74,7 @@ FINAL_THREADS = config['FINAL_THREADS']
 
 # for params with potential for > 1 selection ---------------
 def replace_spaces_commas(config_param_name, config_param):
-	storage_options = ['qs', 'rds', 'sceo', 'cloupe', 'cellchat', 'cellphone']
+	storage_options = ['qs2', 'rds', 'sceo', 'cloupe', 'cellchat', 'cellphone']
 	visualization_options = ['violin', 'ridge', 'dot', 'feature']
 	flag = 1
 
@@ -85,8 +85,8 @@ def replace_spaces_commas(config_param_name, config_param):
 	if config_param.endswith(','):
 		config_param = config_param.rsplit(',', 1)[0] #remove last comma
 
-	if config_param_name == 'FINAL_STORAGE' and 'qs' not in config_param:
-		config_param = 'qs,'+ config_param	
+	if config_param_name == 'FINAL_STORAGE' and 'qs2' not in config_param:
+		config_param = 'qs2,'+ config_param	
 
 	options = []
 	if ',' in config_param:
@@ -98,7 +98,7 @@ def replace_spaces_commas(config_param_name, config_param):
 		if config_param_name == 'FINAL_STORAGE':
 			if o not in storage_options:
 				print('If you would like to save output as RDS, enter \'rds\' for ' + config_param_name + ' in the configs/post_annotation_configs.yaml file, then run this script again')
-				print('P.S. you can have \'sceo\', but that format must be saved as a RDS or QS file.')
+				print('P.S. you can have \'sceo\', but that format must be saved as a RDS or qs2 file.')
 				sys.exit()
 			else:
 				flag = 0
@@ -358,8 +358,8 @@ if PROVIDE_ANALYZED_SEURAT_OBJECT == 'n' or (PROVIDE_ANALYZED_SEURAT_OBJECT == '
 # this will work whether user supplied object or not.
 # if the user has a custom name for Standard or SCT -- need to check in final_analysis.R for nomenclature.
 ident = FINAL_SEURAT_NORMALIZATION_METHOD + '.' + FINAL_SEURAT_INTEGRATION_METHOD + '_snn_res.' + str(FINAL_RESOLUTION)
-analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_analyzed_seurat_object.qs'
-#final_analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_final_analyzed_seurat_object.qs'
+analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_analyzed_seurat_object.qs2'
+#final_analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_final_analyzed_seurat_object.qs2'
 
 if PROVIDE_ANALYZED_SEURAT_OBJECT == 'y' and os.path.isfile(USER_ANALYZED_SEURAT_OBJECT):
 	analyzed_seurat_object = USER_ANALYZED_SEURAT_OBJECT
@@ -409,15 +409,15 @@ if ',' in FINAL_STORAGE:
 if ',' not in FINAL_STORAGE:
 	options.append(FINAL_STORAGE)
 
-if 'qs' in options:
-	final_analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_final_analyzed_seurat_object.qs'
+if 'qs2' in options:
+	final_analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_final_analyzed_seurat_object.qs2'
 
-if 'qs' not in options and 'rds' not in options:
-	options.append('qs')
-	final_analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_final_analyzed_seurat_object.qs'
-	FINAL_STORAGE = FINAL_STORAGE + ',qs'
+if 'qs2' not in options and 'rds' not in options:
+	options.append('qs2')
+	final_analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_final_analyzed_seurat_object.qs2'
+	FINAL_STORAGE = FINAL_STORAGE + ',qs2'
 
-if 'qs' not in options and 'rds' in options:
+if 'qs2' not in options and 'rds' in options:
 	final_analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_final_analyzed_seurat_object.rds'
 
 if 'cloupe' in options:
@@ -468,8 +468,8 @@ for o in options:
 	if o == 'cellchat':
 		if 'rds' in options:
 			storage_item = core_name + '_cellchat.rds'
-		if 'qs' in options:
-			storage_item = core_name + '_cellchat.qs'
+		if 'qs2' in options:
+			storage_item = core_name + '_cellchat.qs2'
 
 	if o == 'cloupe':
 		storage_item = core_name + '.cloupe'
@@ -477,14 +477,14 @@ for o in options:
 	if o == 'sceo':
 		if 'rds' in options:
 			storage_item = core_name + '_sceo.rds'
-		if 'qs' in options:
-			storage_item = core_name + '_sceo.qs'
+		if 'qs2' in options:
+			storage_item = core_name + '_sceo.qs2'
 
 	if o == 'cellphone':
 		cellphoneDB_dir = final_path + 'cellphoneDB/'
 		storage_item = cellphoneDB_dir + PROJECT + '_final_analyzed_cellphoneDB.txt'
 
-	# will need to choose EITHER RDS or QS
+	# will need to choose EITHER RDS or qs2
 	if storage_item not in storage_items:
 		storage_items.append(storage_item)
 	if storage_item not in final_files:

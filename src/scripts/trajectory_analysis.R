@@ -81,7 +81,7 @@ suppressPackageStartupMessages(library(Seurat, lib.loc=lib_path))
 suppressPackageStartupMessages(library(SeuratWrappers, lib.loc=lib_path))
 suppressPackageStartupMessages(library(monocle3, lib.loc=lib_path))
 suppressPackageStartupMessages(library(ggplot2, lib.loc=lib_path))
-suppressPackageStartupMessages(library(qs, lib.loc=lib_path))
+suppressPackageStartupMessages(library(qs2, lib.loc=lib_path))
 # --------------------------------------------------------------------
 
 # DIRECTORIES
@@ -233,7 +233,7 @@ trajectory_analysis <- function(cds, cluster.scheme, partition.trajectory)
 }
 # --------------------------------------------------------------------
 
-# SAVE THE cell_Data_set OBJECT AS qs AND/OR rds
+# SAVE THE cell_Data_set OBJECT AS qs2 AND/OR rds
 # --------------------------------------------------------------------
 save_cds <- function(cds, final.storage)
 {
@@ -243,11 +243,11 @@ save_cds <- function(cds, final.storage)
 	{
 		print(s)
 
-		if (s == 'qs')
+		if (s == 'qs2')
 		{
-			print('You have requested a qs file...OK')
-			f_name = paste0(core_name, '.qs')
-			qsave(cds, f_name)
+			print('You have requested a qs2 file...OK')
+			f_name = paste0(core_name, '.qs2')
+			qs2::qs_save(cds, f_name)
 		}
 
 		if (s == 'rds')
@@ -263,16 +263,16 @@ save_cds <- function(cds, final.storage)
 
 # GET SEURAT OBJECT EXTENSION AND LOAD SEURAT OBJECT
 # --------------------------------------------------------------------
-# NEED to FIX THIS -- THIS WILL OPEN BOTH QS AND RDS FILES ERER 12.9.24
+# NEED to FIX THIS -- THIS WILL OPEN BOTH qs2 AND RDS FILES ERER 12.9.24
 print('Importing seurat object.')
 S <- ''
 
 extension = file_ext(seurat_object)
 
-if (extension == 'qs')
+if (extension == 'qs2')
 {
-	print('reading in qs file...')
-	S = qread(seurat_object)
+	print('reading in qs2 file...')
+	S = qs2::qs_read(seurat_object)
 }
 
 if (extension == 'rds')

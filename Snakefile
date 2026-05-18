@@ -71,10 +71,10 @@ VISUALIZATION = config['VISUALIZATION']
 
 #-------------------------------------------------------------------------------------
 
-# Set storage type to qs if none provided
+# Set storage type to qs2 if none provided
 #-------------------------------------------------------------------------------------
 if STORAGE is None:
-	STORAGE = 'qs'
+	STORAGE = 'qs2'
 #-------------------------------------------------------------------------------------
 
 # Get samples
@@ -95,7 +95,7 @@ if os.path.exists(sample_file) == True:
 def replace_spaces_commas(config_param_name, config_param):
 	normalization_options = ['standard', 'sct']
 	integration_options = ['cca', 'harmony', 'rpca']
-	storage_options = ['qs', 'rds']
+	storage_options = ['qs2', 'rds']
 	visualization_options = ['feature', 'violin', 'ridge', 'dot']
 	flag = 1
 	
@@ -398,7 +398,7 @@ elif RUN_AZIMUTH == 'n':
 if RUN_TRANSFERDATA == 'y':
 	if TRANSFERDATA_REF_FILE is None:
 		print('You have select \'y\' for RUN_TRANSFERDATA; TRANSFERDATA_REF_FILE must be selected.')
-		print('Please provide a path (absolute or relative) to the Seurat object file (.rds or .qs) to be used as the TRANSFERDATA_REF_FILE in the configs/prelim_configs.yaml file, then run this script again.')
+		print('Please provide a path (absolute or relative) to the Seurat object file (.rds or .qs2) to be used as the TRANSFERDATA_REF_FILE in the configs/prelim_configs.yaml file, then run this script again.')
 		sys.exit()
 
 	if os.path.exists(TRANSFERDATA_REF_FILE) == False:
@@ -593,10 +593,10 @@ if REGRESSION_FILE != 'does_not_exist':
 
 # ----------- INITIAL SEURAT AND QC REPORT --------------------------------------------
 #  will save merged seurat object here
-storage_file = string_path + 'analysis/RDS/' + PROJECT + '_initial_seurat_object.qs'
+storage_file = string_path + 'analysis/RDS/' + PROJECT + '_initial_seurat_object.qs2'
 
 if len(SAMPLE_LIST) == 1:
-	storage_file = string_path + 'analysis/RDS/' + PROJECT + '_initial_seurat_object.qs'
+	storage_file = string_path + 'analysis/RDS/' + PROJECT + '_initial_seurat_object.qs2'
 
 # the source for the merging of samples will be the STARTING_DATA, unless soupX is run
 SEURAT_CREATION_SOURCE = STARTING_DATA
@@ -630,7 +630,7 @@ if SEURAT_CREATION_SOURCE == 'cellranger':
 
 # main analyzed seurat object
 #-------------------------------------------------------------------------------------
-analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_analyzed_seurat_object.qs'
+analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_analyzed_seurat_object.qs2'
 #-------------------------------------------------------------------------------------
 
 # dge, proportions, dimplots

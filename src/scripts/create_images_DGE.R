@@ -27,12 +27,12 @@ tryCatch(
 
 option_list <- list(
   make_option(c('--project'), type='character', help='Project name, used to create output directories and file names.'),
-  make_option(c('--storage'), type='character', default='rds', help='Storage format for the analyzed Seurat object, either \'rds\' or \'qs\'.'),
+  make_option(c('--storage'), type='character', default='rds', help='Storage format for the analyzed Seurat object, either \'rds\' or \'qs2\'.'),
   make_option(c('--normalization_method'), type='character', help='Normalization method(s) to use, comma-separated. Options are \'sct\' and \'standard\'.'),
   make_option(c('--integration_method'), type='character', help='Integration method(s) to use, comma-separated. Options are \'cca\', \'harmony\', \'rpca\', and \'sct\'.'),
   make_option(c('--resolution'), type='character', help='Resolution(s) to use for clustering, comma-separated.'),
   make_option(c('--conserved_genes'), type='character', default='n', help='Whether to find conserved genes across experiments. Options are \'y\' or \'n\'. Default is \'n\'.'),
-  make_option(c('--analyzed_seurat_object'), type='character', help='Path to the analyzed Seurat object file (RDS or QS format).'),
+  make_option(c('--analyzed_seurat_object'), type='character', help='Path to the analyzed Seurat object file (RDS or qs2 format).'),
   make_option(c('--processes'), type='integer', default=1, help='Number of processes to use for parallel computation. Default is 1.'),
   make_option(c('--memory'), type='integer', help='Max amount of memory.'),
   make_option(c('--tsne_plot'), type='character', default='n', help='Whether to create tSNE plots. Options are \'y\' or \'n\'. Default is \'n\'.'),
@@ -66,7 +66,7 @@ suppressPackageStartupMessages(library(Seurat, lib.loc=lib_path))
 suppressPackageStartupMessages(library(ggplot2, lib.loc=lib_path))
 suppressPackageStartupMessages(library(reshape2, lib.loc=lib_path))
 suppressPackageStartupMessages(library(data.table, lib.loc=lib_path))
-suppressPackageStartupMessages(library(qs, lib.loc=lib_path))
+suppressPackageStartupMessages(library(qs2, lib.loc=lib_path))
 suppressPackageStartupMessages(library(future, lib.loc=lib_path))
 suppressPackageStartupMessages(library(progressr, lib.loc=lib_path))
 suppressPackageStartupMessages(library(presto, lib.loc=lib_path))
@@ -517,7 +517,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 # --------------------------------------------------------------------------------------------
 # IMPORT DATA
 print('importing data...')
-S = qread(analyzed_seurat_object)
+S = qs2::qs_read(analyzed_seurat_object)
 # ------------------------------------------------
 
 # GET NUMBER OF SAMPLES

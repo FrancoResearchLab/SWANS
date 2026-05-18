@@ -267,7 +267,7 @@ TSNE: n
 CONSERVED_GENES: n
 ```
 
-The final analyzed data can be saved as a rds (default: qs file (significantly faster to read/save)). The analyzed data can also be converted to a single cell experimental object. The user may choose one or all storage options.
+The final analyzed data can be saved as a rds (default: qs2 file (significantly faster to read/save)). The analyzed data can also be converted to a single cell experimental object. The user may choose one or all storage options.
 
 ```yaml
 # storage format (rds,sceo)
@@ -385,7 +385,7 @@ ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT:
 # --------------------------------------------
 ```
 
-What additional ways do you want your final output (qs default)?
+What additional ways do you want your final output (qs2 default)?
 
 ```yaml
 # final storage format (rds,sceo,cloupe,cellchat)
@@ -680,11 +680,11 @@ If there is a failure, there will be additional information in the email (as wel
 ```text
 Error in rule final_analysis:
     jobid: 4
-    input: src/scripts/final_analysis.R, data/endpoints/project_name/analysis/RDS/project_name_analyzed_seurat_object.qs, gene_files/cell_annotation_project_name.txt
-    output: data/endpoints/project_name/analysis/RDS/project_name_final_analyzed_seurat_object.qs, data/endpoints/project_name/analysis/RDS/project_name_final_analyzed_seurat_object.qs
+    input: src/scripts/final_analysis.R, data/endpoints/project_name/analysis/RDS/project_name_analyzed_seurat_object.qs2, gene_files/cell_annotation_project_name.txt
+    output: data/endpoints/project_name/analysis/RDS/project_name_final_analyzed_seurat_object.qs2, data/endpoints/project_name/analysis/RDS/project_name_final_analyzed_seurat_object.qs2
     log: logs/project_name/final_analysis/project_name_final_analysis.log (check log file(s) for error details) **THIS IS WHERE THE LOG FILE IS SAVED**
     shell:
-        Rscript src/scripts/final_analysis.R project_name /usr/local/lib/R/site-library/ data/endpoints/project_name/analysis/RDS/project_name_analyzed_seurat_object.qs 			standard harmony 0.2 			gene_files/cell_annotation_project_name.txt n gene_files/goi_final_project_name.txt 30 			0.1 1.5 0.1 			y 			human qs n  			None dot Sample 			Experiment celltypes 			None None 812454943216 			2> logs/project_name/final_analysis/project_name_final_analysis.log
+        Rscript src/scripts/final_analysis.R project_name /usr/local/lib/R/site-library/ data/endpoints/project_name/analysis/RDS/project_name_analyzed_seurat_object.qs2 			standard harmony 0.2 			gene_files/cell_annotation_project_name.txt n gene_files/goi_final_project_name.txt 30 			0.1 1.5 0.1 			y 			human qs2 n  			None dot Sample 			Experiment celltypes 			None None 812454943216 			2> logs/project_name/final_analysis/project_name_final_analysis.log
         (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
 
 Shutting down, this might take some time.

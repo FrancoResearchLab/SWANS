@@ -25,7 +25,7 @@ tryCatch(
 
 option_list <- list(
   make_option(c("--initial_seurat_object"), type = "character",
-              help = "Path to the initial Seurat object (qs or rds), likely from create_initial_seurat.R."),
+              help = "Path to the initial Seurat object (qs2 or rds), likely from create_initial_seurat.R."),
   make_option(c("--project"), type = "character",
               help = "Project name for output files."),
   make_option(c("--organism"), type = "character",
@@ -63,7 +63,7 @@ option_list <- list(
   make_option(c("--run_transferdata"), type = "character",
               help = "Whether to run TransferData annotation (y/n)."),
   make_option(c("--transferdata_ref_file"), type = "character",
-              help = "Path to the TransferData reference file (qs or rds)."),
+              help = "Path to the TransferData reference file (qs2 or rds)."),
   make_option(c("--transferdata_reduction"), type = "character",
               help = "Reduction to use for TransferData (e.g., pca, umap)."),
   make_option(c("--transferdata_annocol"), type = "character",
@@ -73,7 +73,7 @@ option_list <- list(
   make_option(c("--include_tsne"), type = "character",
               help = "Whether to include tSNE reduction (y/n)."),
   make_option(c("--analyzed_seurat_object"), type = "character",
-              help = "Path to save the analyzed Seurat object (qs)."),
+              help = "Path to save the analyzed Seurat object (qs2)."),
   make_option(c("--report_path_figures"), type = "character",
               help = "Path to save figures for the report."),
   make_option(c("--processes"), type = "integer", default = 4,
@@ -122,7 +122,7 @@ regression_file <- if (is.null(opt$options$regression_file) || !file.exists(opt$
 # --------------------------------------------------------------------
 suppressMessages(library(future, lib.loc = lib_path))
 suppressMessages(library(tools, lib.loc = lib_path))
-suppressMessages(library(qs, lib.loc = lib_path))
+suppressMessages(library(qs2, lib.loc = lib_path))
 suppressMessages(library(Seurat, lib.loc = lib_path))
 suppressMessages(library(clustree, lib.loc = lib_path))
 if (run_azimuth == 'y')
@@ -239,7 +239,7 @@ if (length(resolution_config_list) > 1)
 import_data = function(filename, filetype)
 {
   print('Loading Seurat object.')
-  seurat.object = qread(file = filename)
+  seurat.object = qs2::qs_read(file = filename)
 
   return(seurat.object)
 }
@@ -539,14 +539,14 @@ load_transferdata_ref = function(transferdata.ref.file, transferdata.reduction)
   # Call load fxn based on extension
   transferdata.ref = switch(
     file_ext(transferdata.ref.file),
-    qs = qread(transferdata.ref.file),
+    qs2 = qs2::qs_read(transferdata.ref.file),
     rds = readRDS(transferdata.ref.file),
-    stop('The reference file provided for TransferData is not a qs or rds file.')
+    stop('The reference file provided for TransferData is not a qs2 or rds file.')
   )
 
   # Check that object is Seurat class
   if (class(transferdata.ref)[1] != 'Seurat') {
-    stop('Please provide a Seurat object saved as a qs or rds file.')
+    stop('Please provide a Seurat object saved as a qs2 or rds file.')
   }
 
   if (!transferdata.reduction %in% names(transferdata.ref@reductions)) {
@@ -742,8 +742,8 @@ run_clustering = function(seurat.object, integration.method.list = NULL, normali
 
 # SEURAT ANALYSIS
 # --------------------------------------------------------------------
-# LOAD THE MERGED OBJECT (rds or qs)
-S = import_data(initial_seurat_object, 'qs')
+# LOAD THE MERGED OBJECT (rds or qs2)
+S = import_data(initial_seurat_object, 'qs2')
 
 # GET NUMBER OF SAMPLES
 n_samples = length(unique(S@meta.data[['Sample']]))
@@ -785,5 +785,5 @@ if (run_transferdata == 'y') {
 S = run_clustering(S, integration_method_list, normalization_method_list, resolution_config_list, include_tsne)
 
 # SAVE OBJECT
-qsave(S, analyzed_seurat_object)
+qs2::qs_save(S, analyzed_seurat_object)
 # --------------------------------------------------------------------

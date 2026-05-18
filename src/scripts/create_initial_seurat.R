@@ -46,7 +46,7 @@ option_list <- list(
 library(tidyverse, lib.loc = lib_path)
 library(rcartocolor, lib.loc = lib_path)
 library(Seurat, lib.loc = lib_path)
-library(qs, lib.loc = lib_path)
+library(qs2, lib.loc = lib_path)
 library(patchwork, lib.loc = lib_path)
 library(dplyr, lib.loc = lib_path)
 
@@ -306,7 +306,7 @@ filter_save_seuobj = function(seu.obj)
 
   # save filtered object
   print('Saving Seurat object.')
-  qsave(seu.obj.filt, file = seurat_file_name)
+  qs2::qs_save(seu.obj.filt, file = seurat_file_name)
 }
 #--------------------------------------------------------------------
 

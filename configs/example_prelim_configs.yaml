@@ -119,9 +119,8 @@ TSNE: n
 # run conserved genes (y/n) -- only run with multiple experiments
 CONSERVED_GENES: n
 
-# file is automatically saved as qs file.
-# adding rds will create two files (rds + qs)
-# storage format (rds)
+# file is automatically saved as qs2 file.
+# adding rds will create two files (rds + qs2)
 STORAGE: 
 
 # number of threads

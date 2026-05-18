@@ -26,4 +26,4 @@ rule memory:
 		"cells=$( zcat {params.barcodes_files} | wc -l) && \
 			genes=$( zcat {params.features_files} | wc -l) && \
 			echo $(( $cells * $genes * 8 )) > {output.m_file} \
-			> {log.log_output} 2>&1"
+			2> {log.log_output}"

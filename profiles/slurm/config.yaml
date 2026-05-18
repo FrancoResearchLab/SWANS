@@ -49,3 +49,13 @@ set-resources:
     runtime: 6:00:00
     time: 6:00:00
     cpus_per_task: 16
+  final_analysis:
+    mem_mb: 128000
+    runtime: 8:00:00
+    time: 8:00:00
+    cpus_per_task: 16
+  trajectory_analysis:
+    mem_mb: 128000
+    runtime: 8:00:00
+    time: 8:00:00
+    cpus_per_task: 16

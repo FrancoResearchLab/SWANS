@@ -46,5 +46,5 @@ rule doubletFinder:
     --sequencing_type {params.sequencing_type} \
     --processes {threads} \
     {params.lib_path} \
-    2> {log.log_output}"
+    > {log.log_output} 2>&1"
 

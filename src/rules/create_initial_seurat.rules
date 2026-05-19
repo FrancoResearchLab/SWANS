@@ -38,11 +38,18 @@ rule create_initial_seurat:
     benchmark: benchmark_log + PROJECT.lower() + '_create_initial_seurat.benchmark'
     shell:
         "Rscript {input.script} \
-        --sample_file {params.sample_file} --project {params.project} --organism {params.organism} \
-        --seurat_creation_source {params.seurat_creation_source} --run_doubletfinder {params.run_doubletfinder} \
-        --mito_cutoff {params.mito} --ribo_cutoff {params.ribo} --min_feature_threshold {params.min_feature_threshold} \
-        --max_feature_threshold {params.max_feature_threshold} --seurat_file_name {params.seurat_file_name} \
-        {params.r_lib_path} 2> {log.log_output}"
+        --sample_file {params.sample_file} \
+        --project {params.project} \
+        --organism {params.organism} \
+        --seurat_creation_source {params.seurat_creation_source} \
+        --run_doubletfinder {params.run_doubletfinder} \
+        --mito_cutoff {params.mito} \
+        --ribo_cutoff {params.ribo} \
+        --min_feature_threshold {params.min_feature_threshold} \
+        --max_feature_threshold {params.max_feature_threshold} \
+        --seurat_file_name {params.seurat_file_name} \
+        {params.r_lib_path} \
+        > {log.log_output} 2>&1"
 
 rule make_qc_report:
     input:

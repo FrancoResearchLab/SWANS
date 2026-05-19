@@ -1,0 +1,4 @@
+cores: 60
+jobs: 10
+latency-wait: 60
+printshellcmds: true

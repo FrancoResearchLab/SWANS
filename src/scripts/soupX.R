@@ -75,13 +75,13 @@ contam_plot = function(sc)
   print(summary(post))
 
   p_contam <- ggplot(post, aes(x = x, y = y)) +
-    geom_line(color = '#440154FF', size = 1.2) +  # blue solid line
+    geom_line(color = '#440154FF', linewidth = 1.2) +
     geom_vline(xintercept = fit$rhoEst, color = '#26828EFF', size = 1, linetype = 'solid') +  # red estimate line
     stat_function(fun = function(x) 
     {
       dgamma(x, shape = (fit$priorRho / fit$priorRhoStdDev)^2, rate  = fit$priorRho / (fit$priorRhoStdDev^2))
     },
-    color = '#C0C0C0', linetype = 'dashed', size = 1) +  # gray dashed prior
+    color = '#C0C0C0', linetype = 'dashed', linewidth = 1) +
     labs(
       x = expression('Contamination Fraction ('*rho*')'),
       y = 'Posterior Density',
@@ -109,7 +109,7 @@ filtered_h5 <- ''
 
 if (sequencing_type == 'standard')
 {
-	cellranger_data = paste(soupX_input_path, 'outs/', sep='')
+	cellranger_data = file.path(soupX_input_path, 'outs')
 	raw_folder <- 'raw_feature_bc_matrix'
 	filtered_folder <- 'filtered_feature_bc_matrix'
 	raw_h5 <- 'raw_feature_bc_matrix.h5'
@@ -118,7 +118,7 @@ if (sequencing_type == 'standard')
 
 if (sequencing_type == 'flex')
 {
-	cellranger_data = paste(soupX_input_path, 'count/', sep='')
+	cellranger_data = file.path(soupX_input_path, 'count')
 	raw_folder <- 'sample_raw_feature_bc_matrix'
 	filtered_folder <- 'sample_filtered_feature_bc_matrix'
 	raw_h5 <- 'sample_raw_feature_bc_matrix.h5'
@@ -176,17 +176,20 @@ soupify_outs <- function(in_path, out_path, cluster_folder_name) #, raw_folder=r
   dev.off()
 }
 
-if (data_type == 'outs')
-{
-  print('outs')
+# Check which file structure is present
+if (data_type == "outs") {
 
-  folder_name = 'graphclust'
-  if (sequencing_type == 'flex')
-  {
-     folder_name = 'gene_expression_graphclust'
+  graphclust_dir <- Filter(
+    function(d) dir.exists(file.path(cellranger_data, "analysis/clustering", d)),
+    c("gene_expression_graphclust", "graphclust")
+  )
+
+  if (length(graphclust_dir) == 0) {
+    all_files <- list.files(cellranger_data, recursive = TRUE, full.names = TRUE)
+    stop("No valid graphclust directory found. Files present:\n", paste(all_files, collapse = "\n"))
   }
 
-  soupify_outs(cellranger_data, soupX_output_path, folder_name)
+  soupify_outs(cellranger_data, soupX_output_path, graphclust_dir)
 }
 #--------------------------------------------------------------------
 

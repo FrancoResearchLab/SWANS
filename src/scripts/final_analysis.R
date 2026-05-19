@@ -117,7 +117,7 @@ integration_method = single_or_list(integration_method)
 final_storage_method = ''
 if (is.null(final_storage) == TRUE)
 {
-	final_storage_method = as.list('qs')
+	final_storage_method = as.list('qs2')
 }
 
 if (is.null(final_storage) == FALSE)
@@ -163,7 +163,7 @@ suppressPackageStartupMessages(library(sctransform, lib.loc=lib_path))
 suppressPackageStartupMessages(library(ggplot2, lib.loc=lib_path))
 suppressPackageStartupMessages(library(reshape2, lib.loc=lib_path))
 suppressPackageStartupMessages(library(data.table, lib.loc=lib_path))
-suppressPackageStartupMessages(library(qs, lib.loc=lib_path))
+suppressPackageStartupMessages(library(qs2, lib.loc=lib_path))
 suppressPackageStartupMessages(library(future, lib.loc=lib_path))
 suppressPackageStartupMessages(library(progressr, lib.loc=lib_path))
 suppressPackageStartupMessages(library(presto, lib.loc=lib_path))
@@ -179,10 +179,14 @@ suppressPackageStartupMessages(library(tools, lib.loc=lib_path))
 # PARALLEL w/ FUTURE + SET SEED
 #--------------------------------------------------------------------
 print(paste0('Assigning ', memory, ' bytes of memory...'))
-options(future.globals.maxSize = memory)
-#options(future.globals.maxSize = 10001 * 1024^2) 
-plan(multisession(workers = as.integer(processes)))
+options(future.seed = TRUE)
+options(future.globals.maxSize = as.numeric(memory))
+plan(multicore, workers = as.integer(processes))
+
 set.seed(42)
+
+# plan(multisession(workers = as.integer(processes)))
+#options(future.globals.maxSize = 10001 * 1024^2) 
 #--------------------------------------------------------------------
 
 # COLOR SCHEME
@@ -1190,11 +1194,11 @@ save_seurat_object <- function(seurat_object, rds_dir, project, final_storage_me
 				saveRDS(SCEO, file = f_name)
 			}
 		
-			if ('qs' %in% final_storage_method)
+			if ('qs2' %in% final_storage_method)
 			{
-				print('saving sceo as qs file')
-				f_name = paste0(core_name, '_sceo.qs')
-				qsave(SCEO, file = f_name)
+				print('saving sceo as qs2 file')
+				f_name = paste0(core_name, '_sceo.qs2')
+				qs2::qs_save(SCEO, file = f_name)
 			}
 		}
 	}
@@ -1203,10 +1207,10 @@ save_seurat_object <- function(seurat_object, rds_dir, project, final_storage_me
 	{
 		print(s)
 
-		# saving s.o. in qs format 
-		#print('saving object as qs file...')
-		#f_name_qs = paste0(core_name, '.qs')
-		#qsave(seurat_object, f_name_qs)
+		# saving s.o. in qs2 format 
+		#print('saving object as qs2 file...')
+		#f_name_qs2 = paste0(core_name, '.qs2')
+		#qs2::qs_save(seurat_object, f_name_qs2)
 
 		if (s == 'cellphone')
 		{
@@ -1234,18 +1238,18 @@ save_seurat_object <- function(seurat_object, rds_dir, project, final_storage_me
 				saveRDS(cellChat, file = f_name)
 			}
 
-			if ('qs' %in% final_storage_method)
+			if ('qs2' %in% final_storage_method)
 			#if (grepl( 'rds', final_storage_method, fixed = TRUE) == FALSE)
 			{
-				f_name = paste0(core_name, '_cellchat.qs')
-				qsave(cellChat, f_name)
+				f_name = paste0(core_name, '_cellchat.qs2')
+				qs2::qs_save(cellChat, f_name)
 			}
 		}
 
-		# Always save as .qs !!!
-		print('You have requested a qs file...OK')
-		f_name = paste0(core_name, '.qs')
-		qsave(seurat_object, f_name)
+		# Always save as .qs2 !!!
+		print('You have requested a qs2 file...OK')
+		f_name = paste0(core_name, '.qs2')
+		qs2::qs_save(seurat_object, f_name)
 
 		if (s == 'rds')
 		{
@@ -1292,9 +1296,9 @@ S <- ''
 #--------------------------------------------------------------------
 extension = file_ext(analyzed_seurat_object)
 
-if (extension == 'qs')
+if (extension == 'qs2')
 {
-	S = qread(analyzed_seurat_object)
+	S = qs2::qs_read(analyzed_seurat_object)
 }
 
 if (extension == 'rds')
@@ -1302,10 +1306,10 @@ if (extension == 'rds')
 	S = readRDS(analyzed_seurat_object)
 }
 
-if (extension != 'rds' & extension != 'qs')
+if (extension != 'rds' & extension != 'qs2')
 {
-	print('The provided seurat file is not a qs or rds file.')
-	print('This script will fail. Please save the seurat file as a qs or rds file.')
+	print('The provided seurat file is not a qs2 or rds file.')
+	print('This script will fail. Please save the seurat file as a qs2 or rds file.')
 	stop()
 }
 #--------------------------------------------------------------------

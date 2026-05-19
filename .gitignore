@@ -7,6 +7,7 @@ benchmark_report/
 count_stamps/
 helper_scripts/make_symbolic_links.sh
 .Renviron
+.Rprofile
 
 # Snakemake folder to ignore
 .snakemake/

@@ -27,14 +27,14 @@ tryCatch(
 
 option_list <- list(
   make_option(c('--project'), type='character', help='Project name, used to create output directories and file names.'),
-  make_option(c('--storage'), type='character', default='rds', help='Storage format for the analyzed Seurat object, either \'rds\' or \'qs\'.'),
+  make_option(c('--storage'), type='character', default='rds', help='Storage format for the analyzed Seurat object, either \'rds\' or \'qs2\'.'),
   make_option(c('--normalization_method'), type='character', help='Normalization method(s) to use, comma-separated. Options are \'sct\' and \'standard\'.'),
   make_option(c('--integration_method'), type='character', help='Integration method(s) to use, comma-separated. Options are \'cca\', \'harmony\', \'rpca\', and \'sct\'.'),
   make_option(c('--resolution'), type='character', help='Resolution(s) to use for clustering, comma-separated.'),
   make_option(c('--conserved_genes'), type='character', default='n', help='Whether to find conserved genes across experiments. Options are \'y\' or \'n\'. Default is \'n\'.'),
-  make_option(c('--analyzed_seurat_object'), type='character', help='Path to the analyzed Seurat object file (RDS or QS format).'),
+  make_option(c('--analyzed_seurat_object'), type='character', help='Path to the analyzed Seurat object file (RDS or qs2 format).'),
   make_option(c('--processes'), type='integer', default=1, help='Number of processes to use for parallel computation. Default is 1.'),
-  make_option(c('--memory'), type='integer', help='Max amount of memory.'),
+  make_option(c('--memory'), type='numeric', help='Max amount of memory.'),
   make_option(c('--tsne_plot'), type='character', default='n', help='Whether to create tSNE plots. Options are \'y\' or \'n\'. Default is \'n\'.'),
   make_option(c('--report_table_path'), type='character', help='Path to save report tables. Default is \'data/endpoints/{project}reports/\'.'),
   make_option(c('--user_gene_file'), type='character', help='Path to a user-defined gene file for visualization. Default is \'does_not_exist\'.'),
@@ -52,7 +52,7 @@ resolution <- if (is.null(opt$options$resolution)) stop('--resolution is require
 conserved_genes <- if (is.null(opt$options$conserved_genes)) stop('--conserved_genes is required. See --help for all opts') else opt$options$conserved_genes
 analyzed_seurat_object <- if (is.null(opt$options$analyzed_seurat_object) || !file.exists(opt$options$analyzed_seurat_object)) stop('--analyzed_seurat_object is required and must be a valid file path. See --help for all opts')  else opt$options$analyzed_seurat_object
 processes <- opt$options$processes
-memory <- as.integer(opt$options$memory)
+memory <- as.numeric(opt$options$memory)
 tsne_plot <- if (is.null(opt$options$tsne_plot)) stop('--tsne_plot is required. See --help for all opts') else opt$options$tsne_plot
 report_table_path <- if (is.null(opt$options$report_table_path)) stop('--report_table_path is required. See --help for all opts') else opt$options$report_table_path
 user_gene_file <- if (is.null(opt$options$user_gene_file) || !file.exists(opt$options$user_gene_file)) 'does_not_exist' else opt$options$user_gene_file
@@ -66,7 +66,7 @@ suppressPackageStartupMessages(library(Seurat, lib.loc=lib_path))
 suppressPackageStartupMessages(library(ggplot2, lib.loc=lib_path))
 suppressPackageStartupMessages(library(reshape2, lib.loc=lib_path))
 suppressPackageStartupMessages(library(data.table, lib.loc=lib_path))
-suppressPackageStartupMessages(library(qs, lib.loc=lib_path))
+suppressPackageStartupMessages(library(qs2, lib.loc=lib_path))
 suppressPackageStartupMessages(library(future, lib.loc=lib_path))
 suppressPackageStartupMessages(library(progressr, lib.loc=lib_path))
 suppressPackageStartupMessages(library(presto, lib.loc=lib_path))
@@ -75,10 +75,13 @@ suppressPackageStartupMessages(library(tidyverse, lib.loc=lib_path))
 # PARALLEL w/ FUTURE + SET SEED
 #--------------------------------------------------------------------
 #print(c(memory, class(memory), type(memory)))
-options(future.globals.maxSize = memory) # 210000 * 1024^2) #may make variable so user can increase if failure based on dataset size???
-plan(multisession(workers = as.integer(processes)))
+options(future.seed = TRUE)
+options(future.globals.maxSize = as.numeric(memory))
+plan(multicore, workers = as.integer(processes))
 
 set.seed(42)
+
+# plan(multisession(workers = as.integer(processes)))
 #--------------------------------------------------------------------
 
 # FUNCTION: determine if argument is single value or list
@@ -425,7 +428,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
         # DGEA -------------------------
         if (n == 'sct')
         {
-          print('Preping seurat object (sct assay)...')
+          print('Prepping seurat object (sct assay)...')
           set.seed(42)
           seurat_object <- PrepSCTFindMarkers(object = seurat_object)
         }
@@ -517,7 +520,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 # --------------------------------------------------------------------------------------------
 # IMPORT DATA
 print('importing data...')
-S = qread(analyzed_seurat_object)
+S = qs2::qs_read(analyzed_seurat_object)
 # ------------------------------------------------
 
 # GET NUMBER OF SAMPLES

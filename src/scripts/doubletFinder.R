@@ -76,10 +76,13 @@ suppressMessages(library(DoubletFinder, lib.loc = lib_path))
 #--------------------------------------------------------------------
 # PARALLEL w/ FUTURE + SET SEED
 # --------------------------------------------------------------------
+options(future.seed = TRUE)
 options(future.globals.maxSize = 20000 * 1024^2)
-plan(multisession(workers = as.integer(processes)))
+plan(multicore, workers = as.integer(processes))
 
 set.seed(42)
+
+# plan(multisession(workers = as.integer(processes)))
 # --------------------------------------------------------------------
 
 # ASSIGN GLOBAL VARIABLES
@@ -294,9 +297,10 @@ write_doublet_ids <- function(seurat.object, sample, project)
   # define it as a Doublet in the final Doublet_Classification
   doublet.class = seurat.object@meta.data[, doublet.col.list] %>%
     mutate(DF_Classification = case_when(
-		if_any(all_of(doublet.col.list), ~ .x == 'Doublet') ~ 'Doublet',  TRUE ~ 'Singlet')  # Check across columns
-      #if_any(c(doublet.col.list), ~ .x == 'Doublet') ~ 'Doublet', .default = 'Singlet')
+		  if_any(all_of(doublet.col.list), ~ .x == 'Doublet') ~ 'Doublet', 
+      TRUE ~ 'Singlet'
     )
+  )
   
   # Add final Doublet classification to the Seurat object
   seurat.object = AddMetaData(seurat.object, metadata = doublet.class$DF_Classification, col.name = 'DF_Classification')

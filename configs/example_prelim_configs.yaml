@@ -1,6 +1,9 @@
 # contact (email will be sent when jobs complete) 
 contact: USER@chop.edu
 
+# local execution or cluster execution via slurm?
+EXECUTOR: slurm
+
 # project name (IN LOWER CASE) base_name: (name of output directory under data/endpoints/)
 PROJECT: project_name
 
@@ -116,9 +119,8 @@ TSNE: n
 # run conserved genes (y/n) -- only run with multiple experiments
 CONSERVED_GENES: n
 
-# file is automatically saved as qs file.
-# adding rds will create two files (rds + qs)
-# storage format (rds)
+# file is automatically saved as qs2 file.
+# adding rds will create two files (rds + qs2)
 STORAGE: 
 
 # number of threads

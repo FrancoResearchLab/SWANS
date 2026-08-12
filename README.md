@@ -24,8 +24,27 @@ Once a final schema/approach is selected, clusters are renamed according to user
 
 # Running the pipeline
 * *******************************************************************************
-## Requirements
-SWANS uses Snakemake with Singularity to execute each rule within a Singularity container. SWANS was built and tested using Snakemake version 7.32.4 and Singularity (singularity-ce) version 4.3.2-1.el8. The images for each phase of the analysis are specified in the `Snakefile` and `FinalSnakefile`. All rules with the exception of `rule cellranger_counts` use the 'POND' Docker image, while the `cellranger_counts` rule uses the 'cellranger' image. 
+## Execution mode
+SWANS can run locally or on a cluster (using Slurm). In `configs/prelim_configs.yaml` and `configs/post_annotation_configs.yaml`, the `EXECUTOR` param should be used to set the execution mode as either `local` or `slurm`. 
+
+#### `EXECUTOR: local`
+The `local` execution mode of SWANS will run the pipeline using the local machine.
+
+Setting `EXECUTOR: local` will use the `local` profile (`profiles/local/`) as the Snakemake profile (passed to Snakemake as `--profile profiles/local/`). Snakemake will use options specified in `profiles/local/config.yaml`.
+
+#### `EXECUTOR: slurm`
+The `slurm` execution mode of SWANS will run the pipeline by submitting each Snakemake job as a cluster job using Slurm.
+
+Setting `EXECUTOR: slurm` will use the `slurm` profile (`profiles/slurm/`) as the Snakemake profile (passed to Snakemake as `--profile profiles/slurm/`). Snakemake will use options specified in `profiles/slurm/config.yaml`.
+
+## Software requirements
+
+The [`local` execution mode](#executor-local) was built and tested using Snakemake version 7.32.4 and Singularity (singularity-ce) version 4.3.2-1.el8. 
+
+The [`slurm` execution mode](#executor-slurm) was built and tested using Snakemake version 9.17.2 and Singularity (singularity-ce) version 4.4.1. 
+
+## Containers
+SWANS uses Snakemake with Singularity to execute each rule within a Singularity container. The images for each phase of the analysis are specified in the `Snakefile` and `FinalSnakefile`. All rules with the exception of `rule cellranger_counts` use the 'POND' Docker image, while the `cellranger_counts` rule uses the 'cellranger' image. 
 
 ### Docker files
 Docker images are loaded automatically with Singularity (no user action required). For those curious souls...Dockerfile locations:
@@ -36,7 +55,7 @@ For those who would like to make their own images, see docker_files in this repo
 - pond: `docker_files/POND/1.2/Dockerfile`
 - cellranger: `docker_files/cellranger/9.0.1/Dockerfile`
 
-## Run SWANS using the main bash script, `run_snakemake.sh`
+## Run SWANS
 Once the sample file (`samples.sample_list`) and the configuration files have been set up, the pipeline can be run from the SWANS repo directory with:
 
 ```bash
@@ -98,12 +117,25 @@ In the `samples.sample_list`, one of the lines should look similar to below.
 <details>
   <summary>Click to expand!</summary>
 
-Customize the [configs/example_prelim_configs.yaml](configs/example_prelim_configs.yaml) file by supplying your email and other options that best correspond to the analysis you would like to perform (*e.g.,* human vs mouse...). Be sure to remove `example_` from the file name.
+Customize the [configs/example_prelim_configs.yaml](configs/example_prelim_configs.yaml). Be sure to remove `example_` from the file name.
+
+Add your email.
 
 ```yaml
 # contact (email will be sent when jobs complete) 
 CONTACT: user@email.com
+```
 
+Set the [execution mode](#execution-mode).
+
+```yaml
+# local execution or cluster execution via slurm? (local or slurm)
+EXECUTOR: local
+```
+
+Set project name and organism type.
+
+```yaml
 # project name (in lower case) base_name: (name of output directory under `data/endpoints/`)
 PROJECT: project_name
 
@@ -313,6 +345,13 @@ Customize the [configs/example_post_annotation_configs.yaml](configs/example_pos
 ```yaml
 # run finale (y/n)
 RUN_FINAL_ANALYSIS: n
+```
+
+Set the [execution mode](#execution-mode).
+
+```yaml
+# local execution or cluster execution via slurm? (local or slurm)
+EXECUTOR: local
 ```
 
 The user must select a final resolution, a final normalization method (standard, sct), and a final integration method (cca, harmony, rpca) to move forward. They must also provide the cluster_annotation_file file (see below). **The path to the cluster_annotation_file must be relative and not absolute!!** 

@@ -59,3 +59,7 @@ R/library/*
 
 # Ignore screenlog
 screenlog*
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml

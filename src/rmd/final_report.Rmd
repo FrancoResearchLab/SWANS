@@ -1,5 +1,3 @@
-
-
 <style>
 .main-container {
     max-width: 1324px;
@@ -287,6 +285,7 @@ author: "E. Reichenberger"
 date: "`r format(Sys.time())`"
 output: html_document
 ---
+
 
 <script>
   // keep jQuery plugin from trying to call noUiSlider
@@ -757,7 +756,7 @@ JSON files in this directory will have this naming structure (where projectName,
 projectName_z_scores.normalizationMethod.integrationMethod_snn_resolution_celltypes.json<br>
 projectName_z_scores.normalizationMethod.integrationMethod_snn_resolution_celltypes_experiment.json<br>
 projectName_z_scores.normalizationMethod.integrationMethod_snn_resolution_celltypes_experiment_sample.json<br>&nbsp;<br>
-</h4><br>
+<br>
 
 It will take ~10 seconds for the tables to load.
 <p>Select a <code>.json</code> file for each z-score summary type:</p>

@@ -253,7 +253,7 @@ save_cds <- function(cds, final.storage)
 		if (s == 'rds')
 		{
 			print('You have requested a rds file...OK')
-			f_name = paste0(core_name, '.RDS')
+			f_name = paste0(core_name, '.rds')
 			saveRDS(cds, file = f_name)
 		}
 	}

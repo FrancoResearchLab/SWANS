@@ -81,7 +81,6 @@ plan(multicore, workers = as.integer(processes))
 
 set.seed(42)
 
-# plan(multisession(workers = as.integer(processes)))
 #--------------------------------------------------------------------
 
 # FUNCTION: determine if argument is single value or list
@@ -332,17 +331,20 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
             bin_count <- ceiling(length(genes)/12)
             temp_vec <- vector('list', bin_count)
 
-            while( i <= length(markers$V1) )
+            #while( i <= length(markers$V1) )
+            while( i <= length(genes) )
             {
               if( length(temp_vec[[j]]) < 12 )
               {
-                temp_vec[[j]] <- c(temp_vec[[j]], markers$V1[i])
+                #temp_vec[[j]] <- c(temp_vec[[j]], markers$V1[i])
+                temp_vec[[j]] <- c(temp_vec[[j]], genes[i])
                 i <- i+1
               }
               
               else
               {
                 j <- j+1
+					 print(j)
               }
             }
 

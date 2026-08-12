@@ -1,7 +1,9 @@
+'''
 # Author: K. Beigel
 # Date: 7.23.2024
 # Purpose: Analyze Seurat object.
 # --------------------------------------------------------------
+'''
 
 #--------------------MESSAGES-----------------------------------
 onsuccess:
@@ -33,6 +35,7 @@ rule analyze_sc_object:
         split_layers_by = SPLIT_LAYERS_BY,
         normalization_config = SEURAT_NORMALIZATION_METHOD,
         integration_config = SEURAT_INTEGRATION_METHOD,
+        algorithm = FIND_CLUSTERS_ALGORITHM,
         ref_based_integration = REFERENCE_BASED_INTEGRATION,
         ref_samples = REFERENCE_SAMPLES,
         run_azimuth = RUN_AZIMUTH,
@@ -71,6 +74,7 @@ rule analyze_sc_object:
         --split_layers_by {params.split_layers_by} \
         --normalization_config {params.normalization_config} \
         --integration_config {params.integration_config} \
+        --algorithm {params.algorithm} \
         --ref_based_integration {params.ref_based_integration} \
         --ref_samples {params.ref_samples} \
         --run_azimuth {params.run_azimuth} \
@@ -86,4 +90,5 @@ rule analyze_sc_object:
         --processes {params.processes} \
         --memory_file {input.m_file} \
         --regression_file {params.regression_file} \
-        {params.lib_path} 2> {log.log_output}"
+        {params.lib_path} \
+        > {log.log_output} 2>&1"

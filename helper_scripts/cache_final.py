@@ -8,6 +8,7 @@ def get_config(search_config):
 
 	# configs to exclude from lowercasing
 	exclusion_list = (
+		'EXECUTOR',
 		'CLUSTER_ANNOTATION_FILE',
 		'USER_ANALYZED_SEURAT_OBJECT',
 		'FINAL_USER_GENE_FILE'

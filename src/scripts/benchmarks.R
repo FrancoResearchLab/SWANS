@@ -62,7 +62,7 @@ time_memory <- paste0(benchmark_fig_dir, project, '_time_memory.png')
 png(filename=time_memory, width=2700,height=2000,res=300)
 print(ggplot(combined_data, aes(h.m.s, max_rss, colour=benchmark_application)) + 
   geom_point(show.legend = FALSE) +  # Remove legend for points
-  geom_text_repel(aes(label = benchmark_application), show.legend = FALSE) +
+  geom_text_repel(aes(label = benchmark_application), show.legend = FALSE, angle=90) +
 	theme(axis.text.x = element_text(size = 12, angle = 45, vjust = 0.5, hjust=.5), 
         axis.text.y = element_text(size = 12, hjust = 1, angle = 45),  
         axis.title.x = element_text(size = 16, margin = margin(t = 20, b = 10)),  

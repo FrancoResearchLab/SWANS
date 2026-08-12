@@ -16,56 +16,47 @@ lib_path <- '/usr/local/lib/R/site-library'
 args <- commandArgs(trailingOnly = TRUE)
 tryCatch(
   expr = {
-    suppressMessages(library("optparse", lib.loc = lib_path))
+    suppressMessages(library('optparse', lib.loc = lib_path))
   },
   error = function(e) {
-    if (dir.exists(tail(args, n=1))) lib_path <- tail(args, n=1) else stop("Valid library path specified at the end as a positional arg required.")
+    if (dir.exists(tail(args, n=1))) lib_path <- tail(args, n=1) else stop('Valid library path specified at the end as a positional arg required.')
     # if lib path provided, override default
-    suppressMessages(library("optparse", lib.loc = lib_path))
+    suppressMessages(library('optparse', lib.loc = lib_path))
   }
 )
 
 option_list <- list(
-  make_option(c("--project"), type="character",
-              help="Project name, used to create output directories and file names."),
-  make_option(c("--storage"), type="character", default='rds',
-              help="Storage format for the analyzed Seurat object, either 'rds' or 'qs'."),
-  make_option(c("--normalization_method"), type="character",
-              help="Normalization method(s) to use, comma-separated. Options are 'sct' and 'standard'."),
-  make_option(c("--integration_method"), type="character",
-              help="Integration method(s) to use, comma-separated. Options are 'cca', 'harmony', 'rpca', and 'sct'."),
-  make_option(c("--resolution"), type="character",
-              help="Resolution(s) to use for clustering, comma-separated."),
-  make_option(c("--conserved_genes"), type="character", default='n',
-              help="Whether to find conserved genes across experiments. Options are 'y' or 'n'. Default is 'n'."),
-  make_option(c("--analyzed_seurat_object"), type="character",
-              help="Path to the analyzed Seurat object file (RDS or QS format)."),
-  make_option(c("--processes"), type="integer", default=1,
-              help="Number of processes to use for parallel computation. Default is 1."),
-  make_option(c("--tsne_plot"), type="character", default='n',
-              help="Whether to create tSNE plots. Options are 'y' or 'n'. Default is 'n'."),
-  make_option(c("--report_table_path"), type="character",
-              help="Path to save report tables. Default is 'data/endpoints/{project}reports/'."),
-  make_option(c("--user_gene_file"), type="character",
-              help="Path to a user-defined gene file for visualization. Default is 'does_not_exist'."),
-  make_option(c("--visualization"), type="character",
-              help="Visualization methods for user-defined genes, comma-separated. Options are 'feature', 'dot', 'violin', and 'ridge'.")
+  make_option(c('--project'), type='character', help='Project name, used to create output directories and file names.'),
+  make_option(c('--storage'), type='character', default='rds', help='Storage format for the analyzed Seurat object, either \'rds\' or \'qs2\'.'),
+  make_option(c('--normalization_method'), type='character', help='Normalization method(s) to use, comma-separated. Options are \'sct\' and \'standard\'.'),
+  make_option(c('--integration_method'), type='character', help='Integration method(s) to use, comma-separated. Options are \'cca\', \'harmony\', \'rpca\', and \'sct\'.'),
+  make_option(c('--resolution'), type='character', help='Resolution(s) to use for clustering, comma-separated.'),
+  make_option(c('--conserved_genes'), type='character', default='n', help='Whether to find conserved genes across experiments. Options are \'y\' or \'n\'. Default is \'n\'.'),
+  make_option(c('--analyzed_seurat_object'), type='character', help='Path to the analyzed Seurat object file (RDS or qs2 format).'),
+  make_option(c('--processes'), type='integer', default=1, help='Number of processes to use for parallel computation. Default is 1.'),
+  make_option(c('--memory'), type='numeric', help='Max amount of memory.'),
+  make_option(c('--tsne_plot'), type='character', default='n', help='Whether to create tSNE plots. Options are \'y\' or \'n\'. Default is \'n\'.'),
+  make_option(c('--report_table_path'), type='character', help='Path to save report tables. Default is \'data/endpoints/{project}reports/\'.'),
+  make_option(c('--user_gene_file'), type='character', help='Path to a user-defined gene file for visualization. Default is \'does_not_exist\'.'),
+  make_option(c('--visualization'), type='character', help='Visualization methods for user-defined genes, comma-separated. Options are \'feature\', \'dot\', \'violin\', and \'ridge\'.')
 )  
+
 
 # Since the last args is positional, object sticks the options in a separate key
 opt <- parse_args(OptionParser(option_list=option_list), positional_arguments=TRUE, args=args)
-project <- if (is.null(opt$options$project)) stop("--project is required. See --help for all opts") else opt$options$project
+project <- if (is.null(opt$options$project)) stop('--project is required. See --help for all opts') else opt$options$project
 storage <- opt$options$storage
-normalization_method <- if (is.null(opt$options$normalization_method)) stop("--normalization_method is required. See --help for all opts") else opt$options$normalization_method
-integration_method <- if (is.null(opt$options$integration_method)) stop("--integration_method is required. See --help for all opts") else opt$options$integration_method
-resolution <- if (is.null(opt$options$resolution)) stop("--resolution is required. See --help for all opts") else opt$options$resolution
-conserved_genes <- if (is.null(opt$options$conserved_genes)) stop("--conserved_genes is required. See --help for all opts") else opt$options$conserved_genes
-analyzed_seurat_object <- if (is.null(opt$options$analyzed_seurat_object) || !file.exists(opt$options$analyzed_seurat_object)) stop("--analyzed_seurat_object is required and must be a valid file path. See --help for all opts")  else opt$options$analyzed_seurat_object
+normalization_method <- if (is.null(opt$options$normalization_method)) stop('--normalization_method is required. See --help for all opts') else opt$options$normalization_method
+integration_method <- if (is.null(opt$options$integration_method)) stop('--integration_method is required. See --help for all opts') else opt$options$integration_method
+resolution <- if (is.null(opt$options$resolution)) stop('--resolution is required. See --help for all opts') else opt$options$resolution
+conserved_genes <- if (is.null(opt$options$conserved_genes)) stop('--conserved_genes is required. See --help for all opts') else opt$options$conserved_genes
+analyzed_seurat_object <- if (is.null(opt$options$analyzed_seurat_object) || !file.exists(opt$options$analyzed_seurat_object)) stop('--analyzed_seurat_object is required and must be a valid file path. See --help for all opts')  else opt$options$analyzed_seurat_object
 processes <- opt$options$processes
-tsne_plot <- if (is.null(opt$options$tsne_plot)) stop("--tsne_plot is required. See --help for all opts") else opt$options$tsne_plot
-report_table_path <- if (is.null(opt$options$report_table_path)) stop("--report_table_path is required. See --help for all opts") else opt$options$report_table_path
+memory <- as.numeric(opt$options$memory)
+tsne_plot <- if (is.null(opt$options$tsne_plot)) stop('--tsne_plot is required. See --help for all opts') else opt$options$tsne_plot
+report_table_path <- if (is.null(opt$options$report_table_path)) stop('--report_table_path is required. See --help for all opts') else opt$options$report_table_path
 user_gene_file <- if (is.null(opt$options$user_gene_file) || !file.exists(opt$options$user_gene_file)) 'does_not_exist' else opt$options$user_gene_file
-visualization <- if (is.null(opt$options$visualization)) stop("--visualization is required. See --help for all opts") else opt$options$visualization
+visualization <- if (is.null(opt$options$visualization)) stop('--visualization is required. See --help for all opts') else opt$options$visualization
 
 
 suppressPackageStartupMessages(library(RColorBrewer, lib.loc=lib_path))
@@ -75,7 +66,7 @@ suppressPackageStartupMessages(library(Seurat, lib.loc=lib_path))
 suppressPackageStartupMessages(library(ggplot2, lib.loc=lib_path))
 suppressPackageStartupMessages(library(reshape2, lib.loc=lib_path))
 suppressPackageStartupMessages(library(data.table, lib.loc=lib_path))
-suppressPackageStartupMessages(library(qs, lib.loc=lib_path))
+suppressPackageStartupMessages(library(qs2, lib.loc=lib_path))
 suppressPackageStartupMessages(library(future, lib.loc=lib_path))
 suppressPackageStartupMessages(library(progressr, lib.loc=lib_path))
 suppressPackageStartupMessages(library(presto, lib.loc=lib_path))
@@ -83,10 +74,13 @@ suppressPackageStartupMessages(library(tidyverse, lib.loc=lib_path))
 
 # PARALLEL w/ FUTURE + SET SEED
 #--------------------------------------------------------------------
-options(future.globals.maxSize = 210000 * 1024^2) #may way to make that a variable that user can increase if there is a failure or base it on the dataset size???
-plan(multisession(workers = as.integer(processes)))
+#print(c(memory, class(memory), type(memory)))
+options(future.seed = TRUE)
+options(future.globals.maxSize = as.numeric(memory))
+plan(multicore, workers = as.integer(processes))
 
 set.seed(42)
+
 #--------------------------------------------------------------------
 
 # FUNCTION: determine if argument is single value or list
@@ -216,7 +210,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
         print('calculating z-scores across all clusters...')
         ae <- AggregateExpression(object = seurat_object, group.by = name)$RNA
         z_ae <- as.data.frame(scale(ae))
-        z_ae <- tibble::rownames_to_column(z_ae, "gene")
+        z_ae <- tibble::rownames_to_column(z_ae, 'gene')
         z_ae <- reshape2::melt(z_ae)
         z_ae$variable <- gsub('g', '', z_ae$variable)
         colnames(z_ae) <- c('gene', 'cluster', 'z.score') # changed to z.score 2.25.25
@@ -234,11 +228,13 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 
 				cc_phase_cluster_prop <- as.data.frame(prop.table(table(seurat_object@meta.data$Experiment, seurat_object@meta.data[[name]], seurat_object@meta.data$Phase), margin = 1) * 100)
 				colnames(cc_phase_cluster_prop) <- c('Experiment', 'Cluster', 'Phase', 'Frequency')
+				cc_phase_cluster$Cluster <- factor(cc_phase_cluster$Cluster, levels = sort(unique(cc_phase_cluster$Cluster))) #make factor for human-readable ordering 1.22.26
 
-				cc_phase_cluster$Combined_Frequency <- paste0(cc_phase_cluster$Frequency, ' (', round(cc_phase_cluster_prop$Frequency, 1), '%)')
-
-				cc_phase_cluster <- cc_phase_cluster[, c('Experiment', 'Cluster', 'Phase', 'Combined_Frequency')]
-				colnames(cc_phase_cluster) <- c('Experiment', 'Cluster', 'Phase', 'Frequency')
+				# consider adding combined frequency output if added to html output
+				#cc_phase_cluster$Combined_Frequency <- paste0(cc_phase_cluster$Frequency, ' (', round(cc_phase_cluster_prop$Frequency, 1), '%)')
+				#cc_phase_cluster <- cc_phase_cluster[, c('Experiment', 'Cluster', 'Phase', 'Combined_Frequency')]
+				#colnames(cc_phase_cluster) <- c('Experiment', 'Cluster', 'Phase', 'Frequency')
+				#cc_phase_cluster_sample$Combined_Frequency <- paste0(cc_phase_cluster_sample$Frequency, ' (', round(cc_phase_cluster_sample_prop$Frequency, 1), '%)')
 
 				# write table
 				cc_phase_cluster <- cc_phase_cluster %>% arrange(Cluster, Phase)
@@ -249,6 +245,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 				print('making table of phases across all clusters (by sample)...')
 				cc_phase_cluster_sample <- as.data.frame(table(seurat_object@meta.data$Sample, seurat_object@meta.data[[name]], seurat_object@meta.data$Phase))
 				colnames(cc_phase_cluster_sample) <- c('Sample', 'Cluster', 'Phase', 'Frequency')
+				cc_phase_cluster_sample$Cluster <- factor(cc_phase_cluster_sample$Cluster, levels = sort(unique(cc_phase_cluster_sample$Cluster))) # make factor for human-readable ordering 1.22.26
 
 				# write table
 				phase_table_sample = paste(report_table_path, '/', project, '_phase_sample_', name, '.txt', sep='')
@@ -269,11 +266,11 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 
 				print(ggplot(cc_phase_cluster_sample, aes(x=Cluster, y=Frequency, shape=Phase, color=Sample)) + 
 				  geom_point(size=3) + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-				  labs(x='Cluster', y='Frequency', shape='Cell Cycle Phase', color='Sample'))
+				  labs(x='Cluster', y='Absolute Frequency', shape='Cell Cycle Phase', color='Sample'))
 
 				print(ggplot(cc_phase_cluster, aes(x=Cluster, y=Frequency, shape=Phase, color=Experiment)) + 
 				  geom_point(size=3) + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-				  labs(x='Cluster', y='Frequency', shape='Cell Cycle Phase', color='Experiment'))
+				  labs(x='Cluster', y='Absolute Frequency', shape='Cell Cycle Phase', color='Experiment'))
 
         if (tsne == 'y')
         {
@@ -292,7 +289,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
         # combine tables as matrix
         X = as.matrix(number_perCluster_experiment)
         Y = as.matrix(number_perCluster_experiment_prop1)
-        Z = matrix(paste0(X, " (", Y, "%", ")"), nrow = nrow(X), dimnames = dimnames(X))
+        Z = matrix(paste0(X, ' (', Y, '%', ')'), nrow = nrow(X), dimnames = dimnames(X))
 
         npce <- reshape2::melt(Z)
         colnames(npce) <- c('expCond', 'cluster', 'numCells')
@@ -332,19 +329,22 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
             i <- 1
             j <- 1
             bin_count <- ceiling(length(genes)/12)
-            temp_vec <- vector("list", bin_count)
+            temp_vec <- vector('list', bin_count)
 
-            while( i <= length(markers$V1) )
+            #while( i <= length(markers$V1) )
+            while( i <= length(genes) )
             {
               if( length(temp_vec[[j]]) < 12 )
               {
-                temp_vec[[j]] <- c(temp_vec[[j]], markers$V1[i])
+                #temp_vec[[j]] <- c(temp_vec[[j]], markers$V1[i])
+                temp_vec[[j]] <- c(temp_vec[[j]], genes[i])
                 i <- i+1
               }
               
               else
               {
                 j <- j+1
+					 print(j)
               }
             }
 
@@ -430,7 +430,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
         # DGEA -------------------------
         if (n == 'sct')
         {
-          print('Preping seurat object (sct assay)...')
+          print('Prepping seurat object (sct assay)...')
           set.seed(42)
           seurat_object <- PrepSCTFindMarkers(object = seurat_object)
         }
@@ -476,7 +476,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 
           print('Finding conserved DGEs...')
 
-          cluster_count <- levels(seurat_object@meta.data[[name]]) # anticipate issues, may need [["name"]]
+          cluster_count <- levels(seurat_object@meta.data[[name]]) # anticipate issues, may need [['name']]
           print(levels(seurat_object@meta.data[[name]])) 
 
           for (count in cluster_count)
@@ -522,7 +522,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 # --------------------------------------------------------------------------------------------
 # IMPORT DATA
 print('importing data...')
-S = qread(analyzed_seurat_object)
+S = qs2::qs_read(analyzed_seurat_object)
 # ------------------------------------------------
 
 # GET NUMBER OF SAMPLES

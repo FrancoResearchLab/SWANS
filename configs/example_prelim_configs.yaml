@@ -1,11 +1,17 @@
 # contact (email will be sent when jobs complete) 
 contact: USER@chop.edu
 
+# local execution or cluster execution via slurm?
+EXECUTOR: slurm
+
 # project name (IN LOWER CASE) base_name: (name of output directory under data/endpoints/)
 PROJECT: project_name
 
 # organism (e.g., mouse, human)
 ORGANISM: human
+
+# sequencing type 10X Genomics Standard/GEM or Flex (standard, flex)
+SEQUENCING_TYPE: standard
 
 # starting point data (e.g., fastq, cellranger, matrix)
 STARTING_DATA: cellranger
@@ -78,6 +84,9 @@ SEURAT_INTEGRATION_METHOD: cca,rpca,harmony
 # resolution value(s) examples: single value: 0.5; multiple values: 0.1,0.3.0.5 
 RESOLUTION: 0.1,0.2,0.3
 
+# which FindClusters algorithm (1,2,3,4 --> 1 = original Louvain algorithm (default); 2 = Louvain algorithm with multilevel refinement; 3 = SLM algorithm; 4 = Leiden algorithm)
+FIND_CLUSTERS_ALGORITHM: 
+
 # run integration in reference-based fashion? (y/n)
 REFERENCE_BASED_INTEGRATION: n
 
@@ -110,9 +119,8 @@ TSNE: n
 # run conserved genes (y/n) -- only run with multiple experiments
 CONSERVED_GENES: n
 
-# file is automatically saved as qs file.
-# adding rds will create two files (rds + qs)
-# storage format (rds)
+# file is automatically saved as qs2 file.
+# adding rds will create two files (rds + qs2)
 STORAGE: 
 
 # number of threads

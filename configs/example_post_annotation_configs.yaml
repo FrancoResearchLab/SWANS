@@ -1,6 +1,9 @@
 # run finale (y/n)
 RUN_FINAL_ANALYSIS: n
 
+# local execution or cluster execution via slurm?
+EXECUTOR: slurm
+
 # minimimum % of cells in one of compared groups for dge
 MIN_PCT: 0.1
 
@@ -65,6 +68,10 @@ ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT:
 
 # final storage format (rds,sceo,cloupe,cellchat,cellphone)
 FINAL_STORAGE: 
+
+# 10X end user license agreement 
+# required if cloupe listed for FINAL_STORAGE (y/n)
+EULA: 
 
 # relative path with filename to file containing genes of interest
 FINAL_USER_GENE_FILE: 

@@ -14,7 +14,7 @@ from helper_scripts.sample_list import get_samples
 from pathlib import Path 
 import shutil
 
-container: "docker://francothyroidlab/pond:1.2"
+container: "docker://francothyroidlab/pond:1.3"
 configfile: 'configs/prelim_configs.yaml'
 
 # set config parameters
@@ -22,6 +22,7 @@ configfile: 'configs/prelim_configs.yaml'
 contact = config['contact']
 PROJECT = config['PROJECT']
 ORGANISM = config['ORGANISM']
+SEQUENCING_TYPE = config['SEQUENCING_TYPE']
 STARTING_DATA = config['STARTING_DATA']
 RUN_CELLRANGER = config['RUN_CELLRANGER']
 RPATH = config['RPATH']
@@ -41,6 +42,7 @@ CELL_CYCLE_REGRESSION = config['CELL_CYCLE_REGRESSION']
 CELL_CYCLE_METHOD = config['CELL_CYCLE_METHOD']
 SEURAT_NORMALIZATION_METHOD = config['SEURAT_NORMALIZATION_METHOD']
 SEURAT_INTEGRATION_METHOD = config['SEURAT_INTEGRATION_METHOD']
+FIND_CLUSTERS_ALGORITHM = config['FIND_CLUSTERS_ALGORITHM']
 REFERENCE_BASED_INTEGRATION = config['REFERENCE_BASED_INTEGRATION']
 RUN_AZIMUTH = config['RUN_AZIMUTH']
 RUN_TRANSFERDATA = config['RUN_TRANSFERDATA']
@@ -69,10 +71,10 @@ VISUALIZATION = config['VISUALIZATION']
 
 #-------------------------------------------------------------------------------------
 
-# Set storage type to qs if none provided
+# Set storage type to qs2 if none provided
 #-------------------------------------------------------------------------------------
 if STORAGE is None:
-	STORAGE = 'qs'
+	STORAGE = 'qs2'
 #-------------------------------------------------------------------------------------
 
 # Get samples
@@ -93,7 +95,7 @@ if os.path.exists(sample_file) == True:
 def replace_spaces_commas(config_param_name, config_param):
 	normalization_options = ['standard', 'sct']
 	integration_options = ['cca', 'harmony', 'rpca']
-	storage_options = ['qs', 'rds']
+	storage_options = ['qs2', 'rds']
 	visualization_options = ['feature', 'violin', 'ridge', 'dot']
 	flag = 1
 	
@@ -218,6 +220,23 @@ def not_null_check_no_yes(config_param, config_param_name):
 		return(config_param)
 # -------------------------------------------------------------------------
 
+# check FIND_CLUSTERS_ALGORITHM
+# Set FindClusters to 1 (louvain) if none provided
+#-------------------------------------------------------------------------------------
+if FIND_CLUSTERS_ALGORITHM is None:
+	FIND_CLUSTERS_ALGORITHM = 1
+
+FIND_CLUSTERS_ALGORITHM = int(FIND_CLUSTERS_ALGORITHM)
+find_cluster_algorithm_options = [1,2,3,4]
+
+if FIND_CLUSTERS_ALGORITHM not in find_cluster_algorithm_options:
+	print('You must provide 1, 2, 3, or 4 for a clustering algorithm (FIND_CLUSTERS_ALGORITHM).')
+	print('(exception: if FIND_CLUSTERS_ALGORITHM is blank, it will default to 1)')
+	print('1 = original Louvain algorithm (default); 2 = Louvain algorithm with multilevel refinement; 3 = SLM algorithm; 4 = Leiden algorithm')
+	sys.exit()
+#-------------------------------------------------------------------------------------
+
+
 '''
 # -- double check resolution
 if str(RESOLUTION).isnumeric() == True: 
@@ -242,6 +261,18 @@ for index,n in enumerate(no_nulls):
 	n = not_null_check_no_yes(n, value)
 
 # -- special cases
+
+sequencing_options = ['standard', 'flex']
+if SEQUENCING_TYPE is None or type(SEQUENCING_TYPE) == 'NoneType' or SEQUENCING_TYPE == ' ':
+	print(SEQUENCING_TYPE + ' cannot be empty.')
+	print('Please write \'standard\' or \'flex\' for SEQUENCING_TYPE in the configs/prelim_configs.yaml file, then run this script again')
+	sys.exit()
+else:
+	SEQUENCING_TYPE = SEQUENCING_TYPE.strip()
+
+	if SEQUENCING_TYPE not in sequencing_options:
+		print('Please write \'standard\' or \'flex\' for SEQUENCING_TYPE in the configs/prelim_configs.yaml file, then run this script again')
+		sys.exit()
 
 if RUN_CELLRANGER == 'y':
 
@@ -367,7 +398,7 @@ elif RUN_AZIMUTH == 'n':
 if RUN_TRANSFERDATA == 'y':
 	if TRANSFERDATA_REF_FILE is None:
 		print('You have select \'y\' for RUN_TRANSFERDATA; TRANSFERDATA_REF_FILE must be selected.')
-		print('Please provide a path (absolute or relative) to the Seurat object file (.rds or .qs) to be used as the TRANSFERDATA_REF_FILE in the configs/prelim_configs.yaml file, then run this script again.')
+		print('Please provide a path (absolute or relative) to the Seurat object file (.rds or .qs2) to be used as the TRANSFERDATA_REF_FILE in the configs/prelim_configs.yaml file, then run this script again.')
 		sys.exit()
 
 	if os.path.exists(TRANSFERDATA_REF_FILE) == False:
@@ -562,10 +593,10 @@ if REGRESSION_FILE != 'does_not_exist':
 
 # ----------- INITIAL SEURAT AND QC REPORT --------------------------------------------
 #  will save merged seurat object here
-storage_file = string_path + 'analysis/RDS/' + PROJECT + '_initial_seurat_object.qs'
+storage_file = string_path + 'analysis/RDS/' + PROJECT + '_initial_seurat_object.qs2'
 
 if len(SAMPLE_LIST) == 1:
-	storage_file = string_path + 'analysis/RDS/' + PROJECT + '_initial_seurat_object.qs'
+	storage_file = string_path + 'analysis/RDS/' + PROJECT + '_initial_seurat_object.qs2'
 
 # the source for the merging of samples will be the STARTING_DATA, unless soupX is run
 SEURAT_CREATION_SOURCE = STARTING_DATA
@@ -599,12 +630,12 @@ if SEURAT_CREATION_SOURCE == 'cellranger':
 
 # main analyzed seurat object
 #-------------------------------------------------------------------------------------
-analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_analyzed_seurat_object.qs'
+analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJECT + '_analyzed_seurat_object.qs2'
 #-------------------------------------------------------------------------------------
 
 # dge, proportions, dimplots
 # -------------------------------------------------------------------------------------
-touch_file_create_images_DGE = create_images_DGE_log + PROJECT + '_create_images_DGE_dummy.txt',
+touch_file_create_images_DGE = 'data/endpoints/' + PROJECT + '/analysis/' + PROJECT + '_create_images_DGE_dummy.txt',
 #-------------------------------------------------------------------------------------
 
 # List of final files (for testing and troubleshooting purposes)
@@ -651,5 +682,5 @@ rule biggie:
 		# memory_file
 		# analyzed_seurat_object
 		# final_files
-		touch_file_create_images_DGE
+		 touch_file_create_images_DGE
 #--------------------OUTPUT--------------------------------------

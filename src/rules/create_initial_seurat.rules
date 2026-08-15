@@ -2,31 +2,32 @@
 Author:    K. Beigel
 Date:        10.18.2021
 '''
-
 #--------------------MESSAGES-----------------------------------
 onsuccess:
   print("The Initial Seurat pipeline completed with no errors.")
   shell("mail -s 'The Initial Seurat pipeline completed with no errors.' "+ config['contact']+" < {log}")
-
 onerror:
   print("The Initial Seurat pipeline did not complete without errors."),
   shell("mail -s 'The Initial Seurat pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
-
 #--------------------RULES---------------------------------------
+rule copy_thresholds_to_report:
+    input:
+        thresholds = thresholds_file_to_use
+    output:
+        report_thresholds = report_path_tables + PROJECT + '_thresholds_used.tsv'
+    shell:
+        "cp {input.thresholds} {output.report_thresholds}"
+
+
 rule create_initial_seurat:
     input:
         script = 'src/scripts/create_initial_seurat.R',
-        input_files = qc_files
+        seurat_obj = unfiltered_seurat_object,
+        thresholds = thresholds_file_to_use,
+        metrics = qc_metrics_report_html,
+        report_thresholds = report_path_tables + PROJECT + '_thresholds_used.tsv'
     params:
-        sample_file = 'samples.sample_list',
         project = PROJECT,
-        organism = ORGANISM,
-        seurat_creation_source = SEURAT_CREATION_SOURCE,
-        run_doubletfinder = RUN_DOUBLETFINDER,
-        mito = MITO,
-        ribo = RIBO,
-        min_feature_threshold = MIN_FEATURE_THRESHOLD,
-        max_feature_threshold = MAX_FEATURE_THRESHOLD,
         seurat_file_name = storage_file,
         r_lib_path = RPATH
     output: 
@@ -38,15 +39,9 @@ rule create_initial_seurat:
     benchmark: benchmark_log + PROJECT.lower() + '_create_initial_seurat.benchmark'
     shell:
         "Rscript {input.script} \
-        --sample_file {params.sample_file} \
+        --seurat_obj {input.seurat_obj} \
+        --thresholds_file {input.thresholds} \
         --project {params.project} \
-        --organism {params.organism} \
-        --seurat_creation_source {params.seurat_creation_source} \
-        --run_doubletfinder {params.run_doubletfinder} \
-        --mito_cutoff {params.mito} \
-        --ribo_cutoff {params.ribo} \
-        --min_feature_threshold {params.min_feature_threshold} \
-        --max_feature_threshold {params.max_feature_threshold} \
         --seurat_file_name {params.seurat_file_name} \
         {params.r_lib_path} \
         > {log.log_output} 2>&1"
@@ -66,4 +61,3 @@ rule make_qc_report:
         """
             Rscript -e 'library(rmarkdown); rmarkdown::render(paste0(\"{input.script}\"), output_file=paste0("../../", \"{qc_report_html}\"))'
         """
-        

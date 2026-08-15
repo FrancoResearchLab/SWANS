@@ -120,16 +120,16 @@ fi
 echo "Setting up project directory"
 
 # Get executor (local or cluster)
-executor=`python3 $SCRIPT_DIR/helper_scripts/cache.py EXECUTOR:`
+executor=`python3 $SCRIPT_DIR/helper_scripts/cache_generic.py $config_file EXECUTOR:`
 
 path="data/endpoints/"
-project=`python3 $SCRIPT_DIR/helper_scripts/cache.py PROJECT:` #retrieves project name from config file
+project=`python3 $SCRIPT_DIR/helper_scripts/cache_generic.py $config_file PROJECT:` #retrieves project name from config file
 
 echo "Creating project directory (if it does not exist)"
 path=$path$project
 
-starting_data=`python3 $SCRIPT_DIR/helper_scripts/cache.py STARTING_DATA:` #retrieves starting data from config file
-run_cellranger=`python3 $SCRIPT_DIR/helper_scripts/cache.py RUN_CELLRANGER:` #retrieves cellranger y/n from config file
+starting_data=`python3 $SCRIPT_DIR/helper_scripts/cache_generic.py $config_file STARTING_DATA:` #retrieves starting data from config file
+run_cellranger=`python3 $SCRIPT_DIR/helper_scripts/cache_generic.py $config_file RUN_CELLRANGER:` #retrieves cellranger y/n from config file
 
 mkdir -p $path
 python3 $SCRIPT_DIR/helper_scripts/setup.py $project $starting_data $run_cellranger #makes project_name/sample_name/[matrix]or[cellranger] for each sample
@@ -137,8 +137,8 @@ python3 $SCRIPT_DIR/helper_scripts/setup.py $project $starting_data $run_cellran
 python3 $SCRIPT_DIR/helper_scripts/make_symbolic_links.py $project $starting_data $run_cellranger #this will make a bash script
 sh $SCRIPT_DIR/helper_scripts/make_symbolic_links.sh #this will make the symbolic links in each matrix directory
 
-threads=`python3 $SCRIPT_DIR/helper_scripts/cache.py THREADS:` #retrieves project name from config file
-rpath=`python3 $SCRIPT_DIR/helper_scripts/cache.py RPATH:` #retrieves rpath name from config file
+threads=`python3 $SCRIPT_DIR/helper_scripts/cache_generic.py $config_file THREADS:` #retrieves project name from config file
+rpath=`python3 $SCRIPT_DIR/helper_scripts/cache_generic.py $config_file RPATH:` #retrieves rpath name from config file
 
 # make .Renviron file to control libpaths
 echo "R_LIBS_USER=$rpath" > .Renviron
@@ -157,7 +157,7 @@ echo -e "=======================================================================
 # Gets cellranger reference genome dir from config file, checks existtence, adds as bind mount
 if [ "$run_cellranger" = "y" ]; then
 echo -e "========== CELLRANGER_REFERENCE directory for Singularity bind mounting ==========="
-	cellranger_reference=`python3 $SCRIPT_DIR/helper_scripts/cache.py CELLRANGER_REFERENCE:`
+	cellranger_reference=`python3 $SCRIPT_DIR/helper_scripts/cache_generic.py $config_file CELLRANGER_REFERENCE:`
 
 	if [[ -z "$cellranger_reference" ]]; then
 		echo -e "[WARN] No directory path entered for CELLRANGER_REFERENCE"
@@ -176,8 +176,8 @@ echo -e "============= Preliminary analysis files for Singularity bind mounts ==
 # Check that any files in the prelim_configs.yaml exists, gets their directory for bind mounting
 prelim_file_configs=("TRANSFERDATA_REF_FILE" "REGRESSION_FILE" "USER_GENE_FILE")
 for config in "${prelim_file_configs[@]}"; do
-	# Get the file path by calling cache.py with the config name
-	file_path=$(python3 "$SCRIPT_DIR/helper_scripts/cache.py" "${config}:")
+	# Get the file path by calling cache_generic.py with the config name
+	file_path=$(python3 "$SCRIPT_DIR/helper_scripts/cache_generic.py" "$config_file" "${config}:")
 
 	if [[ -z "$file_path" ]]; then
   		echo -e "[WARN] No file path entered for $config"
@@ -229,9 +229,11 @@ profile_dir=$(get_profile_dir "$executor")
 
 # call Snakemake on with profile
 #-----------------------------------------------------------------------------
+#	$dryrun_flag \
+	#--use-singularity --dryrun --rerun-triggers mtime \
+#snakemake --snakefile $SCRIPT_DIR/Snakefile --dryrun --rerun-triggers mtime \
 snakemake --snakefile $SCRIPT_DIR/Snakefile \
 	--profile $profile_dir \
-	$dryrun_flag \
 	--use-singularity \
 	--singularity-args "-B $prelim_bind_mnts"
 #-----------------------------------------------------------------------------
@@ -244,8 +246,8 @@ sh $SCRIPT_DIR/helper_scripts/citations.sh
 #check if final config yaml exists
 #-----------------------------------------------------------------------------
 final_config_file="configs/post_annotation_configs.yaml"
-run_final=`python3 $SCRIPT_DIR/helper_scripts/cache_final.py RUN_FINAL_ANALYSIS:` #retrieves starting data from config file
-executor_final=`python3 $SCRIPT_DIR/helper_scripts/cache_final.py EXECUTOR:`
+run_final=`python3 $SCRIPT_DIR/helper_scripts/cache_generic.py $final_config_file RUN_FINAL_ANALYSIS:` #retrieves starting data from config file
+executor_final=`python3 $SCRIPT_DIR/helper_scripts/cache_generic.py $final_config_file EXECUTOR:`
 
 if [ -e "$final_config_file" ] && [[ $run_final == "y" ]]; then
 	echo "You have the final config file, let the magic begin."
@@ -264,8 +266,8 @@ if [ -e "$final_config_file" ] && [[ $run_final == "y" ]]; then
 	postanno_file_configs=("CLUSTER_ANNOTATION_FILE" "USER_ANALYZED_SEURAT_OBJECT" "FINAL_USER_GENE_FILE")
 
 	for config in "${postanno_file_configs[@]}"; do
-		# Get the file path by calling cache.py with the config name
-		file_path=$(python3 "$SCRIPT_DIR/helper_scripts/cache_final.py" "${config}:")
+		# Get the file path by calling cache_generic.py with the config name
+		file_path=$(python3 "$SCRIPT_DIR/helper_scripts/cache_generic.py" "$final_config_file" "${config}:")
 
 		if [[ -z "$file_path" ]]; then
 			echo "[WARN] No file path entered for $config"

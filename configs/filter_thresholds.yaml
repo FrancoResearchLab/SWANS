@@ -1,0 +1,15 @@
+# run preliminary analysis (y/n)
+RUN_PRELIM_ANALYSIS: y
+
+# mito cutoff (e.g., numeric value)
+MITO: 15
+
+# ribo cutoff (e.g., numeric value)
+RIBO: 100 
+
+# feature thresholds e.g., S <- subset(S.merged, subset = nFeature_RNA > 200 & nFeature_RNA < 3000)
+# NOTE!!! MIN_FEATURE_THRESHOLD will not change!
+MIN_FEATURE_THRESHOLD: 200
+
+# file for filtering thresholds
+CONFIRMED_THRESHOLDS_FILE: 

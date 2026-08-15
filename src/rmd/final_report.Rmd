@@ -66,9 +66,9 @@ regression_mito <- proj_info$`MITO_REGRESSION`
 
 run_soupX <- proj_info$`RUN_SOUPX`
 run_doubletFinder <- proj_info$`RUN_DOUBLETFINDER`
-mito <- proj_info$`MITO`
-minfeat_thresh <- proj_info$`MIN_FEATURE_THRESHOLD`
-max_feat_thresh <- proj_info$`MAX_FEATURE_THRESHOLD`
+thresholds_used_file <- file.path(data_dir, project, 'analysis', 'report', 'tables', paste0(project, '_thresholds_used.tsv'))
+thresholds_used <- read.table(thresholds_used_file, sep = '\t', header = TRUE)
+
 split_layers <- proj_info$`SPLIT_LAYERS_BY`
 num_var_features <- proj_info$`NUM_VARIABLE_FEATURES`
 scale_data <- proj_info$`SCALE_DATA_FEATURES`
@@ -78,8 +78,8 @@ normalization <- final_info$`FINAL_SEURAT_NORMALIZATION_METHOD`
 integration <- final_info$`FINAL_SEURAT_INTEGRATION_METHOD`
 resolution <- final_info$`FINAL_RESOLUTION`
 
-cluster_annotation <- paste0(root_dir, final_info$`CLUSTER_ANNOTATION_FILE`)
-file_user_gene_file <- paste0(root_dir, final_info$`FINAL_USER_GENE_FILE`) #need to double check if this causes an error
+cluster_annotation <- file.path(root_dir, final_info$`CLUSTER_ANNOTATION_FILE`)
+file_user_gene_file <- file.path(root_dir, final_info$`FINAL_USER_GENE_FILE`) #need to double check if this causes an error
 
 avglogfc <- final_info$`AVG_LOG2FC_THRESHOLD`
 filter_threshold <- final_info$`FINAL_FILTERING_THRESHOLD`
@@ -98,14 +98,14 @@ if (trajectory_analysis == 'y' && partition == 'y')
 }
 
 # Sig PC 
-sig_pc_file <- paste0(data_dir, project, '/analysis/tables/', project, '_', normalization, '_pca_sigPC.txt')
+sig_pc_file <- file.path(data_dir, project, 'analysis', 'tables', paste0(project, '_', normalization, '_pca_sigPC.txt'))
 sig_pc <- read.table(sig_pc_file, header=TRUE)
 sig_pc <- sig_pc$x
 #-------------------------------------------------------------------------------
 
 # Post-Annotation Result Tables
 #-------------------------------------------------------------------------------
-final_markers_file <- paste0(data_dir, project, '/analysis/final_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_markers_total.txt') 
+final_markers_file <- file.path(data_dir, project, 'analysis', 'final_analysis', 'tables', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_markers_total.txt'))
 final_markers <- read.table(final_markers_file, header=TRUE, sep='\t', stringsAsFactors = FALSE)
 final_markers$p_val <- format(final_markers$p_val, digits=3)
 final_markers$avg_log2FC <- round(final_markers$avg_log2FC, 3)
@@ -128,7 +128,7 @@ final_markers$pct.2[is.na(final_markers$pct.2)] <- 0
 colnames(final_markers) <- gsub("\\.", "_", colnames(final_markers))
 
 # make combined comparison csv files for each cluster
-csv_folder <- paste0(data_dir, project, '/analysis/final_analysis/tables/csv_files/')
+csv_folder <- file.path(data_dir, project, 'analysis', 'final_analysis', 'tables', 'csv_files')
 dir.create(csv_folder, showWarnings = FALSE)
 
 cluster_list <- paste0('cluster_', ucluster)
@@ -164,7 +164,7 @@ gc()
 col_order = c('Description', 'database', 'cluster', 'comparison', 'ES', 'NES', 'p.adjust', 'leadingEdge', 'size', 'leadingEdge_geneCount')
 
 # adjusted p.value
-final_pathways_file.adjP <- paste0(data_dir, project, '/analysis/final_analysis/pathway_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_filtered_results_combined_pathways_p_val_adj.csv')
+final_pathways_file.adjP <- file.path(data_dir, project, 'analysis', 'final_analysis', 'pathway_analysis', 'tables', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_filtered_results_combined_pathways_p_val_adj.csv'))
 final_pathways_adjP <- ''
 if (file.exists(final_pathways_file.adjP))
 {  
@@ -184,7 +184,7 @@ if (file.exists(final_pathways_file.adjP))
 
 
 # avglog2FC
-final_pathways_file.log <- paste0(data_dir, project, '/analysis/final_analysis/pathway_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_filtered_results_combined_pathways_avg_log2fc.csv')
+final_pathways_file.log <- file.path(data_dir, project, 'analysis', 'final_analysis', 'pathway_analysis', 'tables', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_filtered_results_combined_pathways_avg_log2fc.csv'))
 final_pathways_log <- ''
 if (file.exists(final_pathways_file.log))
 {  
@@ -205,43 +205,44 @@ if (file.exists(final_pathways_file.log))
 
 # Cell Counts + Proportions
 #-------------------------------------------------------------------------------
-counts_sample_file <- paste0(data_dir, project, '/analysis/final_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_cluster_counts_proportions_sample.txt')
+counts_sample_file <- file.path(data_dir, project, 'analysis', 'final_analysis', 'tables', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_cluster_counts_proportions_sample.txt'))
 counts_sample <- read.table(counts_sample_file, header=TRUE, sep='\t')
 
-counts_experiment_file <- paste0(data_dir, project, '/analysis/final_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_cluster_counts_proportions_experiment.txt')
+counts_experiment_file <- file.path(data_dir, project, 'analysis', 'final_analysis', 'tables', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_cluster_counts_proportions_experiment.txt'))
 counts_experiment <- read.table(counts_experiment_file, header=TRUE, sep='\t')
 #-------------------------------------------------------------------------------
 
 # Cell Cycling Phase + Frequency
 #-------------------------------------------------------------------------------
-phase_table_experiment_file <- paste0(data_dir, project, '/analysis/final_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_phase_experiment.txt')
+phase_table_experiment_file <- file.path(data_dir, project, 'analysis', 'final_analysis', 'tables', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_phase_experiment.txt'))
 phase_table_experiment <- read.table(phase_table_experiment_file, header=TRUE, sep='\t')
 
-phase_table_sample_file <- paste0(data_dir, project, '/analysis/final_analysis/tables/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_phase_sample.txt')
+phase_table_sample_file <- file.path(data_dir, project, 'analysis', 'final_analysis', 'tables', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_phase_sample.txt'))
 phase_table_sample <- read.table(phase_table_sample_file, header=TRUE, sep='\t')
 #-------------------------------------------------------------------------------
 
 # Z-scores
 #-------------------------------------------------------------------------------
-z_scores_file_celltypes <- paste(data_dir, project, '/analysis/final_analysis/tables/', project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, '_celltypes.txt', sep='')
+z_scores_file_celltypes <- file.path(data_dir, project, 'analysis', 'final_analysis', 'tables', paste0(project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, '_celltypes.txt'))
 z_score_celltypes <- read.table(z_scores_file_celltypes, header=TRUE, sep='\t')
 z_score_celltypes[, 2:length(names(z_score_celltypes))]  <- round(z_score_celltypes[, 2:length(names(z_score_celltypes))], 3)
 
-z_scores_file_celltypes_experiment <- paste(data_dir, project, '/analysis/final_analysis/tables/', project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, '_celltypes_experiment.txt', sep='')
+z_scores_file_celltypes_experiment <- file.path(data_dir, project, 'analysis', 'final_analysis', 'tables', paste0(project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, '_celltypes_experiment.txt'))
 z_score_celltypes_experiment <- read.table(z_scores_file_celltypes_experiment, header=TRUE, sep='\t')
 z_score_celltypes_experiment[, 2:length(names(z_score_celltypes_experiment))]  <- round(z_score_celltypes_experiment[, 2:length(names(z_score_celltypes_experiment))], 3)
 
-z_scores_file_celltypes_experiment_samples <- paste(data_dir, project, '/analysis/final_analysis/tables/', project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, '_celltypes_experiment_sample.txt', sep='')
+z_scores_file_celltypes_experiment_samples <- file.path(data_dir, project, 'analysis', 'final_analysis', 'tables', paste0(project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, '_celltypes_experiment_sample.txt'))
 z_scores_celltypes_experiment_sample <- read.table(z_scores_file_celltypes_experiment_samples, header=TRUE, sep='\t')
 z_scores_celltypes_experiment_sample[, 2:length(names(z_scores_celltypes_experiment_sample))]  <- round(z_scores_celltypes_experiment_sample[, 2:length(names(z_scores_celltypes_experiment_sample))], 3)
 
 # dynamic z-scores
-z_folder <- paste0(data_dir, project, '/analysis/final_analysis/tables/z_score_files/')
+z_folder <- file.path(data_dir, project, 'analysis', 'final_analysis', 'tables', 'z_score_files/')
 dir.create(z_folder, showWarnings = FALSE)
 
 z_selection <- c('_celltypes.txt', '_celltypes_experiment.txt', '_celltypes_experiment_sample.txt')
 
-z_files <- file.path(paste0(data_dir, project, '/analysis/final_analysis/tables/', project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, z_selection))
+#z_files <- file.path(paste0(data_dir, project, '/analysis/final_analysis/tables/', project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, z_selection))
+z_files <- file.path(data_dir, project, 'analysis', 'final_analysis', 'tables', paste0(project, '_z_scores.', normalization, '.', integration, '_snn_res.', resolution, z_selection))
 
 for (z_file in z_files)
 {  
@@ -274,25 +275,25 @@ if (conserved_genes == 'y' || conserved_genes == TRUE)
 }
 #-------------------------------------------------------------------------------
 
-variable_genes_file <- paste0(data_dir, project, '/analysis/tables/', project, '_', normalization, '_variable_genes.txt')
+variable_genes_file <- file.path(data_dir, project, 'analysis', 'tables', paste0(project, '_', normalization, '_variable_genes.txt'))
 variable_genes <- read.table(variable_genes_file, header=TRUE, sep='\t')
 colnames(variable_genes) <- 'genes'
 #-------------------------------------------------------------------------------
 
 # IMAGES
 #-------------------------------------------------------------------------------
-umap <- paste0(data_dir, project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap.png')
-umap_phase <- paste0(data_dir, project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_phase.png')
-umap_phase_experiment <- paste0(data_dir, project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_phase_experiment.png')
-umap_phase_sample <- paste0(data_dir, project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_phase_sample.png')
-phase_experiment <- paste0(data_dir, project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_geom_point_phase_sample.png')
-phase_sample <- paste0(data_dir, project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_geom_point_phase_experiment.png')
-umap_experiment <- paste0(data_dir, project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_experiment.png')
-umap_sample <- paste0(data_dir, project, '/analysis/final_analysis/figures/', project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_sample.png')
-proportions_sample <- paste0(data_dir, project, '/analysis/final_analysis/figures/', project, '_barplot_proportions_sample_', normalization, '.', integration, '_snn_res.', resolution, '.png')
-proportions_experiment <- paste0(data_dir, project, '/analysis/final_analysis/figures/', project, '_barplot_proportions_experiment_', normalization, '.', integration, '_snn_res.', resolution, '.png')
-heatmap_plot <- paste0(data_dir, project, '/analysis/final_analysis/figures/', project, '_', normalization, '_variable_genes_heatmap.png')
-trajectory_clusters_file <- paste0(data_dir, project, '/analysis/final_analysis/trajectory_analysis/figures/', project, '_monocle3_clusters.png')
+umap <- file.path(data_dir, project, 'analysis', 'final_analysis', 'figures', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap.png'))
+umap_phase <- file.path(data_dir, project, 'analysis', 'final_analysis', 'figures', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_phase.png'))
+umap_phase_experiment <- file.path(data_dir, project, 'analysis', 'final_analysis', 'figures', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_phase_experiment.png'))
+umap_phase_sample <- file.path(data_dir, project, 'analysis', 'final_analysis', 'figures', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_phase_sample.png'))
+phase_experiment <- file.path(data_dir, project, 'analysis', 'final_analysis', 'figures', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_geom_point_phase_sample.png'))
+phase_sample <- file.path(data_dir, project, 'analysis', 'final_analysis', 'figures', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_geom_point_phase_experiment.png'))
+umap_experiment <- file.path(data_dir, project, 'analysis', 'final_analysis', 'figures', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_experiment.png'))
+umap_sample <- file.path(data_dir, project, 'analysis', 'final_analysis', 'figures', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_umap_sample.png'))
+proportions_sample <- file.path(data_dir, project, 'analysis', 'final_analysis', 'figures', paste0(project, '_barplot_proportions_sample_', normalization, '.', integration, '_snn_res.', resolution, '.png'))
+proportions_experiment <- file.path(data_dir, project, 'analysis', 'final_analysis', 'figures', paste0(project, '_barplot_proportions_experiment_', normalization, '.', integration, '_snn_res.', resolution, '.png'))
+heatmap_plot <- file.path(data_dir, project, 'analysis', 'final_analysis', 'figures', paste0(project, '_', normalization, '_variable_genes_heatmap.png'))
+trajectory_clusters_file <- file.path(data_dir, project, 'analysis', 'final_analysis', 'trajectory_analysis', 'figures', paste0(project, '_monocle3_clusters.png'))
 #-------------------------------------------------------------------------------
 ```
 
@@ -343,9 +344,10 @@ Organism: `r organism`
 ##### QC
 Was SoupX Run? `r run_soupX`    
 Was DoubletFinder Run? `r run_doubletFinder`    
-Mitochondria Filtering Threshold: `r mito`    
-Minimum Features (per cell) Threshold: `r minfeat_thresh`    
-Maximum Features (per cell) Threshold: `r max_feat_thresh`    
+
+```{r echo=FALSE, include=TRUE}
+datatable(data = thresholds_used, caption = 'Table 1a: Filtering Thresholds.', options=list(pageLength=10))
+```
 
 ##### Analysis Parameters
 Was Cell Cycling Regression Performed: `r regression_cc`     

@@ -19,10 +19,10 @@ onerror:
 rule analyze_sc_object:
     input:
         script = 'src/scripts/analyze_seurat_object.R',
-        initial_seurat_files = initial_seurat_list,
+        initial_seurat_object = storage_file,
+        #initial_seurat_files = initial_seurat_list,
         m_file = memory_file,
     params:
-        initial_seurat_object = storage_file,
         project = PROJECT,
         organism = ORGANISM,
         n_components = COMPONENTS,
@@ -61,7 +61,7 @@ rule analyze_sc_object:
     shell:
         "Rscript \
         {input.script} \
-        --initial_seurat_object {params.initial_seurat_object} \
+        --initial_seurat_object {input.initial_seurat_object} \
         --project {params.project} \
         --organism {params.organism} \
         --n_components {params.n_components} \

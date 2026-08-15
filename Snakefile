@@ -16,6 +16,7 @@ import shutil
 
 container: "docker://francothyroidlab/pond:1.3"
 configfile: 'configs/prelim_configs.yaml'
+configfile: 'configs/filter_thresholds.yaml'
 
 # set config parameters
 # -------------------------------------------------------------------------
@@ -28,10 +29,6 @@ RUN_CELLRANGER = config['RUN_CELLRANGER']
 RPATH = config['RPATH']
 RUN_SOUPX = config['RUN_SOUPX']
 RUN_DOUBLETFINDER = config['RUN_DOUBLETFINDER']
-MITO = config['MITO']
-RIBO = config['RIBO']
-MIN_FEATURE_THRESHOLD = config['MIN_FEATURE_THRESHOLD']
-MAX_FEATURE_THRESHOLD = config['MAX_FEATURE_THRESHOLD']
 SPLIT_LAYERS_BY = config['SPLIT_LAYERS_BY']
 COMPONENTS = config['COMPONENTS']
 NUM_VARIABLE_FEATURES = config['NUM_VARIABLE_FEATURES']
@@ -69,6 +66,12 @@ USER_GENE_FILE = config['USER_GENE_FILE']
 REGRESSION_FILE = config['REGRESSION_FILE']
 VISUALIZATION = config['VISUALIZATION']
 
+MITO = config['MITO']
+RIBO = config['RIBO']
+MIN_FEATURE_THRESHOLD = config['MIN_FEATURE_THRESHOLD']
+#MAX_FEATURE_THRESHOLD = config['MAX_FEATURE_THRESHOLD']
+RUN_PRELIM_ANALYSIS = config['RUN_PRELIM_ANALYSIS']
+CONFIRMED_THRESHOLDS_FILE = config['CONFIRMED_THRESHOLDS_FILE']
 #-------------------------------------------------------------------------------------
 
 # Set storage type to qs2 if none provided
@@ -164,8 +167,10 @@ if VISUALIZATION is not None and type(VISUALIZATION) != 'NoneType' and VISUALIZA
 
 # check if null ----------------
 def not_null_check_no_yes(config_param, config_param_name):
-	numeric_values = ['MITO', 'MIN_FEATURE_THRESHOLD', 'MAX_FEATURE_THRESHOLD', 'COMPONENTS', 'NUM_VARIABLE_FEATURES', 'RESOLUTION', 'THREADS', 'MEMORY']
-	do_not_lower = ['RPATH', 'MITO', 'MIN_FEATURE_THRESHOLD', 'MAX_FEATURE_THRESHOLD', 'COMPONENTS', 'NUM_VARIABLE_FEATURES', 'TRANSFERDATA_REF_FILE', 'TRANSFERDATA_REDUCTION', 'TRANSFERDATA_ANNOCOL', 'RESOLUTION', 'THREADS', 'MEMORY']
+	#numeric_values = ['MITO', 'MIN_FEATURE_THRESHOLD', 'MAX_FEATURE_THRESHOLD', 'COMPONENTS', 'NUM_VARIABLE_FEATURES', 'RESOLUTION', 'THREADS', 'MEMORY']
+	#do_not_lower = ['RPATH', 'MITO', 'MIN_FEATURE_THRESHOLD', 'MAX_FEATURE_THRESHOLD', 'COMPONENTS', 'NUM_VARIABLE_FEATURES', 'TRANSFERDATA_REF_FILE', 'TRANSFERDATA_REDUCTION', 'TRANSFERDATA_ANNOCOL', 'RESOLUTION', 'THREADS', 'MEMORY']
+	numeric_values = ['MITO', 'MIN_FEATURE_THRESHOLD', 'COMPONENTS', 'NUM_VARIABLE_FEATURES', 'RESOLUTION', 'THREADS', 'MEMORY']
+	do_not_lower = ['RPATH', 'MITO', 'MIN_FEATURE_THRESHOLD', 'COMPONENTS', 'NUM_VARIABLE_FEATURES', 'TRANSFERDATA_REF_FILE', 'TRANSFERDATA_REDUCTION', 'TRANSFERDATA_ANNOCOL', 'RESOLUTION', 'THREADS', 'MEMORY']
 	multi_options = ['RESOLUTION', 'SEURAT_NORMALIZATION_METHOD', 'SEURAT_INTEGRATION_METHOD', 'STORAGE']
 	yes_no = ['RUN_SOUPX', 'RUN_DOUBLETFINDER', 'MITO_REGRESSION', 'CELL_CYCLE_REGRESSION', 'REFERENCE_BASED_INTEGRATION', 'RUN_AZIMUTH', 'RUN_TRANSFERDATA', 'TSNE', 'CONSERVED_GENES']
 
@@ -252,9 +257,11 @@ elif ',' in str(RESOLUTION):
 '''
 # -------------------------------------------------------------------------
 
-no_nulls_strings = ['contact', 'PROJECT', 'ORGANISM', 'STARTING_DATA', 'RUN_CELLRANGER', 'RPATH', 'RUN_SOUPX', 'RUN_DOUBLETFINDER', 'MITO', 'MIN_FEATURE_THRESHOLD', 'MAX_FEATURE_THRESHOLD', 'SPLIT_LAYERS_BY', 'COMPONENTS', 'NUM_VARIABLE_FEATURES', 'SCALE_DATA_FEATURES', 'MITO_REGRESSION', 'RIBO_REGRESSION', 'CELL_CYCLE_REGRESSION', 'SEURAT_NORMALIZATION_METHOD', 'SEURAT_INTEGRATION_METHOD', 'REFERENCE_BASED_INTEGRATION', 'RUN_AZIMUTH', 'RUN_TRANSFERDATA', 'RESOLUTION', 'TSNE', 'CONSERVED_GENES', 'STORAGE', 'THREADS']
+#no_nulls_strings = ['contact', 'PROJECT', 'ORGANISM', 'STARTING_DATA', 'RUN_CELLRANGER', 'RPATH', 'RUN_SOUPX', 'RUN_DOUBLETFINDER', 'RUN_PRELIM_ANALYSIS', 'MITO', 'MIN_FEATURE_THRESHOLD', 'MAX_FEATURE_THRESHOLD', 'SPLIT_LAYERS_BY', 'COMPONENTS', 'NUM_VARIABLE_FEATURES', 'SCALE_DATA_FEATURES', 'MITO_REGRESSION', 'RIBO_REGRESSION', 'CELL_CYCLE_REGRESSION', 'SEURAT_NORMALIZATION_METHOD', 'SEURAT_INTEGRATION_METHOD', 'REFERENCE_BASED_INTEGRATION', 'RUN_AZIMUTH', 'RUN_TRANSFERDATA', 'RESOLUTION', 'TSNE', 'CONSERVED_GENES', 'STORAGE', 'THREADS']
+no_nulls_strings = ['contact', 'PROJECT', 'ORGANISM', 'STARTING_DATA', 'RUN_CELLRANGER', 'RPATH', 'RUN_SOUPX', 'RUN_DOUBLETFINDER', 'RUN_PRELIM_ANALYSIS', 'MITO', 'MIN_FEATURE_THRESHOLD', 'SPLIT_LAYERS_BY', 'COMPONENTS', 'NUM_VARIABLE_FEATURES', 'SCALE_DATA_FEATURES', 'MITO_REGRESSION', 'RIBO_REGRESSION', 'CELL_CYCLE_REGRESSION', 'SEURAT_NORMALIZATION_METHOD', 'SEURAT_INTEGRATION_METHOD', 'REFERENCE_BASED_INTEGRATION', 'RUN_AZIMUTH', 'RUN_TRANSFERDATA', 'RESOLUTION', 'TSNE', 'CONSERVED_GENES', 'STORAGE', 'THREADS']
 
-no_nulls = [contact, PROJECT, ORGANISM, STARTING_DATA, RUN_CELLRANGER, RPATH, RUN_SOUPX, RUN_DOUBLETFINDER, MITO, MIN_FEATURE_THRESHOLD, MAX_FEATURE_THRESHOLD, SPLIT_LAYERS_BY, COMPONENTS, NUM_VARIABLE_FEATURES, SCALE_DATA_FEATURES, MITO_REGRESSION, RIBO_REGRESSION, CELL_CYCLE_REGRESSION, SEURAT_NORMALIZATION_METHOD, SEURAT_INTEGRATION_METHOD, REFERENCE_BASED_INTEGRATION, RUN_AZIMUTH, RUN_TRANSFERDATA, RESOLUTION, TSNE, CONSERVED_GENES, STORAGE, THREADS]
+#no_nulls = [contact, PROJECT, ORGANISM, STARTING_DATA, RUN_CELLRANGER, RPATH, RUN_SOUPX, RUN_DOUBLETFINDER, RUN_PRELIM_ANALYSIS, MITO, MIN_FEATURE_THRESHOLD, MAX_FEATURE_THRESHOLD, SPLIT_LAYERS_BY, COMPONENTS, NUM_VARIABLE_FEATURES, SCALE_DATA_FEATURES, MITO_REGRESSION, RIBO_REGRESSION, CELL_CYCLE_REGRESSION, SEURAT_NORMALIZATION_METHOD, SEURAT_INTEGRATION_METHOD, REFERENCE_BASED_INTEGRATION, RUN_AZIMUTH, RUN_TRANSFERDATA, RESOLUTION, TSNE, CONSERVED_GENES, STORAGE, THREADS]
+no_nulls = [contact, PROJECT, ORGANISM, STARTING_DATA, RUN_CELLRANGER, RPATH, RUN_SOUPX, RUN_DOUBLETFINDER, RUN_PRELIM_ANALYSIS, MITO, MIN_FEATURE_THRESHOLD, SPLIT_LAYERS_BY, COMPONENTS, NUM_VARIABLE_FEATURES, SCALE_DATA_FEATURES, MITO_REGRESSION, RIBO_REGRESSION, CELL_CYCLE_REGRESSION, SEURAT_NORMALIZATION_METHOD, SEURAT_INTEGRATION_METHOD, REFERENCE_BASED_INTEGRATION, RUN_AZIMUTH, RUN_TRANSFERDATA, RESOLUTION, TSNE, CONSERVED_GENES, STORAGE, THREADS]
 
 for index,n in enumerate(no_nulls):
 	value = no_nulls_strings[index]
@@ -439,6 +446,7 @@ def user_files(user_file, user_file_name):
 
 REGRESSION_FILE =  user_files(REGRESSION_FILE, 'REGRESSION_FILE')
 USER_GENE_FILE =  user_files(USER_GENE_FILE, 'USER_GENE_FILE')
+CONFIRMED_THRESHOLDS_FILE = user_files(CONFIRMED_THRESHOLDS_FILE, 'CONFIRMED_THRESHOLDS_FILE')
 
 if (ORGANISM != 'mouse' and ORGANISM != 'human') or ORGANISM is None:
 	print('This pipeline only works with mouse or human data')
@@ -470,6 +478,7 @@ cellranger_log = log_directory + 'cellranger/'
 multiqc_log = log_directory + 'multiqc/'
 doubletFinder_log = log_directory + 'doubletFinder/'
 soupX_log = log_directory + 'soupX/'
+metrics_log = log_directory + 'metrics/'
 create_initial_seurat_log = log_directory + 'create_initial_seurat/'
 qc_report_log = log_directory + 'qc_report/'
 memory_log = log_directory + 'memory_log/'
@@ -548,7 +557,9 @@ if RUN_SOUPX == 'y':
 # -----------------------------------------------------------------
 
 # ---------- MAKE DIRECTORIES PRE-ANALYSIS OUTPUT ------------------------------------
-out_parts = ['analysis', 'RDS', 'figures', 'tables', 'report']
+#out_parts = ['analysis', 'RDS', 'figures', 'tables', 'report']
+# adding qc_metrics to the list of directories to be createda 8.13.2026
+out_parts = ['analysis', 'RDS', 'figures', 'tables', 'report', 'qc_metrics']
 string_path = 'data/endpoints/' + PROJECT + '/'
 
 for o in out_parts:
@@ -558,6 +569,12 @@ for o in out_parts:
 	if not os.path.exists(temp_path):
 		os.mkdir(temp_path)
 # ------------------------------------------------------------------------------------
+
+# ----------- DEFINE QC METRICS DIRECTORIES ----------------------------------------------
+qc_metrics_path = string_path + 'analysis/qc_metrics/'
+qc_metrics_path_figures = qc_metrics_path + 'figures/' 
+qc_metrics_path_tables = qc_metrics_path + 'tables/' 
+# --------------------------------------------------------------------------------------
 
 # ----------- DEFINE REPORT DIRECTORIES ----------------------------------------------
 report_path = string_path + 'analysis/report/'
@@ -585,10 +602,30 @@ shutil.copyfile(config_file, new_config_file)
 shutil.copyfile(interactive_report, new_interactive_report)
 shutil.copyfile(sample_file, new_sample_file)
 
+# consider adding user threshold metrics CONFIRMED_THRESHOLDS_FILE 
 if USER_GENE_FILE != 'does_not_exist':
 	shutil.copyfile(USER_GENE_FILE, new_user_gene_file)
 if REGRESSION_FILE != 'does_not_exist':
 	shutil.copyfile(REGRESSION_FILE, new_user_regression_file)
+# -------------------------------------------------------------------------------------
+
+# ----------------------------- QC METRICS --------------------------------------------
+unfiltered_seurat_object = string_path + 'analysis/RDS/' +  PROJECT + '_unfiltered_seurat_object.qs2'
+suggested_thresholds_file = qc_metrics_path_tables + PROJECT + '_suggested_thresholds.tsv'
+qc_metrics_report_rmd = 'src/rmd/qc_metrics_report.Rmd'
+qc_metrics_report_html = report_path + PROJECT + '_qc_metrics_report.html'
+thresholds_file_to_use = ''
+
+if CONFIRMED_THRESHOLDS_FILE != 'does_not_exist':
+    thresholds_file_to_use = CONFIRMED_THRESHOLDS_FILE
+else:
+    thresholds_file_to_use = suggested_thresholds_file
+
+#config_file_metrics = 'configs/filter_thresholds.yaml'
+#new_config_file_metrics = report_path + 'filter_thresholds.yaml'
+#shutil.copyfile(config_file_metrics, new_config_file_metrics)
+
+qc_metrics_list = [qc_files, unfiltered_seurat_object, thresholds_file_to_use, qc_metrics_report_html]
 # -------------------------------------------------------------------------------------
 
 # ----------- INITIAL SEURAT AND QC REPORT --------------------------------------------
@@ -613,8 +650,6 @@ f2 = figure_outs + PROJECT + '_qc_2_vln.png'
 # qc_report input (rmarkdown) and qc_report output (html)
 qc_report_rmd = 'src/rmd/qc_report.Rmd'
 qc_report_html = string_path + 'analysis/report/qc_report/' + PROJECT + '_qc_report.html'
-
-initial_seurat_list = [f1, f2, storage_file, qc_report_html]
 # -------------------------------------------------------------------------------------
 
 # memory
@@ -638,9 +673,26 @@ analyzed_seurat_object = 'data/endpoints/' + PROJECT + '/analysis/RDS/' +  PROJE
 touch_file_create_images_DGE = 'data/endpoints/' + PROJECT + '/analysis/' + PROJECT + '_create_images_DGE_dummy.txt',
 #-------------------------------------------------------------------------------------
 
+#-------------------------------------------------------------------------------------
+phase_two_list = [f1, f2, storage_file, qc_report_html, qc_files, memory_file, analyzed_seurat_object, touch_file_create_images_DGE]  #files to be passed to biggie
+#-------------------------------------------------------------------------------------
+
 # List of final files (for testing and troubleshooting purposes)
+# need to add suggested_thresholds_file here but the name might change so 
+# i need to check if CONFIRMED_THRESHOLDS_FILE exists and if not, use suggested_thresholds_file
+# i also need to add CONFIRMED_THRESHOLDS_FILE as a config parameter 
 # -------------------------------------------------------------------------------------
-final_files = [qc_files, initial_seurat_list, analyzed_seurat_object, touch_file_create_images_DGE]  #files to be passed to biggie
+#final_files = [qc_files, initial_seurat_list, analyzed_seurat_object, touch_file_create_images_DGE]  #files to be passed to biggie
+# -------------------------------------------------------------------------------------
+
+#  defining initial_seurat_list for biggie
+# -------------------------------------------------------------------------------------
+initial_seurat_list = []
+
+if RUN_PRELIM_ANALYSIS == 'n':
+	initial_seurat_list = qc_metrics_list
+if RUN_PRELIM_ANALYSIS == 'y':
+	initial_seurat_list = phase_two_list
 # -------------------------------------------------------------------------------------
 
 #--------------------TARGET RULES-----------------------------------
@@ -656,13 +708,16 @@ include:
 include:
 	"src/rules/soupX.rules"
 include:
-	"src/rules/create_initial_seurat.rules"
-include:
-	"src/rules/get_memory.rules"
-include:
-	"src/rules/analyze_seurat_object.rules"
-include:
-	"src/rules/create_images_DGE.rules"
+	"src/rules/qc_metrics.rules"
+if RUN_PRELIM_ANALYSIS == 'y': 
+	include:
+		"src/rules/create_initial_seurat.rules"
+	include:
+		"src/rules/get_memory.rules"
+	include:
+		"src/rules/analyze_seurat_object.rules"
+	include:
+		"src/rules/create_images_DGE.rules"
 #-------------------------------------------------------------------------------------
 
 #--------------------MESSAGES-----------------------------------
@@ -678,9 +733,9 @@ onerror:
 #--------------------RULES---------------------------------------
 rule biggie:
 	input:
-		# initial_seurat_list,
+		initial_seurat_list,
 		# memory_file
 		# analyzed_seurat_object
-		# final_files
-		 touch_file_create_images_DGE
+		# touch_file_create_images_DGE
+		#final_files
 #--------------------OUTPUT--------------------------------------

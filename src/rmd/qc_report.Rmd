@@ -156,10 +156,17 @@ organism <- proj_info$`ORGANISM`
 ## Configs relevant to QC
 run_soupX <- proj_info$`RUN_SOUPX`
 run_doubletFinder <- proj_info$`RUN_DOUBLETFINDER`
-mito_thresh <- proj_info$`MITO`
-ribo_thresh <- proj_info$`RIBO`
-minfeat_thresh <- proj_info$`MIN_FEATURE_THRESHOLD`
-maxfeat_thresh <- proj_info$`MAX_FEATURE_THRESHOLD`
+#mito_thresh <- proj_info$`MITO`
+#ribo_thresh <- proj_info$`RIBO`
+#minfeat_thresh <- proj_info$`MIN_FEATURE_THRESHOLD`
+#maxfeat_thresh <- proj_info$`MAX_FEATURE_THRESHOLD`
+## Filtering thresholds are per-sample now (set during the QC metrics review
+## stage, either accepted as suggested or hand-edited by the user), so they
+## no longer live as single global values in prelim_configs.yaml. The
+## pipeline copies whichever thresholds file was actually used into the
+## report folder as a record — read that instead.
+thresholds_used_file <- file.path(data_dir, project, 'analysis', 'report', 'tables', paste0(project, '_thresholds_used.tsv'))
+thresholds_used <- read.table(thresholds_used_file, sep = '\t', header = TRUE)
 ```
 
 
@@ -252,10 +259,11 @@ Organism: `r organism`
 ##### QC
 Was SoupX Run? `r run_soupX`    
 Was DoubletFinder Run? `r run_doubletFinder`    
-Mitochondria Filtering Threshold: `r mito_thresh`    
-Ribosomal Filtering Threshold: `r ribo_thresh`    
-Minimum Features (per cell) Threshold: `r minfeat_thresh`    
-Maximum Features (per cell) Threshold: `r maxfeat_thresh`    
+
+Filtering thresholds used (per sample, set during the QC metrics review stage):
+```{r thresholds-used-table}
+datatable(thresholds_used, options = list(pageLength = 10), rownames = FALSE)
+```
 
 # DoubletFinder + SoupX
 <hr style="border:1px solid gray"/>

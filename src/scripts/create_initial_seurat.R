@@ -1,9 +1,11 @@
 #!/usr/bin/env Rscript
 # Author:    K. Beigel
+# Date:      9.30.2024
 # Modified by: M. Brown
 # Mod note: M. Brown add preprocessing directive, converted positional args to flags with input checks and a default lib path for compatibility with argparse and nextflow integration
-
-# Date:      9.30.2024
+# Modified by: E. Reichenberger
+# Mod note: E. Reichenberger updated to start with unfiltered seurat object + to use per-sample thresholds from passed file for filtering
+# Date:      8.14.2026
 
 # set a default library path for optparse to give help
 lib_path <- '/usr/local/lib/R/site-library'
@@ -21,26 +23,14 @@ tryCatch(
 )
 
 option_list <- list(
-  make_option(c("--sample_file"), type="character",
-              help="TSV with header, sample name in first column, condition in second column, path to starting data in third column"),
+  make_option(c("--seurat_obj"), type="character",
+              help="Path to the unfiltered Seurat object (.qs2) from the QC metrics step"),
+  make_option(c("--thresholds_file"), type="character",
+              help="TSV with per-sample filtering thresholds (Sample, MIN_FEATURE_THRESHOLD, MAX_FEATURE_THRESHOLD, MITO_THRESHOLD, RIBO_THRESHOLD)"),
   make_option(c("--project"), type="character",
               help="Name of the project"),
-  make_option(c("--organism"), type="character",
-              help="Organism (human or mouse)"),
-  make_option(c("--seurat_creation_source"), type="character",
-              help="Use count matrices from cellranger or soupX"),
-  make_option(c("--run_doubletfinder"), type="character",
-              help="'y' to incorporate doubletFinder data'"),
-  make_option(c("--mito_cutoff"), type="integer",
-              help="Mitochondrial percentage cutoff for filtering as an integer"),
-  make_option(c("--ribo_cutoff"), type="integer",
-              help="Ribosomal cutoff for filtering as an integer"),
-  make_option(c("--min_feature_threshold"), type="integer",
-              help="Minimum number of features per cell for filtering as an integer"),
-  make_option(c("--max_feature_threshold"), type="integer",
-              help="Maximum number of features per cell for filtering as an integer"),
   make_option(c("--seurat_file_name"), type="character",
-              help="Name of the Seurat object file to save")
+              help="Name of the filtered Seurat object file to save")
 )
 
 library(tidyverse, lib.loc = lib_path)
@@ -52,16 +42,11 @@ library(dplyr, lib.loc = lib_path)
 
 # Since the last args is positional, object sticks the options in a separate key
 opt <- parse_args(OptionParser(option_list=option_list), positional_arguments=TRUE, args=args)
-sample_file <- if (is.null(opt$options$sample_file) | !file.exists(opt$options$sample_file)) stop("Valid --sample_file is required. See --help for all opts") else opt$options$sample_file
+seurat_obj_path <- if (is.null(opt$options$seurat_obj) | !file.exists(opt$options$seurat_obj)) stop("Valid --seurat_obj is required. See --help for all opts") else opt$options$seurat_obj
+thresholds_file_path <- if (is.null(opt$options$thresholds_file) | !file.exists(opt$options$thresholds_file)) stop("Valid --thresholds_file is required. See --help for all opts") else opt$options$thresholds_file
 project <- if (is.null(opt$options$project)) stop("--project is required. See --help for all opts") else opt$options$project
-organism <- if (is.null(opt$options$organism)) stop("--organism is required. See --help for all opts") else tolower(opt$options$organism)
-seurat_creation_source <- if (is.null(opt$options$seurat_creation_source)) stop("--seurat_creation_source is required. See --help for all opts") else opt$options$seurat_creation_source
-run_doubletfinder <- if (is.null(opt$options$run_doubletfinder)) stop("--run_doubletfinder is required. See --help for all opts") else tolower(opt$options$run_doubletfinder)
-mito_cutoff <- if (is.null(opt$options$mito_cutoff)) stop("--mito_cutoff is required. See --help for all opts") else opt$options$mito_cutoff
-ribo_cutoff <- if (is.null(opt$options$ribo_cutoff)) stop("--ribo_cutoff is required. See --help for all opts") else opt$options$ribo_cutoff
-min_feature_threshold <- if (is.null(opt$options$min_feature_threshold)) stop("--min_feature_threshold is required. See --help for all opts") else opt$options$min_feature_threshold
-max_feature_threshold <- if (is.null(opt$options$max_feature_threshold)) stop("--max_feature_threshold is required. See --help for all opts") else opt$options$max_feature_threshold
 seurat_file_name <- if (is.null(opt$options$seurat_file_name)) stop("--seurat_file_name is required. See --help for all opts") else opt$options$seurat_file_name
+
 # CREATE DIRECTORIES
 #--------------------------------------------------------------------
 # Output
@@ -76,118 +61,16 @@ for (dir in c(figure_dir, rds_dir, table_dir, report_dir)) {
 }
 #--------------------------------------------------------------------
 
-# MITO + RIBOSOMAL PREFIX (based on organism)
-#--------------------------------------------------------------------
-mito = '^MT-'
-ribo = '^RP[LS]'
-
-if (tolower(organism) == 'mouse') {
-  mito = '^mt-'
-  ribo = '^Rp[ls]'
-}
-#--------------------------------------------------------------------
-
-# MAKE THRESHOLDS NUMERIC
-#--------------------------------------------------------------------
-mito_cutoff = as.numeric(mito_cutoff)
-ribo_cutoff = as.numeric(ribo_cutoff)
-min_feature_threshold = as.numeric(min_feature_threshold)
-max_feature_threshold = as.numeric(max_feature_threshold)
-#--------------------------------------------------------------------
-
-# IMPORT DATA, CREATE SEURAT OBJECT, ADD METADATA, CALCULATE MITO%
-#--------------------------------------------------------------------
-get_sample_list = function(sample.file)
-{ 
-  sample.list = read.table(sample.file, sep = '\t', header = TRUE)
-}
-
-# CREATE LIST FOR MERGING
-#--------------------------------------------------------------------
-make_list_seuobjs = function(sample.list, merge.data.source)
-{
-  seu.obj.list = vector(mode = 'list')
-
-  for (row in 1:nrow(sample.list)) {
-
-    sample = sample.list[row, 1]
-    experiment = sample.list[row, 2]
-
-    data.path <- ''
-    data.tenx <- ''
-
-    # determine location of files
-    if (merge.data.source == 'matrix' || merge.data.source == 'soupX') {
-      data.path = paste0('data/endpoints/', project, '/', sample, '/', merge.data.source, '/')
-    }
-
-    if (merge.data.source == 'cellranger') {
-      data.path = paste0('data/endpoints/', project, '/', sample, '/', merge.data.source, '/outs/filtered_feature_bc_matrix/')
-    }
-
-    print(paste('Loading 10X data for', sample, 'from', data.path))
-    data.tenx = Read10X(data.path)
-
-    print(paste('Creating Seurat object for', sample))
-    seu.obj = CreateSeuratObject(counts = data.tenx, project = project, min.cells = 0, min.features = 0)
-    seu.obj = AddMetaData(seu.obj, metadata = experiment, col.name = 'Experiment')
-    seu.obj = AddMetaData(seu.obj, metadata = sample, col.name = 'Sample')
-    seu.obj[['percent.mito']] = PercentageFeatureSet(seu.obj, pattern = mito)
-    seu.obj[['percent.ribo']] = PercentageFeatureSet(seu.obj, pattern = ribo)
-    print(paste(project, sample, 'doublet_ids', sep = '_'))
-    if (run_doubletfinder == 'y') {
-      doublet.file = paste0('data/endpoints/', project, '/', sample, '/doubletFinder/tables/', project, '_', sample, '_', 'doublet_ids.txt')
-      doublet.ids = read.table(doublet.file, header = TRUE)
-      doublet.ids = doublet.ids[, 'doublet_ids']
-      print(paste0('Number of doublets: ', length(doublet.ids)))
-      if (length(doublet.ids) >= 1) {
-        print(paste0('Removing ', length(doublet.ids), ' doublets.'))
-        seu.obj <- seu.obj[, !colnames(seu.obj) %in% doublet.ids]
-      }
-    }
-
-    seu.obj.list[[sample]] = seu.obj
-  }
-
-  return(seu.obj.list)
-}
-#--------------------------------------------------------------------
-
-# MAKE A MERGED SEURAT OBJECT
-#--------------------------------------------------------------------
-make_merged_seuobj = function(seu.obj.list)
-{
-  # create merged seurat object
-  print(paste('Merging samples:', paste(names(seu.obj.list), collapse = ', ')))
-  S.merged <- merge(seu.obj.list[[1]], y = c(seu.obj.list[2:length(seu.obj.list)]), add.cell.ids = names(seu.obj.list), project = project)
-
-  return(S.merged)
-}
-#--------------------------------------------------------------------
-
-# FOR ONE SAMPLE, PULL SINGLE OBJ FROM LIST
-#--------------------------------------------------------------------
-make_single_seuobj = function(seu.obj.list)
-{
-  # create merged seurat object
-  S.single = seu.obj.list[[1]]
-  S.single = RenameCells(object = S.single, add.cell.id = names(seu.obj.list)[1])
-
-  return(S.single)
-}
-#--------------------------------------------------------------------
-
-
 # QC PLOTS: PRE- AND POST-FILTERING
 #--------------------------------------------------------------------
 seu_qc_plots = function(seu.obj, plot.set, title, caption)
 {  
-  # commented out cols for plots; scheme below is hard to distinguish samples
   # colors from: https://github.com/Nowosad/rcartocolor
   palette = carto_pal(7, "ag_Sunset")
-  if (nrow(sample_list) <= 2) {
+  n_samples = length(unique(seu.obj@meta.data$Sample))
+  if (n_samples <= 2) {
     palette = palette[c(2, 4)]
-  } else if (nrow(sample_list) > 2) {
+  } else {
     palette = NULL
   }
   
@@ -287,25 +170,52 @@ seu_qc_plots = function(seu.obj, plot.set, title, caption)
 }
 #--------------------------------------------------------------------
 
-# FILTER SEURAT OBJECT
+# FILTER SEURAT OBJECT — per-sample thresholds, fail loudly on missing samples
 #--------------------------------------------------------------------
-filter_save_seuobj = function(seu.obj)
+filter_save_seuobj = function(seu.obj, thresholds)
 {
   # pre-filtered plots
   print('Plotting QC figures for data (not filtered).')
   seu_qc_plots(seu.obj, '1', 'Unfiltered', 'Data before filtering')
 
-  # filter
-  filter_info = paste0('nFeature_RNA > ', min_feature_threshold, ', nFeature_RNA < ', max_feature_threshold, ', percent.mito < ', mito_cutoff, ', percent.ribo < ', ribo_cutoff)
-  print(paste0('Filtering Seurat object: ', filter_info))
-  seu.obj.filt <- subset(
-    seu.obj,
-    subset = nFeature_RNA > min_feature_threshold & nFeature_RNA < max_feature_threshold & percent.mito < mito_cutoff & percent.ribo < ribo_cutoff
+  # every sample in the object must have a matching row in the thresholds table
+  obj_samples <- unique(seu.obj@meta.data$Sample)
+  missing_samples <- setdiff(obj_samples, thresholds$Sample)
+  if (length(missing_samples) > 0) {
+    stop(paste0(
+      'No thresholds found for sample(s): ', paste(missing_samples, collapse = ', '),
+      '. Check the thresholds file: ', thresholds_file_path
+    ))
+  }
+
+  # join each cell's Sample to its per-sample thresholds
+  meta <- seu.obj@meta.data
+  meta$cell_id <- rownames(meta)
+  meta_joined <- left_join(meta, thresholds, by = 'Sample')
+
+  keep_cells <- meta_joined$cell_id[
+    meta_joined$nFeature_RNA > meta_joined$MIN_FEATURE_THRESHOLD &
+    meta_joined$nFeature_RNA < meta_joined$MAX_FEATURE_THRESHOLD &
+    meta_joined$percent.mito < meta_joined$MITO_THRESHOLD &
+    meta_joined$percent.ribo < meta_joined$RIBO_THRESHOLD
+  ]
+
+  # per-sample before/after cell counts, for the log
+  before_counts <- table(seu.obj@meta.data$Sample)
+  seu.obj.filt <- subset(seu.obj, cells = keep_cells)
+  after_counts <- table(seu.obj.filt@meta.data$Sample)
+
+  count_summary <- data.frame(
+    Sample = names(before_counts),
+    before = as.integer(before_counts),
+    after = as.integer(after_counts[names(before_counts)])
   )
+  print('Cells retained per sample after filtering:')
+  print(count_summary)
 
   # post-filtered plots
   print('Plotting QC figures for data (filtered).')
-  seu_qc_plots(seu.obj.filt, '2',  'Filtered', paste0('Filtered: ', filter_info))
+  seu_qc_plots(seu.obj.filt, '2', 'Filtered', 'Data after per-sample filtering')
 
   # save filtered object
   print('Saving Seurat object.')
@@ -315,18 +225,8 @@ filter_save_seuobj = function(seu.obj)
 
 # FUNCTION CALLS
 #--------------------------------------------------------------------
-sample_list = get_sample_list(sample_file)
-seuobjs_list = make_list_seuobjs(sample_list, seurat_creation_source)
+seu.obj <- qs2::qs_read(seurat_obj_path)
+thresholds <- read.table(thresholds_file_path, sep = '\t', header = TRUE)
 
-seuobj = ''
-
-if (nrow(sample_list) > 1) {
-  seuobj = make_merged_seuobj(seuobjs_list)
-}
-
-if (nrow(sample_list) == 1) {
-  seuobj = make_single_seuobj(seuobjs_list)
-}
-
-filter_save_seuobj(seuobj)
+filter_save_seuobj(seu.obj, thresholds)
 #--------------------------------------------------------------------

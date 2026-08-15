@@ -34,6 +34,7 @@ rule cluster_plots_DGE:
 		report_path = directory(report_path_tables),
 		visualization = VISUALIZATION
 	output: touch_file_create_images_DGE
+	threads: THREADS
 	log:
 		log_output = create_images_DGE_log + PROJECT.lower() + '_create_images_DGE.log'
 	benchmark: benchmark_log + PROJECT.lower() + '_cluster_plots.benchmark'

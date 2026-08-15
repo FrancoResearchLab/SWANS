@@ -1,0 +1,295 @@
+---
+title: "SWANS"
+subtitle: "Unfiltered QC Metrics Report"
+date: "`r format(Sys.time())`"
+params:
+  root_dir: ../..
+  data_dir: ../../data/endpoints
+  qc_config: ../../configs/filter_thresholds.yaml
+showWarnings: FALSE
+output: html_document
+---
+
+<style>
+  .main-container {
+      max-width: 100%;
+      margin-left: 10px;
+      margin-right: 10px;
+      overflow-x: hidden;
+  }
+  .image-container {
+    max-width: 95%;
+    position: relative;
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+  .image-container img {
+    max-width: 95%;
+    cursor: pointer;
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    z-index: 5;
+  }
+  .overlay.show {
+    display: block;
+  }
+  .overlay img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 80%;
+    max-height: 80%;
+    transition: transform 0.3s ease;
+  }
+  .overlay img.enlarged {
+    transform: translate(-50%, -50%) scale(2);
+  }
+  .overlay .close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 30px;
+    color: white;
+    cursor: pointer;
+  }
+</style>
+
+<!-- Same click-to-enlarge behavior as qc_report.Rmd -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const images = document.querySelectorAll(".image-container img");
+    const overlay = document.createElement("div");
+    overlay.classList.add("overlay");
+    const overlayImg = document.createElement("img");
+    overlay.appendChild(overlayImg);
+    document.body.appendChild(overlay);
+    const closeBtn = document.createElement("span");
+    closeBtn.classList.add("close");
+    closeBtn.innerHTML = "&times;";
+    overlay.appendChild(closeBtn);
+    images.forEach(function(image) {
+      image.addEventListener("click", function() {
+        image.classList.toggle("pop-out");
+        overlay.style.display = image.classList.contains("pop-out") ? "block" : "none";
+        overlayImg.src = this.src;
+      });
+    });
+    overlay.addEventListener("click", function() {
+      overlay.style.display = "none";
+      images.forEach(function(image) {
+        image.classList.remove("pop-out");
+      });
+    });
+    closeBtn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      overlay.style.display = "none";
+      images.forEach(function(image) {
+        image.classList.remove("pop-out");
+      });
+    });
+  });
+</script>
+
+<style type="text/css">
+    .main-container {
+      max-width: 100%;
+    }
+    .row {
+      max-width: 97%;
+      display: flex;
+    }
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r packages, include=FALSE}
+library(knitr)
+library(dplyr)
+library(tidyverse)
+library(yaml)
+library(DT)
+```
+
+```{r configs, include=FALSE}
+attach(params)
+
+# project name comes from the prelim config, thresholds config from filter_thresholds.yaml
+prelim_config <- read_yaml('../../configs/prelim_configs.yaml')
+project <- prelim_config$`PROJECT`
+
+qc_metrics_dir <- file.path(data_dir, project, 'analysis', 'qc_metrics')
+figure_dir <- file.path(qc_metrics_dir, 'figures')
+table_dir <- file.path(qc_metrics_dir, 'tables')
+```
+
+```{r paths, include=FALSE}
+# Paginated plots (plot_qc_distributions_by_sample only adds a _pageN suffix
+# when there's more than one page — with few samples, the plain filename is
+# used instead, so match both forms and sort naturally by page number.
+get_page_files <- function(base_name)
+{
+  pattern <- paste0('^', base_name, '(_page[0-9]+)?\\.png$')
+  files <- list.files(figure_dir, pattern = pattern, full.names = TRUE)
+
+  page_num <- function(f)
+  {
+    m <- regmatches(f, regexpr('_page[0-9]+', f))
+    if (length(m) == 0) return(0)
+    as.numeric(gsub('_page', '', m))
+  }
+
+  files[order(sapply(files, page_num))]
+}
+
+# Density distributions (unfiltered) — one set of files per metric, possibly paginated
+density_nfeature_files <- get_page_files(paste0(project, '_qc_1_density_nFeature_RNA'))
+density_ncount_files    <- get_page_files(paste0(project, '_qc_1_density_nCount_RNA'))
+density_mito_files       <- get_page_files(paste0(project, '_qc_1_density_percent.mito'))
+density_ribo_files        <- get_page_files(paste0(project, '_qc_1_density_percent.ribo'))
+
+# Per-sample scatter plots — also possibly paginated
+scatter_bysample_files      <- get_page_files(paste0(project, '_qc_1_scatter_bysample'))
+scatter_mito_nfeature_files <- get_page_files(paste0(project, '_qc_1_scatter_mito_vs_nfeature'))
+
+# Whole-dataset correlation panels — NOT paginated (one unfaceted plot, all samples together)
+mito_correlations <- file.path(figure_dir, paste0(project, '_qc_1_mito_correlations.png'))
+ribo_correlations  <- file.path(figure_dir, paste0(project, '_qc_1_ribo_correlations.png'))
+
+# Tables
+bimodality_file <- file.path(table_dir, paste0(project, '_nFeature_bimodality_summary.tsv'))
+thresholds_file  <- file.path(table_dir, paste0(project, '_suggested_thresholds.tsv'))
+
+# Prints one <img> per file, with a "Page X of N" sub-heading when there's more than one
+print_paged_images <- function(files)
+{
+  n <- length(files)
+  for (i in seq_along(files))
+  {
+    if (n > 1) cat('\n###### Page', i, 'of', n, '\n')
+    cat('\n<div class="image-container">\n')
+    cat('<img src="', files[i], '" alt="Click to enlarge"/>\n', sep = '')
+    cat('</div>\n')
+  }
+}
+```
+
+<div class="main-container">
+
+# Project: `r project`
+
+# Pipeline Information
+SWANS, version 2.0 — QC Metrics stage (pre-filtering review)
+
+This report summarizes the **unfiltered** dataset before any cells are removed. Use it, along with the suggested thresholds table below, to decide on filtering values before continuing the pipeline. Nothing shown here has been filtered yet — the goal is to look at the raw distributions and pick thresholds that make sense for this dataset.
+
+<hr style="border:1px solid gray"/>
+
+## Correlation Panels (whole dataset)
+
+These combine three views per metric into one figure, using all samples together (colored by sample) rather than faceting sample-by-sample — useful for seeing overall dataset-wide patterns.
+
+##### Mitochondrial correlations
+Left to right: nFeature_RNA vs percent.mito, nCount_RNA vs percent.mito, nCount_RNA vs nFeature_RNA (reference panel, repeated for convenience).
+
+<div class="image-container">
+  <img src="`r mito_correlations`" alt="Click to enlarge"/>
+</div>
+
+##### Ribosomal correlations
+Same layout as above, using percent.ribo instead of percent.mito.
+
+<div class="image-container">
+  <img src="`r ribo_correlations`" alt="Click to enlarge"/>
+</div>
+
+<hr style="border:1px solid gray"/>
+
+## Per-Sample Distributions
+
+These density plots show the distribution of each QC metric split out by sample, so you can compare samples to each other and spot any that look unusual.
+
+Samples are split across multiple pages of up to 12 per page when there are more than 12 samples in the project, so a section below may show several images in sequence rather than one.
+
+##### nCount_RNA (total transcript counts per cell)
+Reflects sequencing depth per cell. Differences between samples here often explain differences in the nFeature_RNA threshold (a sample sequenced more shallowly will show a lower ceiling).
+
+```{r density-ncount, results='asis'}
+print_paged_images(density_ncount_files)
+```
+
+##### percent.mito (mitochondrial read percentage)
+High mitochondrial content is a standard signal of low-quality or dying cells. The dotted line marks median + 3×MAD per sample, a robust upper-bound suggestion.
+
+```{r density-mito, results='asis'}
+print_paged_images(density_mito_files)
+```
+
+##### percent.ribo (ribosomal read percentage)
+Provided for reference only. Unlike mito%, high ribo% is not well-supported in the literature as a marker of low-quality cells — it often just reflects sequencing depth or cell-type differences. A threshold line is shown, but SWANS does not recommend filtering on this metric by default.
+
+```{r density-ribo, results='asis'}
+print_paged_images(density_ribo_files)
+```
+
+##### nFeature_RNA (genes detected per cell)
+The dotted line marks the 99th percentile per sample — a starting suggestion for the upper filtering bound. Cells far to the right of this line are unusually gene-rich and may be doublets or debris.
+
+```{r density-nfeature, results='asis'}
+print_paged_images(density_nfeature_files)
+```
+
+<hr style="border:1px solid gray"/>
+
+## Bimodality Check (nFeature_RNA)
+
+For each sample, this table reports whether the nFeature_RNA distribution looks bimodal (i.e., has two separate peaks, which can indicate two populations of cells — such as real cells and empty droplets — mixed together). `likely_bimodal` is flagged when the bimodality coefficient exceeds 0.555, a commonly used cutoff. `valley_x` lists the nFeature_RNA value(s) of any dip between peaks, which can be useful as an alternative lower threshold.
+
+```{r bimodality-table}
+bimodality <- read.table(bimodality_file, sep = '\t', header = TRUE)
+datatable(bimodality, options = list(pageLength = 10), rownames = FALSE)
+```
+
+<hr style="border:1px solid gray"/>
+
+## Per-Sample Scatter Plots
+
+##### nCount_RNA vs nFeature_RNA
+Each point is a cell, colored by sample. The relationship between counts and features is usually a smooth, tight curve — a cell far off that curve (very high counts but very few genes, or vice versa) can indicate a technical artifact.
+
+```{r scatter-bysample, results='asis'}
+print_paged_images(scatter_bysample_files)
+```
+
+##### nFeature_RNA vs percent.mito
+Cells with both low gene counts and high mito% (bottom-right of this plot) are the classic signature of dying or low-quality cells and are good candidates for filtering.
+
+```{r scatter-mito-nfeature, results='asis'}
+print_paged_images(scatter_mito_nfeature_files)
+```
+
+<hr style="border:1px solid gray"/>
+
+## Suggested Filtering Thresholds
+
+These are the pipeline's auto-suggested per-sample thresholds, derived from the plots above (99th percentile for the max feature count, median + 3×MAD for mito%). **Review these before proceeding** — they are a starting point, not a final answer. To use different values, create a confirmed thresholds file (see `CONFIRMED_THRESHOLDS_FILE` in `configs/filter_thresholds.yaml`) with your own numbers in the same format.
+
+```{r thresholds-table}
+thresholds <- read.table(thresholds_file, sep = '\t', header = TRUE)
+datatable(thresholds, options = list(pageLength = 10), rownames = FALSE)
+```
+
+<hr style="border:1px solid gray"/>
+
+</div>

@@ -1,0 +1,68 @@
+'''
+Author: E. Reichenberger
+Date:   8.14.2026
+'''
+
+#--------------------MESSAGES-----------------------------------
+onsuccess:
+  print("The Initial Seurat pipeline completed with no errors.")
+  shell("mail -s 'The Initial Seurat pipeline completed with no errors.' "+ config['contact']+" < {log}")
+
+onerror:
+  print("The Initial Seurat pipeline did not complete without errors."),
+  shell("mail -s 'The Initial Seurat pipeline did not complete without errors, check the logs and try again.' "+ config['contact']+" < {log}")
+
+#--------------------RULES---------------------------------------
+rule collect_metrics:
+    input:
+        script = 'src/scripts/qc_metrics.R',
+        input_files = qc_files
+    params:
+        sample_file = 'samples.sample_list',
+        project = PROJECT,
+        organism = ORGANISM,
+        seurat_creation_source = SEURAT_CREATION_SOURCE,
+        run_doubletfinder = RUN_DOUBLETFINDER,
+        mito = MITO,
+        ribo = RIBO,
+        min_feature_threshold = MIN_FEATURE_THRESHOLD,
+        r_lib_path = RPATH,
+        base_directory = qc_metrics_path
+    output: 
+        #s = unfiltered_seurat_object,
+        seurat_file_name = unfiltered_seurat_object,
+        thresholds = suggested_thresholds_file
+    log:
+        log_output = metrics_log + PROJECT + '_qc_metrics.log'
+    benchmark: benchmark_log + PROJECT.lower() + '_qc_metrics.benchmark'
+    shell:
+        "Rscript {input.script} \
+        --sample_file {params.sample_file} \
+        --project {params.project} \
+        --organism {params.organism} \
+        --seurat_creation_source {params.seurat_creation_source} \
+        --run_doubletfinder {params.run_doubletfinder} \
+        --mito_cutoff {params.mito} \
+        --ribo_cutoff {params.ribo} \
+        --min_feature_threshold {params.min_feature_threshold} \
+        --seurat_file_name {output.seurat_file_name} \
+        --base_directory {params.base_directory} \
+        --threshold_file {output.thresholds} \
+        {params.r_lib_path} \
+        > {log.log_output} 2>&1"
+
+rule make_qc_metrics_report:
+    input:
+        seurat_obj = unfiltered_seurat_object,
+        thresholds = suggested_thresholds_file,
+        script = qc_metrics_report_rmd
+    params:
+        project = PROJECT
+    output: qc_metrics_report_html
+    log:
+        log_output = metrics_log + PROJECT + '_qc_metrics_report.log'
+    benchmark: benchmark_log + PROJECT + '_qc_metrics_report.benchmark'
+    shell:
+        """
+            Rscript -e 'library(rmarkdown); rmarkdown::render(paste0(\"{input.script}\"), output_file=paste0("../../", \"{output}\"))'
+        """

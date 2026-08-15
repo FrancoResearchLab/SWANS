@@ -1,3 +1,4 @@
+#soupify_outs -> read.csv -> read.table -> file
 #!/usr/bin/env Rscript
 # Author:  E. Reichenberger
 # Modified by: M. Brown
@@ -55,6 +56,7 @@ set.seed(42)
 
 # CREATE OUT PATH
 dir.create(soupX_output_path, recursive=TRUE, showWarnings=FALSE)
+soupX_input_path <- gsub('/+', '/', soupX_input_path) #replace any // w /
 
 # contamination plot function
 #--------------------------------------------------------------------
@@ -110,6 +112,7 @@ filtered_h5 <- ''
 if (sequencing_type == 'standard')
 {
 	cellranger_data = file.path(soupX_input_path, 'outs')
+   cellranger_data <- gsub('/+', '/', cellranger_data) #replace any // w /
 	raw_folder <- 'raw_feature_bc_matrix'
 	filtered_folder <- 'filtered_feature_bc_matrix'
 	raw_h5 <- 'raw_feature_bc_matrix.h5'
@@ -119,6 +122,7 @@ if (sequencing_type == 'standard')
 if (sequencing_type == 'flex')
 {
 	cellranger_data = file.path(soupX_input_path, 'count')
+   cellranger_data <- gsub('/+', '/', cellranger_data) #replace any // w /
 	raw_folder <- 'sample_raw_feature_bc_matrix'
 	filtered_folder <- 'sample_filtered_feature_bc_matrix'
 	raw_h5 <- 'sample_raw_feature_bc_matrix.h5'
@@ -182,7 +186,7 @@ if (data_type == "outs") {
   graphclust_dir <- Filter(
     function(d) dir.exists(file.path(cellranger_data, "analysis/clustering", d)),
     c("gene_expression_graphclust", "graphclust")
-  )
+  )[1]
 
   if (length(graphclust_dir) == 0) {
     all_files <- list.files(cellranger_data, recursive = TRUE, full.names = TRUE)

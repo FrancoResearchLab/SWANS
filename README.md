@@ -1,6 +1,9 @@
 # SWANS 2.0: Single-entity Workflow ANalysiS Pipeline
 <p align="center"><img src="markdown_images/SWANS_logo.png" alt="SWANS logo" width="800"></p>
+
+
 * *******************************************************************************
+
 ## Motivation
 Beyond analyzing data, the motiviation behind developing SWANS was related to a) how a bioinformatician can share massive amounts of complex data in a concise manner with investigators, b) have a devoted pipeline that can run a completely different analysis by changing configuration files, and c) how can an analysis be tweaked and the analyses compared to arrive at a one schema for additional downstream analysis. 
 

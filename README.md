@@ -1,4 +1,5 @@
 # SWANS 2.0: Single-entity Workflow ANalysiS Pipeline
+<p align="center"><img src="markdown_images/SWANS_logo.png" alt="SWANS logo" width="800"></p>
 * *******************************************************************************
 ## Motivation
 Beyond analyzing data, the motiviation behind developing SWANS was related to a) how a bioinformatician can share massive amounts of complex data in a concise manner with investigators, b) have a devoted pipeline that can run a completely different analysis by changing configuration files, and c) how can an analysis be tweaked and the analyses compared to arrive at a one schema for additional downstream analysis. 
@@ -11,7 +12,7 @@ A unique aspect of SWANS is that, in a single pass, data can be analyzed using m
 SWANS is designed to run a preliminary analysis and a post-annotation (final) analysis.   
 
 ### Preliminary Analysis
-The preliminary analysis includes Cell Ranger, MultiQC (optional), QC (incl. optional SoupX/DoubletFinder), sample merging, clustering, and DGE analysis, z-score transformations, clustering characterization (cell counts/proportions), and visualization of all options among other items. An dynamic interactive report ([HTML + Shiny Report](#HTML)) is created to simultaneously display multiple UMAP clustering schemas, and related DGEs, z-scores, cell counts/proportions, and Clustree images to assist in choosing a final clustering schema.
+The preliminary analysis includes Cell Ranger, MultiQC (optional), QC (incl. optional SoupX/DoubletFinder), an unfiltered QC metrics review stage with a mandatory hard stop for threshold review, sample merging, clustering, and DGE analysis, z-score transformations, clustering characterization (cell counts/proportions), and visualization of all options among other items. An dynamic interactive report ([HTML + Shiny Report](#HTML)) is created to simultaneously display multiple UMAP clustering schemas, and related DGEs, z-scores, cell counts/proportions, and Clustree images to assist in choosing a final clustering schema.
 
 ### Final (Post-Annotation) Analysis
 Once a final schema/approach is selected, clusters are renamed according to user specifications (see cluster_annotation_file), within-cluster dges are found by comparing transcriptional differences across experimental conditionals, and gene set enrichment analysis (gsea) is performed on each set of dges. additionally, transcriptional z-scores transformations and cell counts/proportions are calculated to characterize each cluster, each experimental conditional within each cluster, and each sample within each cluster. the is also the option to perform trajectory analysis -- the results of which are including the final analysis in an interactive html report that allows the investigator to review the results, answer their initial queries, and ask new questions. 
@@ -72,14 +73,14 @@ yaml_2.3.10, magick_2.8.4, pdftools_3.4.0, rsconnect_1.3.1, dplyr_1.1.4, dt_0.33
 * *******************************************************************************
 
 ## Quick Start Guide
-The SWANS pipeline will need to be run twice; the first pass will run the preliminary analysis, and the final pass will run the final analysis.  
+The SWANS pipeline may need to be run up to three times: an initial pass to generate the QC metrics report and review thresholds, a second pass to run the preliminary analysis, and a final pass to run the final analysis.
 
-You must have  the following files in your working directory: `samples.sample_list`, `configs/prelim_configs.yaml`, `configs/post_annotation_configs.yaml`, and when running the final analysis, you must also have a `cluster_annotation_file`.
+You must have the following files in your working directory: `samples.sample_list`, `configs/prelim_configs.yaml`, `configs/filter_thresholds.yaml`, `configs/post_annotation_configs.yaml`, and when running the final analysis, you must also have a **cluster_annotation_file**.
 
 You must also have FASTQ files, [Cell Ranger](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/what-is-cell-ranger) output (w/ `outs` directory), <b>or</b> feature-barcode matrix file outputs for each sample you would like to analyze. 
 
 ### Running Pipeline
-In the directory containing `samples.sample_list`, `configs/prelim_configs.yaml`, and `configs/post_annotation_configs.yaml`, type `bash run_snakemake.sh`.   
+In the directory containing `samples.sample_list`, `configs/prelim_configs.yaml`, `configs/filter_thresholds.yaml`, and `configs/post_annotation_configs.yaml`, type `bash run_snakemake.sh`.   
 
 * *******************************************************************************
 
@@ -170,34 +171,12 @@ SOUPX_START: outs
 
 # run doubletfinder (recommended) (y/n)
 RUN_DOUBLETFINDER: y
-```
 
-If you are interested in changing the mitochondria or ribosomal filtering threshold, change the mito/ribo value.  
-In an earlier draft of this pipeline, if single nucleus data was placed under the sequencing parameter (deprecated), setting a mitochondria threshold was not performed. However, experience has shown that nuclear-encoded mitochondrial proteins will show up. If exclusion of all cells expressing mito genes are requested, the mito value can be changed to 0. If all cells expressing mito genes should be retained, place the value at 100. **This is the exact same concept for ribo genes.**
-
-```yaml
-# mito cutoff (e.g., numeric value)
-MITO: 15
-
-# ribo cutoff (e.g., numeric value) (choose 100 for no filtering)
-RIBO: 100 
-```
-
-Control which cells are retained/filtered
-
-```yaml
-# feature thresholds #
-# e.g., s <- subset(s.merged, subset = nfeature_rna > 200 & nfeature_rna < 3000)
-MIN_FEATURE_THRESHOLD: 200
-MAX_FEATURE_THRESHOLD: 3000
-```
-
-When normalizing/scaling data, do you want to do so across experiments or samples (recommended)?
-
-```yaml
 # metadata by which to split the object into layers (experiment, sample (recommended)) -- advanced
 SPLIT_LAYERS_BY: sample
 ```
+
+**Filtering thresholds (mitochondrial %, ribosomal %, feature counts) are not set here.** SWANS has a separate QC review stage with its own suggested thresholds and a config file — see [configs/filter_thresholds.yaml](#configsfilter_thresholdsyaml) below.
 
 You must provide an initial number of principal components to explore. a value like 200 will take considerably longer than 30, but regardless of the value, the 90\% of the variation is quantified, and that value is used for the remainder of the analysis.   
 
@@ -331,6 +310,43 @@ USER_GENE_FILE:
 VISUALIZATION: dot 
 ```
 
+</details>
+
+#### configs/filter_thresholds.yaml
+<details>
+  <summary>Click to expand!</summary>
+
+Customize the [configs/example_filter_thresholds.yaml](configs/example_filter_thresholds.yaml). Be sure to remove `example_` from the file name.
+
+Before filtering happens, SWANS builds an unfiltered Seurat object, computes suggested per-sample filtering thresholds, and generates a QC metrics report (`project_name_qc_metrics_report.html`) so you can review the data before anything is filtered out. This is a mandatory hard stop — the pipeline will not filter or proceed to clustering until you confirm (`RUN_PRELIM_ANALYSIS: y`).
+
+```yaml
+# run preliminary analysis past the QC metrics review stage? (y/n)
+# set to 'n' for the QC-only pass; review the report, then set to 'y' to continue
+RUN_PRELIM_ANALYSIS: n
+
+# mito cutoff (e.g., numeric value)
+MITO: 15
+
+# ribo cutoff (e.g., numeric value)
+RIBO: 100
+
+# minimum number of features (genes) a cell must have to be included when
+# calculating suggested thresholds -- cells below this are excluded before
+# computing the median/MAD stats used to suggest MITO_THRESHOLD/RIBO_THRESHOLD.
+# set this once; it is a fixed floor and does not change between runs.
+MIN_FEATURE_THRESHOLD: 200
+
+# optional: path to a hand-edited thresholds file (see below)
+# leave blank to accept the pipeline's own suggested thresholds
+CONFIRMED_THRESHOLDS_FILE: 
+```
+
+Run the pipeline once with `RUN_PRELIM_ANALYSIS: n`. This produces `data/endpoints/project_name/analysis/qc_metrics/report/project_name_qc_metrics_report.html`, along with a suggested thresholds table (`project_name_suggested_thresholds.tsv`) — one row per sample, with columns `MIN_FEATURE_THRESHOLD`, `MAX_FEATURE_THRESHOLD`, `MITO_THRESHOLD`, and `RIBO_THRESHOLD`. These per-sample values, not the `MITO`/`RIBO` values above, are what actually get used to filter cells.
+
+Review the report. If the suggested thresholds look reasonable, set `RUN_PRELIM_ANALYSIS: y` and rerun — the pipeline will use the suggested thresholds automatically. If you want to use your own values instead, copy the suggested thresholds file, edit the values you want to change, save it under a new name, point `CONFIRMED_THRESHOLDS_FILE` at it, then set `RUN_PRELIM_ANALYSIS: y` and rerun. In either case, whichever file was actually used gets copied to `data/endpoints/project_name/analysis/report/tables/project_name_thresholds_used.tsv` as a permanent record.
+
+**Note on ribo filtering**: the suggested `RIBO_THRESHOLD` defaults to a permissive value (100, effectively no filtering), since high ribosomal percentage is not well-supported in the literature as a low-quality-cell indicator on its own — it often reflects sequencing depth or cell-type differences instead. A reference MAD-based value is still shown in the report if you want to filter on it anyway; just set your own value in a `CONFIRMED_THRESHOLDS_FILE`.
 </details>
 
 #### configs/post_annotation_configs.yaml
@@ -531,7 +547,8 @@ After typing `swans` from the commandline, ...
      │           |   |  ├── figures    
      │           ├── rds    
      │           ├── report    
-     │           |   ├── project_name_qc_report.html ** qc html report 
+     │           |   ├── project_name_qc_metrics_report.html ** qc metrics html report 
+     |           |   ├── interactive_report.rmd ** interactive report for prelim analysis
      │           |   └── benchmarks     
      │           |   |  ├── project_name_benchmark_report.html ** html report on resources (memory/time) used for analysis
      │           |   |  ├── figures    
@@ -541,8 +558,14 @@ After typing `swans` from the commandline, ...
      │           |   └── compare_images     
      │           |   └── figures     
      │           |   |  ├── clustree    
-     |           |   ├── interactive_report.rmd ** interactive report for prelim analysis
+     │           |   └── qc_report     
+     │           |   |  ├── project_name_qc_report.html ** qc html report 
      │           |   └── tables     
+     │           |   |  ├── project_name_clusterProportions.experiment_NORMALIZAION.INTEGRATION_snn_res*.txt
+     │           |   |  ├── project_name_phase_[sample/experiment]_NORMALIATION.INTEGRATION_snn_res*.txt
+     │           |   |  ├── project_name_thresholds_used.tsv    
+     │           |   |  ├── project_name_top100_markers_avg_log2FC_NORMALIATION.INTEGRATION_snn_res*.txt
+     │           |   |  ├── project_name_z_scores.NORMALIZATION.INTEGRATION_snn_res*.txt
      │           ├── tables    
 ```    
 </details>
@@ -551,7 +574,7 @@ After typing `swans` from the commandline, ...
 
 ## Reports
 
-Four (five, if optional report is run) separate reports are included in the output: MultiQC (optional), QC Report, Interactive Report, Benchmarking Report, & Final Report.
+Five (six, if optional report is run) separate reports are included in the output: MultiQC (optional), QC Metrics Report, QC Report, Interactive Report, Benchmarking Report, & Final Report.
 
 #### MultiQC Report (optional)
 <details>
@@ -565,6 +588,14 @@ This is an optional report that can only be created if Cell Ranger is being run 
 
 </details>
 
+#### QC Metrics Report
+<details>
+  <summary>Click to expand!</summary>
+
+location: `data/endpoints/project_name/analysis/report/project_name_qc_metrics_report.html`
+
+Generated during the mandatory QC review stage, before any filtering happens. Shows whole-dataset correlation panels (mito%/ribo% vs features/counts), per-sample distribution plots, a bimodality check on nFeature_RNA, per-sample scatter plots, and the suggested per-sample filtering thresholds table. Use this report to decide on filtering thresholds before continuing the pipeline. 
+</details>
 
 #### QC_report
 <details>
@@ -572,7 +603,7 @@ This is an optional report that can only be created if Cell Ranger is being run 
 
 location: `data/endpoints/project_name/analysis/reports/project_name_qc_report.html`  
 
-This file contains information on doublets, the number of genes and cells in each sample as well as RNA counts, and the abundance/cell of mitochondria and ribosomal genes both pre- and post-filtering. There will be one UMAP plot of the final DoubletFinder classifications for each sample in the dataset. 
+This file contains information on doublets, the number of genes and cells in each sample as well as RNA counts, and the abundance/cell of mitochondria and ribosomal genes both pre- and post-filtering where the filtering levels come from `data/endpoint/project_name/analysis/report/tables/project_name_thresholds_used.tsv`. There will be one UMAP plot of the final DoubletFinder classifications for each sample in the dataset. 
 
 ![qc](markdown_images/qc_report.png)
 
@@ -759,5 +790,3 @@ bioRxiv doi: https://doi.org/10.1101/2025.05.14.654073
 
 ## License
 Licensed under the GNU License and MIT License. See the [license.txt](licenses/license.txt) file.
-
-

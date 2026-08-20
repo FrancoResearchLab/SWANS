@@ -65,6 +65,23 @@ Once the sample file (`samples.sample_list`) and the configuration files have be
 ```bash
 bash run_snakemake.sh
 ```
+
+### Testing before a full run
+Before committing to a full run, it can be useful to check that the pipeline will do what you expect without actually executing anything. Two flags are available via `-r`:
+
+```bash
+bash run_snakemake.sh -r dry-run
+```
+
+`dry-run` passes Snakemake's `--dry-run` flag, which prints the jobs that would be run (and why) without executing any of them or writing any output.
+
+```bash
+bash run_snakemake.sh -r touch
+```
+
+`touch` passes Snakemake's `--touch` flag, which updates the timestamps on existing output files to mark them as up to date, without regenerating them. This is useful if files already exist (e.g., after moving/copying results, or resolving a false "outdated" flag from Snakemake) and you want to avoid an unnecessary rerun.
+
+If no flag is provided, SWANS defaults to a normal run. 
 * *******************************************************************************
 
 ## Viewing the SWANS interactive report in RStudio:

@@ -24,11 +24,11 @@ while getopts ":r:" opt; do
     case "$opt" in
         r)
         case "$OPTARG" in
-            run|dry-run)
+            run|dry-run|touch)
             runtype="$OPTARG"
             ;;
             *)
-            log "ERROR" "Invalid runtype: $OPTARG (allowed: run, dry-run)"
+            log "ERROR" "Invalid runtype: $OPTARG (allowed: run, dry-run, touch)"
             exit 1
             ;;
         esac
@@ -49,16 +49,19 @@ done
 runtype="${runtype:-run}"
 
 # Get flag for dry-run to pass to snakemake
-dryrun_flag=""
+run_flag=""
 case "$runtype" in
     run)
-        dryrun_flag=""
+        run_flag=""
         ;;
     dry-run)
-        dryrun_flag="--dry-run"
+        run_flag="--dry-run"
+        ;;
+    touch)
+        run_flag="--touch"
         ;;
     *)
-        log "ERROR" "Unknown runtype: $runtype (allowed: run, dry-run)"
+        log "ERROR" "Unknown runtype: $runtype (allowed: run, dry-run, touch)"
         exit 1
         ;;
 esac
@@ -229,11 +232,10 @@ profile_dir=$(get_profile_dir "$executor")
 
 # call Snakemake on with profile
 #-----------------------------------------------------------------------------
-#	$dryrun_flag \
-	#--use-singularity --dryrun --rerun-triggers mtime \
 #snakemake --snakefile $SCRIPT_DIR/Snakefile --dryrun --rerun-triggers mtime \
 snakemake --snakefile $SCRIPT_DIR/Snakefile \
 	--profile $profile_dir \
+		$run_flag \
 	--use-singularity \
 	--singularity-args "-B $prelim_bind_mnts"
 #-----------------------------------------------------------------------------
@@ -298,7 +300,7 @@ if [ -e "$final_config_file" ] && [[ $run_final == "y" ]]; then
 	# snakemake --snakefile FinalSnakefile --printshellcmds --dryrun
 	snakemake --snakefile FinalSnakefile \
 		--profile $profile_dir_final \
-		$dryrun_flag \
+		$run_flag \
 		--use-singularity \
 		--singularity-args "-B $prelim_bind_mnts"
 fi

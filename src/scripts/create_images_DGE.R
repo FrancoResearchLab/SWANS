@@ -188,6 +188,21 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
         redux_tsne <- paste0(n, '.tsne')
       }
 
+      # Prep marker genes for heatmap (once per normalization/integration combo) ----
+      heatmap_genes <- NULL
+      if (!is.null(genes))
+      {
+        scaled_genes <- rownames(GetAssayData(seurat_object, assay = assay, slot = 'scale.data'))
+        missing_markers <- setdiff(genes, scaled_genes)
+        if (length(missing_markers) > 0)
+        {
+          message(length(missing_markers), ' markers not in scale.data and will be dropped from heatmap:')
+          message(paste(missing_markers, collapse = ', '))
+        }
+        heatmap_genes <- intersect(genes, scaled_genes)
+      }
+
+      # -------------------------------------------------------------------------------
       for (r in resolut)
       {
         # was getting odd error were i = 45 & 47????
@@ -314,6 +329,18 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
           geom_bar(stat='identity', position='fill') + 
           ylab('Cluster Proportion') + xlab('Sample') + guides(fill=guide_legend(title='Cluster')))
         # ---------------------------------------------------------
+
+        # heatmap (full gene list, on by default) ------------------
+		  n_genes <- length(heatmap_genes)
+		  label_size <- max(2, min(8, 300 / n_genes))
+
+        if (!is.null(heatmap_genes) && length(heatmap_genes) > 0)
+        {
+          print('making heatmap...')
+          try(print(DoHeatmap(seurat_object, features = heatmap_genes) + NoLegend() + theme(axis.text.y = element_text(size = label_size))
+			 ))
+        }
+        # ------------------------------------------------------------
 
         # Visualize user-defined genes ----------------------------
         if (is.null(genes) == FALSE)

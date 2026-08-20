@@ -37,17 +37,6 @@ SOUPX_START: outs
 # run doubletFinder (y/n)
 RUN_DOUBLETFINDER: y
 
-# mito cutoff (e.g., numeric value)
-MITO: 15
-
-# ribo cutoff (e.g., numeric value)
-RIBO: 100 
-
-# feature thresholds #
-# e.g., S <- subset(S.merged, subset = nFeature_RNA > 200 & nFeature_RNA < 3000)
-MIN_FEATURE_THRESHOLD: 200
-MAX_FEATURE_THRESHOLD: 3000
-
 # metadata by which to split the object into layers (Experiment, Sample)
 SPLIT_LAYERS_BY: Sample
 
@@ -133,10 +122,8 @@ MEMORY: 1389064417920
 USER_GENE_FILE: 
 
 # which visualization for USER_GENE_FILE (feature,violin,ridge,dot) -- choose 1, more, or leave blank
-# (feature plotted by default) choosing all will create very large pdf file
+# (heatmap plotted by default) choosing all will create __very__ large pdf file
 VISUALIZATION: dot 
-
-
 
 
 # DO NOT ALTER BELOW ##########################

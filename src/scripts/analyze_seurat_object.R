@@ -582,7 +582,7 @@ load_transferdata_ref = function(transferdata.ref.file, transferdata.reduction)
 # --------------------------------------------------------------------
 run_seurat_transferdata = function(seurat.object, transferdata.ref.file, transferdata.reduction, transferdata.annocol)
 {
-  transferdata.ref = load_transferdata_ref(transferdata.ref.file, transferdata_reduction)
+  transferdata.ref = load_transferdata_ref(transferdata.ref.file, transferdata.reduction) #was transferdata_reduction
 
   print('---- Running FindTransferAnchors. ----')
   # Get transfer anchors between query and reference
@@ -768,6 +768,24 @@ run_clustering = function(seurat.object, integration.method.list = NULL, normali
       sig.pcs = min(n_components, sig.pcs + 10)
     }
 
+	 # added 10.13.2026 ERR
+    # unintegrated umap (no clustering)
+    umap.name = paste0(pca.name, '.umap')
+
+    print(paste('Running unintegrated UMAP for', pca.name))
+    seurat.object = RunUMAP(
+      seurat.object,
+      reduction = pca.name,
+      dims = 1:sig.pcs,
+      reduction.key = paste0(gsub('\\.', '', pca.name), 'UMAP_'),
+      reduction.name = umap.name
+    )
+
+    pdf(file = paste0(report_path_figures, '/', project, '_', gsub('\\.', '_', umap.name), '_by_', split_layers_by, '.pdf'), width = 10, height = 10)
+    print(DimPlot(seurat.object, reduction = umap.name, group.by = split_layers_by, shuffle = TRUE))
+    dev.off()
+	 # above added 10.13.2026 ERR
+
     # Run each integration method
     for (integration.method in names(integration.method.list))
     {
@@ -796,7 +814,9 @@ n_samples = length(unique(S@meta.data[['Sample']]))
 # GET LISTS OF CELL CYCLE GENES (convert to mouse IDs if needed)
 s_genes <- cc.genes.updated.2019$s.genes
 g2m_genes <- cc.genes.updated.2019$g2m.genes
-if (tolower(organism) == 'mouse') {
+
+if (tolower(organism) == 'mouse') 
+{
   s_genes <- convert_genes_hs2mm(cc.genes.updated.2019$s.genes)
   g2m_genes <- convert_genes_hs2mm(cc.genes.updated.2019$g2m.genes)
 }
@@ -811,17 +831,20 @@ S = get_scoring(S, s_genes, g2m_genes, regression_vars, regression_file)
 S = seurat_processing(S, normalization_method_list, split_layers_by, regression_vars, num_var_features)
 
 # RUN INTEGRATION (IF THERE IS MORE THAN ONE SAMPLE)
-if (n_samples > 1) {
+if (n_samples > 1) 
+{
   S = seurat_integration(S, integration_method_list, normalization_method_list)
 }
 
 # RUN AZIMUTH IF SPECIFIED
-if (run_azimuth == 'y') {
+if (run_azimuth == 'y') 
+{
   S = run_azimuth_anno(S, azimuth.ref = azimuth_ref)
 }
 
 # RUN TRANSFERDATA IF SPECIFIED
-if (run_transferdata == 'y') {
+if (run_transferdata == 'y') 
+{
   S = run_seurat_transferdata(S, transferdata_ref_file, transferdata_reduction, transferdata_annocol)
 }
 

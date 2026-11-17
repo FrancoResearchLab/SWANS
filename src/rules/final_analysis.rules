@@ -17,9 +17,11 @@ rule final_analysis:
 	input:
 		script = 'src/scripts/final_analysis.R',
 		seurat_object = analyzed_seurat_object,
-		celltype_assignment_file = CLUSTER_ANNOTATION_FILE,
+		celltype_assignment_file = cluster_annotation_input,
+		#celltype_assignment_file = CLUSTER_ANNOTATION_FILE,
 	params:
 		project = PROJECT,
+		celltype_assignment_file = CLUSTER_ANNOTATION_FILE,
 		rpath = RPATH,
 		normalization = FINAL_SEURAT_NORMALIZATION_METHOD,
 		integration = FINAL_SEURAT_INTEGRATION_METHOD,
@@ -53,7 +55,7 @@ rule final_analysis:
 	shell:
 		"Rscript {input.script} {params.project} {params.rpath} {input.seurat_object} \
 			{params.normalization} {params.integration} {params.resolution} \
-			{input.celltype_assignment_file} {params.tsne} {params.user_file} {params.threads} \
+			{params.celltype_assignment_file} {params.tsne} {params.user_file} {params.threads} \
 			{params.filtering_threshold} {params.avg2fc} {params.min_pct} \
 			{params.conserved_genes} \
 			{params.organism} {params.final_storage} {params.provide}  \

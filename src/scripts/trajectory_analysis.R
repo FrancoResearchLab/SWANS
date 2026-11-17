@@ -131,7 +131,7 @@ define_partitions <- function(seurat.object, partition.trajectory, cluster.schem
 	{	
 		# Using the levels of clusters in the chosen cluster scheme, make a table where all clusters are listed and have partition = 1
 		partitions <- tibble(
-			!!cluster.scheme := levels(seurat.object@meta.data[[cluster.scheme]]), partition = 1) %>%
+			!!cluster.scheme := unique(as.character(seurat.object@meta.data[[cluster.scheme]])), partition = 1) %>%
 				mutate_if(is.character, as.factor) %>% mutate_if(is.integer, as.factor)
 	}
 

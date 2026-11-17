@@ -196,13 +196,13 @@ def not_null_check_no_yes(config_param, config_param_name):
 
 no_nulls = [contact, PROJECT, ORGANISM, RPATH, RUN_FINAL_ANALYSIS, MIN_PCT, \
 	AVG_LOG2FC_THRESHOLD, FINAL_FILTERING_THRESHOLD, FINAL_SEURAT_NORMALIZATION_METHOD, \
-	FINAL_SEURAT_INTEGRATION_METHOD, FINAL_RESOLUTION, CLUSTER_ANNOTATION_FILE, \
+	FINAL_SEURAT_INTEGRATION_METHOD, FINAL_RESOLUTION, \
 	RUN_TRAJECTORY_ANALYSIS, PROVIDE_ANALYZED_SEURAT_OBJECT, TSNE, FINAL_CONSERVED_GENES, \
 	FINAL_THREADS, FINAL_USER_GENE_FILE, FINAL_STORAGE, FINAL_VISUALIZATION]
 
 no_nulls_string = ['contact', 'PROJECT', 'ORGANISM', 'RPATH', 'RUN_FINAL_ANALYSIS', 'MIN_PCT', \
 	'AVG_LOG2FC_THRESHOLD', 'FINAL_FILTERING_THRESHOLD', 'FINAL_SEURAT_NORMALIZATION_METHOD', \
-	'FINAL_SEURAT_INTEGRATION_METHOD', 'FINAL_RESOLUTION', 'CLUSTER_ANNOTATION_FILE', \
+	'FINAL_SEURAT_INTEGRATION_METHOD', 'FINAL_RESOLUTION', \
 	'RUN_TRAJECTORY_ANALYSIS', 'PROVIDE_ANALYZED_SEURAT_OBJECT', 'TSNE', 'FINAL_CONSERVED_GENES', \
 	'FINAL_THREADS', 'FINAL_USER_GENE_FILE', 'FINAL_STORAGE', 'FINAL_VISUALIZATION']
 
@@ -270,6 +270,23 @@ if PROVIDE_ANALYZED_SEURAT_OBJECT == 'y':
 				print('Enter a value for CLUSTER_ANNOTATION_FILE and try again.')
 				print('------------------------------------------------')
 #-------------------------------------------------------------------------------------
+
+# added fall 26 ERR
+# cluster annotation file: only needed when SWANS annotates from the file
+if PROVIDE_ANALYZED_SEURAT_OBJECT == 'n' or ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT == 'y' or (RUN_TRAJECTORY_ANALYSIS == 'y' and PARTITION_TRAJECTORY == 'y'):
+	if CLUSTER_ANNOTATION_FILE is None or str(CLUSTER_ANNOTATION_FILE).strip() == '' or os.path.exists(CLUSTER_ANNOTATION_FILE) == False:
+		print('------------------------------------------------')
+		print('CLUSTER_ANNOTATION_FILE is required (and must exist) unless you provide an annotated seurat object and do not use trajectory partitions.')
+		print('Enter a valid path for CLUSTER_ANNOTATION_FILE in configs/post_annotation_configs.yaml and try again.')
+		print('------------------------------------------------')
+		sys.exit()
+else:
+	CLUSTER_ANNOTATION_FILE = 'does_not_exist'
+
+# rule input: empty list when the annotation file isn't needed
+cluster_annotation_input = []
+if CLUSTER_ANNOTATION_FILE != 'does_not_exist':
+		cluster_annotation_input = CLUSTER_ANNOTATION_FILE
 
 # Get memory
 # may not be needed 

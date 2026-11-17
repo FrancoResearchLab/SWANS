@@ -90,11 +90,27 @@ partition <- final_info$`PARTITION_TRAJECTORY`
 conserved_genes <- final_info$`FINAL_CONSERVED_GENES`
 
 # Annotation
-annotation <- read.csv(cluster_annotation, header=TRUE, sep='\t')
-celltypes <- annotation$celltypes
-if (trajectory_analysis == 'y' && partition == 'y')
+#annotation <- read.csv(cluster_annotation, header=TRUE, sep='\t')
+#celltypes <- annotation$celltypes
+#if (trajectory_analysis == 'y' && partition == 'y')
+#{
+#  partitions <- annotation$partition
+#}
+
+# Annotation (only when SWANS annotates from the cluster file)
+provide <- final_info$`PROVIDE_ANALYZED_SEURAT_OBJECT`
+annotate <- final_info$`ANNOTATE_PROVIDED_FINAL_SEURAT_OBJECT`
+provide_y <- (provide == 'y' || isTRUE(provide))
+annotate_y <- (annotate == 'y' || isTRUE(annotate))
+
+if (!provide_y || annotate_y)
 {
-  partitions <- annotation$partition
+  annotation <- read.csv(cluster_annotation, header=TRUE, sep='\t')
+  celltypes <- annotation$celltypes
+  if (trajectory_analysis == 'y' && partition == 'y')
+  {
+    partitions <- annotation$partition
+  }
 }
 
 # Sig PC 
@@ -116,8 +132,8 @@ for (u in ucluster)
 {
   uname <- paste0(u, '_')
   final_markers$comparison <- trimws(final_markers$comparison)
-  final_markers$comparison <- gsub(' ', '', final_markers$comparison, fixed = TRUE) #remove any spaces
   final_markers$comparison <- gsub(uname, "", final_markers$comparison, fixed = TRUE)
+  final_markers$comparison <- gsub(' ', '', final_markers$comparison, fixed = TRUE) #remove any spaces
 
   final_markers <- final_markers[, c('gene', 'cluster', 'comparison', 'avg_log2FC', 'p_val', 'p_val_adj', 'pct.1', 'pct.2')]
 }
@@ -142,7 +158,8 @@ for (cl in ucluster)
 
 # convert to json
 # make named list of data.frames, one per cluster
-cluster_data_list <- lapply(ucluster, function(cl) {
+cluster_data_list <- lapply(ucluster, function(cl) 
+{
   final_markers %>% filter(cluster == cl) %>%
   select(gene, cluster, comparison, avg_log2FC, p_val, p_val_adj, pct_1, pct_2)
 
@@ -164,7 +181,7 @@ gc()
 col_order = c('Description', 'database', 'cluster', 'comparison', 'ES', 'NES', 'p.adjust', 'leadingEdge', 'size', 'leadingEdge_geneCount')
 
 # adjusted p.value
-final_pathways_file.adjP <- file.path(data_dir, project, 'analysis', 'final_analysis', 'pathway_analysis', 'tables', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_filtered_results_combined_pathways_p_val_adj.csv'))
+final_pathways_file.adjP <- file.path(data_dir, project, 'analysis', 'final_analysis', 'pathway_analysis', 'tables', paste0(project, '_', normalization, '.', integration, '_snn_res.', resolution, '_final_filtered_results_combined_pathways_signed_logp.csv'))
 final_pathways_adjP <- ''
 if (file.exists(final_pathways_file.adjP))
 {  
@@ -556,17 +573,17 @@ cat("</script>\n")
 ***
 
 ### Pathway Analysis (Gene Set Enrichment Analysis) for each Cluster by Experiment
-#### Ranked by adjusted.p.value
+#### Ranked by signed -log10(p.value)
 
 <details>
   <summary style="font-size: 16px; color: black;"><b>Table 4 Column Descriptions (CLICK TO EXPAND)</b></summary>
   
 <ul>
   <li><b>pathway</b>: pathway gene set name</li>
-  <li><b>database</b>: the Molecular Signatures Database (MSigDB) collection of the indicated pathway (Description), where hallmark is the Hallmark collection of gene sets (H collection), curated is the Curated collection of gene sets (C2 collection), and ontology is the Ontology collection of gene sets (C5 collection)</li>
+ <li><b>database</b>: the Molecular Signatures Database (MSigDB) source of the indicated pathway: hallmark (H collection); curated (KEGG_LEGACY, KEGG_MEDICUS, REACTOME, WIKIPATHWAYS, BIOCARTA, PID or CP (C2 canonical pathways)); ontology (C5 GO biological process)</li>
   <li><b>cluster</b>: cell type cluster annotation</li>
   <li><b>comparison</b>: group comparison for the analysis, formatted as a contrast where groupA is the comparison level and groupB is the reference level (groupA_vs_groupB), which indicates the directionality of the ES and NES columns</li>
-  <li><b>ES</b>: enrichment score, which reflects the overrpresenation of genes from the pathway gene set at the top (positive ES) or bottom (negative ES) of the list of differentially expressed genes (ranked by adjusted p-value)</li>
+  <li><b>ES</b>: enrichment score, which reflects the overrpresenation of genes from the pathway gene set at the top (positive ES) or bottom (negative ES) of the gene list (genes detected in ≥ `r min_ptc * 100`% of cells in either group, with |avg_log2FC| ≥ `r avglogfc`), ranked by signed -log10(p-value)</li>
   <ul>
     <li><i>positive ES (and NES)</i>: pathway is enriched in the first group (groupA) compared to the second group (groupB) (see comparison column for information on groups)</li>
     <li><i>negative ES (and NES)</i>: pathway is enriched in the second group (groupB) compared to the first group (groupA) (see comparison column for information on groups)</li>
@@ -588,7 +605,7 @@ if (is.data.frame(final_pathways_adjP)) {
   datatable(
     final_pathways_adjP,
     class = 'cell-border stripe',
-    caption = 'Table 4:  Pathway Analysis results from gene set enrichment analysis (GSEA) using fgsea with adjusted p-value as the ranking metric.',
+    caption = 'Table 4:  Pathway Analysis results from gene set enrichment analysis (GSEA) using fgsea with signed -log10(p-value) as the ranking metric.',
     rownames = FALSE,
     filter = 'none', #hiding this shows the next table, but subsequent tables are hidden
     extensions = 'Buttons',
@@ -638,7 +655,7 @@ if (is.data.frame(final_pathways_adjP)) {
     `overflow-wrap` = "break-word" # Ensure wrapping occurs at appropriate spots
   )
 } else {
-  print('There are no pathway results for GSEA with genes ranked by adjusted p-value.')
+  print('There are no pathway results for GSEA with genes ranked by signed -log10(p-value).')
 }
 ```
 
@@ -649,10 +666,10 @@ if (is.data.frame(final_pathways_adjP)) {
   
 <ul>
   <li><b>pathway</b>: pathway gene set name</li>
-  <li><b>database</b>: the Molecular Signatures Database (MSigDB) collection of the indicated pathway (Description), where hallmark is the Hallmark collection of gene sets (H collection), curated is the Curated collection of gene sets (C2 collection), and ontology is the Ontology collection of gene sets (C5 collection)</li>
+  <li><b>database</b>: the Molecular Signatures Database (MSigDB) source of the indicated pathway: hallmark (H collection); curated (KEGG_LEGACY, KEGG_MEDICUS, REACTOME, WIKIPATHWAYS, BIOCARTA, PID or CP (C2 canonical pathways)); ontology (C5 GO biological process)</li>
   <li><b>cluster</b>: cell type cluster annotation</li>
   <li><b>comparison</b>: group comparison for the analysis, formatted as a contrast where groupA is the comparison level and groupB is the reference level (groupA_vs_groupB), which indicates the directionality of the ES and NES columns</li>
-  <li><b>ES</b>: enrichment score, which reflects the overrpresenation of genes from the pathway gene set at the top (positive ES) or bottom (negative ES) of the list of differentially expressed genes (ranked by average log2 fold change)</li>
+  <li><b>ES</b>: enrichment score, which reflects the overrpresenation of genes from the pathway gene set at the top (positive ES) or bottom (negative ES) of the gene list (genes detected in ≥ `r min_ptc * 100`% of cells in either group, with |avg_log2FC| ≥ `r avglogfc`), ranked by average log2 fold change.</li>
   <ul>
     <li><i>positive ES (and NES)</i>: pathway is enriched in the first group (groupA) compared to the second group (groupB) (see comparison column for information on groups)</li>
     <li><i>negative ES (and NES)</i>: pathway is enriched in the second group (groupB) compared to the first group (groupA) (see comparison column for information on groups)</li>
@@ -990,6 +1007,18 @@ In Monocle3, the trajectory graph edges and nodes are visualized on top of a UMA
   <li><b>Light gray circles</b>: "leaf" nodes, which correspond to a different cell fate outcome of the trajectory</li>
   <li><b>Black circles</b>: "branch" nodes, which are nodes from which cells may travel to different possible connected leaf nodes.</li>
 </ul>
+ 
+```{r traj_partitions, include=T, echo=F}
+if (trajectory_analysis == 'y' || trajectory_analysis == TRUE)
+{
+  if (exists('annotation') && 'partition' %in% colnames(annotation) && (partition == 'y' || isTRUE(partition)))
+  {
+    datatable(data = unique(annotation[, c('celltypes', 'partition')]), caption = 'Table 12: Cluster partitions used for trajectory analysis.', rownames = FALSE, options = list(pageLength = 10))
+  } else {
+    print('No partitions were provided; all clusters were placed in one partition.')
+  }
+}
+```
 
 ```{r traj, include=T, echo=F, out.width="100%", out.height="100%", fig.cap='Trajectory Analysis'}
 if (trajectory_analysis == 'y' || trajectory_analysis == TRUE)

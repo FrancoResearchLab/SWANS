@@ -689,36 +689,42 @@ bioimages <- function(lollipop_data, f_header, ident, pathway_dir, cluster, proj
 	print(fname)
 	p_size = 8
 
-	if (length(lollipop_data$NES) <= 15)
-	{
-		print('less than 15')
-		print(c('number of bio processess:', length(lollipop_data$NES)))
-		png(filename=fname, width=2700,height=2000,res=300)
-		print(fname)
-	}
+	n <- length(lollipop_data$NES)
+	if (n <= 15)            { png(filename=fname, width=2700, height=2000, res=300) }
+	if (n > 15 & n <= 40)   { png(filename=fname, width=5700, height=3750, res=300); p_size = 14 }
+	if (n > 40 & n <= 75)   { png(filename=fname, width=8000, height=5000, res=300); p_size = 20 }
+	if (n > 75)             { png(filename=fname, width=4000, height=7500, res=300); p_size = 10 }   
 
-	if (length(lollipop_data$NES) > 15 & length(lollipop_data$NES) < 40)
-	{
-		print('more than 15, less than 40')
-		print(c('number of bio processess:', length(lollipop_data$NES)))
-		png(filename=fname, width=5700,height=3750,res=300)
-		p_size = 14
-	}
-
-	if (length(lollipop_data$NES) > 40 & length(lollipop_data$NES) < 75)
-	{
-		print('more than 40, less than 75')
-		print(c('number of bio processess:', length(lollipop_data$NES)))
-		png(filename=fname, width=8000,height=5000,res=300)
-		p_size = 20
-	}
-
-	if (length(lollipop_data$NES) > 75)
-	{
-		print('more than 75')
-		print(c('number of bio processess:', length(lollipop_data$NES)))
-		png(filename=fname, width=4000,height=7500,res=300)
-	}
+#	if (length(lollipop_data$NES) <= 15)
+#	{
+#		print('less than 15')
+#		print(c('number of bio processess:', length(lollipop_data$NES)))
+#		png(filename=fname, width=2700,height=2000,res=300)
+#		print(fname)
+#	}
+#
+#	if (length(lollipop_data$NES) > 15 & length(lollipop_data$NES) < 40)
+#	{
+#		print('more than 15, less than 40')
+#		print(c('number of bio processess:', length(lollipop_data$NES)))
+#		png(filename=fname, width=5700,height=3750,res=300)
+#		p_size = 14
+#	}
+#
+#	if (length(lollipop_data$NES) > 40 & length(lollipop_data$NES) < 75)
+#	{
+#		print('more than 40, less than 75')
+#		print(c('number of bio processess:', length(lollipop_data$NES)))
+#		png(filename=fname, width=8000,height=5000,res=300)
+#		p_size = 20
+#	}
+#
+#	if (length(lollipop_data$NES) > 75)
+#	{
+#		print('more than 75')
+#		print(c('number of bio processess:', length(lollipop_data$NES)))
+#		png(filename=fname, width=4000,height=7500,res=300)
+#	}
 
 	if (length(lollipop_data$NES) > 0)
 	{
@@ -770,12 +776,18 @@ f_gsea <- function(df, gmt_name, rank, filtering_threshold, pathway_dir, ident, 
 		rankData <- df$avg_log2FC
 	}
 
-	if (rank == 'p_val_adj')
+	if (rank == 'signed_logp') 
 	{
-		print('ranking by adj p.value')
-		df <- df[order(df$p_val_adj, decreasing = FALSE), ] # want from lowest to highest
-		rankData <- df$p_val_adj
+	  print('ranking by signed -log10 p-value')
+	  rankData <- -log10(pmax(df$p_val, .Machine$double.xmin)) * sign(df$avg_log2FC)
 	}
+
+	#if (rank == 'p_val_adj')
+	#{
+	#	print('ranking by adj p.value')
+	#	df <- df[order(df$p_val_adj, decreasing = FALSE), ] # want from lowest to highest
+	#	rankData <- df$p_val_adj
+	#}
 
 	names(rankData) <- df$gene
 	cluster = unique(df$cluster)
@@ -787,21 +799,32 @@ f_gsea <- function(df, gmt_name, rank, filtering_threshold, pathway_dir, ident, 
 	gsea_output_curated <- fgsea(pathways=msigdbr_list_curated, stats = rankData+rnorm(length(rankData), sd=0.001), minSize = 10, maxSize = 500) 
 	gsea_output_curated_filtered <- subset(gsea_output_curated, padj < filtering_threshold)
 
-	colnames(gsea_output_curated_filtered)[1] <- 'Description'
-	colnames(gsea_output_curated_filtered)[3] <- 'p.adjust'
+	#colnames(gsea_output_curated_filtered)[1] <- 'Description'
+	#colnames(gsea_output_curated_filtered)[3] <- 'p.adjust'
+	setnames(gsea_output_curated_filtered, c('pathway', 'padj'), c('Description', 'p.adjust'))
+
 	gsea_output_curated_filtered <- gsea_output_curated_filtered[, c('Description', 'p.adjust', 'ES', 'NES', 'size', 'leadingEdge')]
-	gsea_output_curated_filtered$p.adjust <- round(gsea_output_curated_filtered$p.adjust, 3)
+	#gsea_output_curated_filtered$p.adjust <- round(gsea_output_curated_filtered$p.adjust, 3)
+	gsea_output_curated_filtered$p.adjust <- signif(gsea_output_curated_filtered$p.adjust, 3)
 	gsea_output_curated_filtered$ES <- round(gsea_output_curated_filtered$ES, 3)
 	gsea_output_curated_filtered$NES <- round(gsea_output_curated_filtered$NES, 3)
 	gmt_curated <- paste0(gmt_name, '_curated')
 	gsea_output_curated_filtered$cluster <- cluster
-	gsea_output_curated_filtered$database <- 'curated'
+	#gsea_output_curated_filtered$database <- 'curated'
+	subcol <- intersect(c('gs_subcollection', 'gs_subcat'), names(curated_gene_sets))[1]
+	gs_db <- unique(as.data.frame(curated_gene_sets)[, c('gs_name', subcol)])
+	db <- gs_db[[subcol]][match(gsea_output_curated_filtered$Description, gs_db$gs_name)]
+	db <- sub('^CP:?', '', db)
+	db[db == ''] <- 'CP'
+	gsea_output_curated_filtered$database <- db
 	gsea_output_curated_filtered$comparison <- comp
 
 	if (length(gsea_output_curated_filtered$NES) > 0)
 	{
 		bioimages(gsea_output_curated_filtered, gmt_curated, ident, pathway_dir, cluster, project, rank, comp)
-		fname1=paste0(pathway_dir_table, project, '_', ident, '_', 'cluster_', gmt_curated, '_filtered_results_', rank, '.csv', sep='')
+		#fname1=paste0(pathway_dir_table, project, '_', ident, '_', 'cluster_', gmt_curated, '_filtered_results_', rank, '.csv', sep='')
+		fname1=paste0(pathway_dir_table, project, '_', ident, '_', 'cluster_', gmt_curated, '_', comp, '_filtered_results_', rank, '.csv')
+
 		print(fwrite(gsea_output_curated_filtered, file=fname1))
 		print('finished curated')
 	}
@@ -813,10 +836,12 @@ f_gsea <- function(df, gmt_name, rank, filtering_threshold, pathway_dir, ident, 
 	gsea_output_hallmark <- fgsea(pathways=msigdbr_list_hallmark, stats = rankData+rnorm(length(rankData), sd=0.001), minSize = 10, maxSize = 500) 
 	gsea_output_hallmark_filtered <- subset(gsea_output_hallmark, padj < filtering_threshold)
 
-	colnames(gsea_output_hallmark_filtered)[1] <- 'Description'
-	colnames(gsea_output_hallmark_filtered)[3] <- 'p.adjust'
+	#colnames(gsea_output_hallmark_filtered)[1] <- 'Description'
+	#colnames(gsea_output_hallmark_filtered)[3] <- 'p.adjust'
+	setnames(gsea_output_hallmark_filtered, c('pathway', 'padj'), c('Description', 'p.adjust'))
 	gsea_output_hallmark_filtered <- gsea_output_hallmark_filtered[, c('Description', 'p.adjust', 'ES', 'NES', 'size', 'leadingEdge')]
-	gsea_output_hallmark_filtered$p.adjust <- round(gsea_output_hallmark_filtered$p.adjust, 3)
+	#gsea_output_hallmark_filtered$p.adjust <- round(gsea_output_hallmark_filtered$p.adjust, 3)
+	gsea_output_hallmark_filtered$p.adjust <- signif(gsea_output_hallmark_filtered$p.adjust, 3)
 	gsea_output_hallmark_filtered$ES <- round(gsea_output_hallmark_filtered$ES, 3)
 	gsea_output_hallmark_filtered$NES <- round(gsea_output_hallmark_filtered$NES, 3)
 	gmt_hallmark <- paste0(gmt_name, '_hallmark')
@@ -827,7 +852,8 @@ f_gsea <- function(df, gmt_name, rank, filtering_threshold, pathway_dir, ident, 
 	if (length(gsea_output_hallmark_filtered$NES) > 0)
 	{
 		bioimages(gsea_output_hallmark_filtered, gmt_hallmark, ident, pathway_dir_figure, cluster, project, rank, comp)
-		fname2=paste0(pathway_dir_table, project, '_', ident, '_', 'cluster_', gmt_hallmark, '_filtered_results_', rank, '.csv', sep='')
+		#fname2=paste0(pathway_dir_table, project, '_', ident, '_', 'cluster_', gmt_hallmark, '_filtered_results_', rank, '.csv', sep='')
+		fname2=paste0(pathway_dir_table, project, '_', ident, '_', 'cluster_', gmt_hallmark, '_', comp, '_filtered_results_', rank, '.csv')
 		print(fwrite(gsea_output_hallmark_filtered, file=fname2))
 		print('finished hallmark')
 	}
@@ -839,10 +865,11 @@ f_gsea <- function(df, gmt_name, rank, filtering_threshold, pathway_dir, ident, 
 	gsea_output_ontology <- fgsea(pathways=msigdbr_list_ontology, stats = rankData+rnorm(length(rankData), sd=0.001), minSize = 10, maxSize = 500) 
 	gsea_output_ontology_filtered <- subset(gsea_output_ontology, padj < filtering_threshold)
 
-	colnames(gsea_output_ontology_filtered)[1] <- 'Description'
-	colnames(gsea_output_ontology_filtered)[3] <- 'p.adjust'
+	#colnames(gsea_output_ontology_filtered)[1] <- 'Description'
+	#colnames(gsea_output_ontology_filtered)[3] <- 'p.adjust'
+	setnames(gsea_output_ontology_filtered, c('pathway', 'padj'), c('Description', 'p.adjust'))
 	gsea_output_ontology_filtered <- gsea_output_ontology_filtered[, c('Description', 'p.adjust', 'ES', 'NES', 'size', 'leadingEdge')]
-	gsea_output_ontology_filtered$p.adjust <- round(gsea_output_ontology_filtered$p.adjust, 3)
+	gsea_output_ontology_filtered$p.adjust <- signif(gsea_output_ontology_filtered$p.adjust, 3)
 	gsea_output_ontology_filtered$ES <- round(gsea_output_ontology_filtered$ES, 3)
 	gsea_output_ontology_filtered$NES <- round(gsea_output_ontology_filtered$NES, 3)
 	gmt_ontology <- paste0(gmt_name, '_ontology')
@@ -853,7 +880,8 @@ f_gsea <- function(df, gmt_name, rank, filtering_threshold, pathway_dir, ident, 
 	if (length(gsea_output_ontology_filtered$NES) > 0)
 	{
 		bioimages(gsea_output_ontology_filtered, gmt_ontology, ident, pathway_dir, cluster, project, rank, comp)
-		fname3=paste0(pathway_dir_table, project, '_', ident, '_', 'cluster_', gmt_ontology, '_filtered_results_', rank, '.csv', sep='')
+		#fname3=paste0(pathway_dir_table, project, '_', ident, '_', 'cluster_', gmt_ontology, '_filtered_results_', rank, '.csv', sep='')
+		fname3=paste0(pathway_dir_table, project, '_', ident, '_', 'cluster_', gmt_ontology, '_', comp, '_filtered_results_', rank, '.csv')
 		print(fwrite(gsea_output_ontology_filtered, file=fname3))
 		print('finished ontology')
 	}
@@ -889,18 +917,18 @@ dge <- function(seurat_object, tbl_dir, normalization_method, ident, f_threshold
 				conserved_dir=paste0(tbl_dir, 'conserved_genes/')
 				dir.create(conserved_dir, showWarnings=FALSE)
 
-				# need to check that at least one condition in cluster has >= 3 cells
+				# need to check that at least one condition in cluster has > 20 cells
 				condition_flag = 0
 
 				cells_per_condition <- table(cluster@meta.data$Experiment)
 				max_cells_per_condition <- max(cells_per_condition)
 
-				if (max_cells_per_condition > 3)
+				if (max_cells_per_condition > 20) #increasing from 3
 				{
 					print('Finding conserved DGEs...')
 
 					set.seed(42)
-					project.conserved.markers <- FindConservedMarkers(seurat_object, ident.1=c, min.cells.group = 3, grouping.var='Experiment', verbose=TRUE)
+					project.conserved.markers <- FindConservedMarkers(seurat_object, ident.1=c, min.cells.group = 20, grouping.var='Experiment', verbose=TRUE)
 					# check to see if project.conserved.markers is an empty dataframe
 					if (nrow(project.conserved.markers) != 0 && ncol(project.conserved.markers) != 0) 
 					{
@@ -913,11 +941,28 @@ dge <- function(seurat_object, tbl_dir, normalization_method, ident, f_threshold
 			}
 			# ---------------------------------------------------------
 
+#			if (normalization_method == 'sct')
+#			{
+#				set.seed(42)
+#				print('Preping seurat object (sct assay)...')
+#				cluster <- PrepSCTFindMarkers(object = cluster)
+#			}
+
+			# skip cell types without >= 2 experiments of > 20 cells (before the slow/fragile SCT step)
+			exp_counts <- table(cluster@meta.data$Experiment)
+			if (sum(exp_counts > 20) < 2)
+			{
+				print(paste0('Skipping ', c, ': fewer than 2 experiments with > 20 cells'))
+				next
+			}
+
 			if (normalization_method == 'sct')
 			{
 				set.seed(42)
 				print('Preping seurat object (sct assay)...')
-				cluster <- PrepSCTFindMarkers(object = cluster)
+				cluster <- tryCatch(PrepSCTFindMarkers(object = cluster),
+					error = function(e) { print(paste0('Skipping ', c, ': PrepSCTFindMarkers failed: ', conditionMessage(e))); NULL })
+				if (is.null(cluster)) next
 			}
 
 			# commented lines below were here originally -- moved up to obviate repetition
@@ -938,7 +983,7 @@ dge <- function(seurat_object, tbl_dir, normalization_method, ident, f_threshold
 				  cj <- subset(x = cluster, subset = celltype.exp == j)
 				  cjx <- nrow(cj@meta.data)
 
-				  if (cix > 3 && cjx > 3) #need at least 3 cells per cluster
+				  if (cix > 20 && cjx > 20) #need at least 20 cells per cluster. updated from 3.
 				  {
 						if (i != j)
 						{
@@ -966,7 +1011,7 @@ dge <- function(seurat_object, tbl_dir, normalization_method, ident, f_threshold
 									project.markers <- FindMarkers(cluster, ident.1 = i, ident.2 = j, verbose = TRUE, only.pos = FALSE, slot='data', logfc.threshold=avg2fc, min.pct=min_pct)
 								}
 
-								if (length(project.markers[1]) != 0)
+								if (nrow(project.markers) > 0)
 								{
 									setDT(project.markers, keep.rownames = TRUE)[]
 									names(project.markers)[1] <- paste('gene')
@@ -978,8 +1023,7 @@ dge <- function(seurat_object, tbl_dir, normalization_method, ident, f_threshold
 									project.markers$comparison <- comparison
 									write.table(project.markers, file=table_name, sep='\t', quote=FALSE, col.names=TRUE, row.names=FALSE)
 
-									# get pathways for cluster
-									f_gsea(project.markers, c, 'p_val_adj', filtering_threshold, pathway_dir, ident, curated_gene_sets, hallmarks, ontology_gene_sets, project, comparison)
+									f_gsea(project.markers, c, 'signed_logp', filtering_threshold, pathway_dir, ident, curated_gene_sets, hallmarks, ontology_gene_sets, project, comparison)
 									f_gsea(project.markers, c, 'avg_log2fc', filtering_threshold, pathway_dir, ident, curated_gene_sets, hallmarks, ontology_gene_sets, project, comparison)
 								}
 							}
@@ -1003,7 +1047,7 @@ combine_clean <- function(pathway_dir, project, ident, tbl_dir)
 	# 	lapply(read_table) %>% bind_rows
 	marker_df <- list.files(path = tbl_dir, pattern = '*final_markers_cluster_', full.names = TRUE) %>%
 	  lapply(function(file) {
-		df <- read_table(file)
+		df <- read_tsv(file) # changed from read_table, handles whitespaces in names
 			 # Ensure the 'cluster' column is of type 'character' (you can change to 'factor' if necessary)
 				  df$cluster <- as.character(df$cluster)
 						return(df)
@@ -1019,7 +1063,7 @@ combine_clean <- function(pathway_dir, project, ident, tbl_dir)
 
 	# delete old copy of csv file (if exists) -- prevents concat file
 	print('delete old copy of csv file (if exists)...')
-	csv_file_adj <- paste0(pathway_dir_table, project, '_', ident, '_final_filtered_results_combined_pathways_p_val_adj.csv')
+	csv_file_adj <- paste0(pathway_dir_table, project, '_', ident, '_final_filtered_results_combined_pathways_signed_logp.csv')
 	csv_file_log <- paste0(pathway_dir_table, project, '_', ident, '_final_filtered_results_combined_pathways_avg_log2fc.csv')
 
 	if (file.exists(csv_file_adj))
@@ -1040,7 +1084,7 @@ combine_clean <- function(pathway_dir, project, ident, tbl_dir)
 	#csv_df <- list.files(path = pathway_dir_table, pattern = '\\.csv$', full.names =TRUE) %>% 
 	# csv_df_adj <- list.files(path = pathway_dir_table, pattern = '*p_val_adj.csv$', full.names =TRUE) %>% 
 	# 	lapply(read_csv) %>% bind_rows
-	csv_df_adj <- list.files(path = pathway_dir_table, pattern = '*p_val_adj.csv$', full.names = TRUE) %>% 
+	csv_df_adj <- list.files(path = pathway_dir_table, pattern = '*signed_logp.csv$', full.names = TRUE) %>% 
 	  lapply(function(file) {
 		      df <- read_csv(file)
 				    # Ensure 'cluster' column is of type 'character' (change to 'factor' if you prefer)
@@ -1125,7 +1169,7 @@ seurat_object_reduction <- function(seurat_object, ident, redux_umap, redux_tsne
 
 	meta_tags <- c('orig.ident', 'nCount_RNA', 'nFeature_RNA','Experiment', 'Sample', 
 		'percent.mito', 'percent.ribo', 'S.Score', 'G2M.Score', 'Phase', 'CC.Difference', 
-		'nCount_SCT', 'nFeature_SCT', 'celltypes', ident)
+		'nCount_SCT', 'nFeature_SCT', 'celltypes', 'predicted.celltype.l2.score', 'mapping.score', ident)
 
 	print('removing unused meta data...')
 
@@ -1385,9 +1429,18 @@ if (user_gene_file != 'does_not_exist' & file.exists(user_gene_file))
 # ------------------------------------------------
 
 # CREATE MSIG LIST -------------------------------
-curated_gene_sets <- msigdbr(species=organism, category='C2', subcategory='CP')
+# updated nov26 to include all subcategories (KEGG was skipped)
+c2 <- msigdbr(species = organism, category = 'C2')
+subcol <- intersect(c('gs_subcollection', 'gs_subcat'), names(c2))[1]
+curated_gene_sets <- c2[grepl('^CP', c2[[subcol]]), ]
+#curated_gene_sets <- msigdbr(species=organism, category='C2', subcategory='CP')
 hallmarks=msigdbr(species=organism, category='H')
-ontology_gene_sets <- msigdbr(species=organism, category='C5')
+#ontology_gene_sets <- msigdbr(species=organism, category='C5')
+ontology_gene_sets <- msigdbr(species = organism, category = 'C5', subcategory = 'GO:BP')  # C5 alone also includes HPO + GO:CC/MF
+# ------------------------------------------------
+
+# FUNCTION CALL  ----------------------------------------------------
+S <- providing_object(provide, annotate, S, meta_sample, meta_experiment, meta_annotation)
 # ------------------------------------------------
 
 # RENAME CLUSTERS + PROP + DIMPLOTS (still need to update for single sample)?????
@@ -1397,26 +1450,32 @@ flag = 0
 if (provide == 'y' & annotate == 'n')
 {
 	flag = 1
+	Idents(object=S) <- 'celltypes'   # meta_annotation column, renamed in providing_object()
 }
+# ------------------------------------------------
 
 # FUNCTION CALLS ----------------------------------------------------
-S <- providing_object(provide, annotate, S, meta_sample, meta_experiment, meta_annotation)
-
 print('Entering rename_and_visualize function...')
 S <- rename_and_visualize(S, celltype_assignment_file, ident, genes, markers, redux_umap, redux_tsne, tsne, fig_dir, tbl_dir, flag, visualization_method, project, normalization_method)
+# ------------------------------------------------
 
 # DGEA + FGSEA -----------------------------------
 print('Entering dge function...')
 dge(S, tbl_dir, normalization_method, ident, filtering_threshold, avg2fc, min.pct, pathway_dir, curated_gene_sets, hallmarks, ontology_gene_sets, project, conserved_genes)
+# ------------------------------------------------
 
 # COMBINE AND CLEAN ------------------------------
 print('consolidating output...')
 combine_clean(pathway_dir, project, ident, tbl_dir)
+# ------------------------------------------------
 
 # REMOVE UNUSED METADATA
 print('removing unused metatdata...')
 S <- seurat_object_reduction(S, ident, redux_umap, redux_tsne, normalization_method, integration_method)
+# ------------------------------------------------
 
-#, SAVE, UPDATE, SO
+# SAVE, UPDATE, SO
+# ------------------------------------------------
 print('savings...')
 save_seurat_object(S, rds_dir, project, final_storage_method, ident)
+# ------------------------------------------------

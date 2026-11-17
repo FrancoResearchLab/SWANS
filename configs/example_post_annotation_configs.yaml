@@ -7,14 +7,13 @@ EXECUTOR: slurm
 # minimimum % of cells in one of compared groups for dge
 MIN_PCT: 0.1
 
-# filtering DEGs (avg_log2FC) -- single value: e.g., 0.1 (longer) 2.5 (shorter)
-# use 0 to keep all results (pathway analysis); non-zero (gene set enrichment analysis)
+# filtering DEGs (avg_log2FC) -- single value: e.g., 0.25
+# also filters the gene list used for GSEA; use 0 so GSEA sees all genes passing MIN_PCT
 AVG_LOG2FC_THRESHOLD: 1.5
 
 # filtering threshold/value of adj.p.value for pathway/gsea results -- single value: e.g., 0.05 
 FINAL_FILTERING_THRESHOLD: 0.10
 
-#### WHAT IF USER IS SUPPLYING OBJECT?????
 # final normalization method for Seurat (standard, sct) -- choose only one
 FINAL_SEURAT_NORMALIZATION_METHOD: standard
 

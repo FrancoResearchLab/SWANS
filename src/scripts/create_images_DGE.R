@@ -332,12 +332,13 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
 
         # heatmap (full gene list, on by default) ------------------
 		  n_genes <- length(heatmap_genes)
-		  label_size <- max(2, min(8, 300 / n_genes))
+		  label_size <- max(3, min(8, 550 / n_genes))
 
         if (!is.null(heatmap_genes) && length(heatmap_genes) > 0)
         {
           print('making heatmap...')
-          try(print(DoHeatmap(seurat_object, features = heatmap_genes) + NoLegend() + theme(axis.text.y = element_text(size = label_size))
+          try(print(DoHeatmap(seurat_object, features = heatmap_genes, raster = FALSE) + NoLegend() + 
+				theme(axis.text.y = element_text(size = label_size))
 			 ))
         }
         # ------------------------------------------------------------
@@ -399,7 +400,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
                   if (v == 'violin')
                   {
                     print('making violin plot...')
-                    try(plot(VlnPlot(seurat_object, features=c(t)) + xlab(label = 'Clusters') + ylab('LogNormalized Expression')))
+                    try(plot(VlnPlot(seurat_object, features=c(t), raster=TRUE) + xlab(label = 'Clusters') + ylab('LogNormalized Expression')))
                   }
 
                   if (v == 'ridge')
@@ -438,7 +439,7 @@ proportions_UMAP_DGE <- function(seurat_object, num_samples, visi, genes=genes, 
                 if (v == 'violin')
                 {
                   print('making violin plot...')
-                  try(plot(VlnPlot(seurat_object, features=c(genes)) + xlab(label = 'Clusters') + ylab('LogNormalized Expression')))
+                  try(plot(VlnPlot(seurat_object, features=c(genes), raster = TRUE) + xlab(label = 'Clusters') + ylab('LogNormalized Expression')))
                 }
 
                 if (v == 'ridge')

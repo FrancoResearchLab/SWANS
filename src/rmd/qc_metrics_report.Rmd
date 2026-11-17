@@ -194,6 +194,15 @@ SWANS, version 2.0 — QC Metrics stage (pre-filtering review)
 
 This report summarizes the **unfiltered** dataset before any cells are removed. Use it, along with the suggested thresholds table below, to decide on filtering values before continuing the pipeline. Nothing shown here has been filtered yet — the goal is to look at the raw distributions and pick thresholds that make sense for this dataset.
 
+## A note on thresholds:
+Filtering thresholds in this report are derived using robust statistics that aren't thrown off by outlier cells — a common problem with cheap/damaged cells or doublets in scRNA-seq data. 
+
+Median + 3×MAD (used for mitochondrial and ribosomal percentage): MAD (median absolute deviation) measures spread the same way standard deviation does, but it's based on the median rather than the mean, so a handful of extreme outlier cells can't drag the threshold around. Median + 3×MAD marks a value three "typical deviations" above the center of the distribution — a robust upper bound beyond which cells are flagged as atypical.
+
+99th percentile (used for nFeature): this simply marks the value below which 99% of cells fall, flagging the top 1% as unusually high — often a signal of doublets (two cells captured together) rather than a single healthy cell.
+
+Both approaches suggest a starting point for filtering, not a hard rule — you're encouraged to review the plots and adjust thresholds per sample if the suggested cutoff looks off from the actual data distribution.
+
 <hr style="border:1px solid gray"/>
 
 ## Correlation Panels (whole dataset)

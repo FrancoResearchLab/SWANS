@@ -260,7 +260,7 @@ Organism: `r organism`
 Was SoupX Run? `r run_soupX`    
 Was DoubletFinder Run? `r run_doubletFinder`    
 
-Filtering thresholds used (per sample, set during the QC metrics review stage):
+Filtering thresholds used (per sample, set during the QC metrics review stage; note RIBO_THRESHOLD was not used to filter cells):
 ```{r thresholds-used-table}
 datatable(thresholds_used, options = list(pageLength = 10), rownames = FALSE)
 ```
